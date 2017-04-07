@@ -1,2 +1,3 @@
 # monte_carlo_forest_fire
-cs227b spring 2017
+CS227B 
+Spring 2017
