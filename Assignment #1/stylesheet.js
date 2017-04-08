@@ -2,6 +2,8 @@
 // TODO 
 //------------------------------------------------------------------------------
 
+var count = 0; 
+
 function renderstate (state)
  {
   var table = document.createElement('table');
@@ -14,11 +16,13 @@ function renderstate (state)
  }
 
 function makerow (table,rownum,state)
- {var row =table.insertRow(rownum);
+ {
+  var row =table.insertRow(rownum);
   makecell(row,rownum,0,state);
   makecell(row,rownum,1,state);
   makecell(row,rownum,2,state);
-  return row}
+  return row
+ }
 
 function makecell (row,rownum,colnum,state)
  {
@@ -31,7 +35,15 @@ function makecell (row,rownum,colnum,state)
   rownum = (rownum+1).toString();
   colnum = (colnum+1).toString();
   var mark = compfindx('Z',seq('cell',rownum,colnum,'Z'),state,seq());
-  if (mark && mark != 'b') {cell.innerHTML = mark} else {cell.innerHTML = '&nbsp;'};
+  if (mark && mark != 'b') {
+    if (count % 2 == 0) {
+      cell.innerHTML = "<font color=\"red\">X</font>"; 
+    } else {
+      cell.innerHTML = "<font color=\"black\">X</font>"; 
+    }
+  } else {
+    cell.innerHTML = '&nbsp;'; 
+  };
   return cell
  }
 
