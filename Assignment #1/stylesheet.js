@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// TODO 
+// Misére 5x5 Tic Tac Toe 
 //------------------------------------------------------------------------------
 
 var count = 0; 
@@ -14,6 +14,7 @@ function renderstate (state) {
   makerow(table, 3, state);
   makerow(table, 4, state);
   count += 1; 
+
   return table; 
 }
 
