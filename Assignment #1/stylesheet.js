@@ -2,6 +2,13 @@
 // Misére 5x5 Tic Tac Toe 
 //------------------------------------------------------------------------------
 
+/* 
+ * English description: 
+ * In Misere Tic Tac Toe, both players play the 'X' character. Unlike normal 
+ * Tic Tac Toe, the loser of the game is the one to first make a row, column, 
+ * or diagonal of X's. In this variant, the game is played on a 5x5 grid. 
+ */
+
 var count = 0; 
 
 function renderstate (state) {
