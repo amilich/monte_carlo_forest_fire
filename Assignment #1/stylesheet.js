@@ -15,11 +15,9 @@ function renderstate (state) {
   var table = document.createElement('table');
   table.setAttribute('cellspacing', '0');
   table.setAttribute('border', '2');
-  makerow(table, 0, state);
-  makerow(table, 1, state);
-  makerow(table, 2, state);
-  makerow(table, 3, state);
-  makerow(table, 4, state);
+  for (row = 0; row < 5; row ++) {
+    makerow(table, row, state);
+  }
   count += 1; 
 
   return table; 
@@ -27,11 +25,9 @@ function renderstate (state) {
 
 function makerow (table, rownum, state) {
   var row = table.insertRow(rownum);
-  makecell(row, rownum, 0, state);
-  makecell(row, rownum, 1, state);
-  makecell(row, rownum, 2, state);
-  makecell(row, rownum, 3, state);
-  makecell(row, rownum, 4, state);
+  for (col = 0; col < 5; col ++) {
+    makecell(row, rownum, col, state);
+  }
   return row; 
 }
 
@@ -52,7 +48,7 @@ function makecell (row, rownum, colnum, state) {
   colnum = (colnum + 1).toString();
   var mark = compfindx('Z',seq('cell', rownum, colnum,'Z'), state, seq());
   if (mark && mark != 'b') {
-    cell.innerHTML = count % 2 == 0 ? "<font color=\"white\">X</font>" : "<font color=\"black\">X</font>"; 
+    cell.innerHTML = count % 2 == 10 ? "<font color=\"white\">X</font>" : "<font color=\"black\">X</font>"; 
   } else {
     cell.innerHTML = '&nbsp;'; 
   };
