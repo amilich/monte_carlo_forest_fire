@@ -10,7 +10,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     (role w)
-    (role b)
+    (role b) 
 
     (index 1)
     (index 2)
@@ -18,14 +18,18 @@
     (index 4)
     (index 5)
 
-    (<= (base (cell ?m ?n x)) (index ?m) (index ?n))
-    (<= (base (cell ?m ?n b)) (index ?m) (index ?n))
+    (<= (base (cell ?r ?c x)) (index ?r) (index ?c))
+    (<= (base (cell ?r ?c b)) (index ?r) (index ?c))
 
     (base (control w))
     (base (control b))
 
     (<= (input ?r (mark ?m ?n)) (role ?r) (index ?m) (index ?n))
     (<= (input ?r noop) (role ?r))
+
+    (base (won w))
+    (base (won b))
+    (base (won 1))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Init States
@@ -60,6 +64,8 @@
     (init (cell 5 4 b))
     (init (cell 5 5 b))
     (init (control w))
+
+    (init (won 1))
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Legal States
@@ -106,6 +112,9 @@
     
     (<= (next (control b))
         (true (control w)))
+
+    (<= (next (won 1))
+        (not (line 1)) (not (line 2)) (not (line 3)))
     
     (<= (row ?m ?x)
         (true (cell ?m 1 ?x))
@@ -133,7 +142,7 @@
         (true (cell 2 4 ?x))
         (true (cell 3 3 ?x))
         (true (cell 4 2 ?x))
-        (true (cell 5 1 ?x)))
+        (true (cell 5 1 ?x)))    
 
     (<= (line ?x) (row ?m ?x))
     (<= (line ?x) (column ?m ?x))

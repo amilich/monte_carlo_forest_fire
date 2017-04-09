@@ -9,23 +9,40 @@
  * or diagonal of X's. In this variant, the game is played on a 5x5 grid. 
  */
 
-var count = 0; 
+var init = 0; // Used to keep track of whether first move has been played 
+var count = 0; // Counting number of moves 
+var board_size = 5; // Size of baord 
+var old_state = new Array(); // Old game state 
+var changed_row = -1; // Last changed row
+var changed_col = -1; // Last chaned column 
 
 function renderstate (state) {
   var table = document.createElement('table');
   table.setAttribute('cellspacing', '0');
   table.setAttribute('border', '2');
-  for (row = 0; row < 5; row ++) {
-    makerow(table, row, state);
+  if (!init) { // not initialized yet
+    old_state = state; 
+    init = true; 
+  } else {
+    for (ii = 0; ii < board_size * board_size; ii ++) {
+      if (state[ii].toString() === old_state[ii].toString()) {
+        // noop 
+      } else {
+        changed_row = Math.floor(ii / board_size); 
+        changed_col = ii % board_size; 
+        console.log("Detected change at " + ii + ", or (" + changed_row + "," + changed_col + ")"); 
+      }
+    }
   }
+  for (row = 0; row < board_size; row ++) makerow(table, row, state);
   count += 1; 
-
+  old_state = state; 
   return table; 
 }
 
 function makerow (table, rownum, state) {
   var row = table.insertRow(rownum);
-  for (col = 0; col < 5; col ++) {
+  for (col = 0; col < board_size; col ++) {
     makecell(row, rownum, col, state);
   }
   return row; 
@@ -48,10 +65,15 @@ function makecell (row, rownum, colnum, state) {
   colnum = (colnum + 1).toString();
   var mark = compfindx('Z',seq('cell', rownum, colnum,'Z'), state, seq());
   if (mark && mark != 'b') {
-    cell.innerHTML = count % 2 == 10 ? "<font color=\"white\">X</font>" : "<font color=\"black\">X</font>"; 
+    cell.innerHTML = "<font color=\"black\">X</font>"; 
   } else {
     cell.innerHTML = '&nbsp;'; 
   };
+  if (rownum - 1 == changed_row && colnum - 1 == changed_col) {
+    console.log("Found cell at (" + changed_row + " , " + changed_col + ")"); 
+    cell.innerHTML = "<font color=\"red\">X</font>"; 
+    console.log(state); 
+  } 
   return cell; 
 }
 
