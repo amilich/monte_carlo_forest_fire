@@ -34,6 +34,7 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	final boolean DEBUG_EN = false;
 	final double MAX_SCORE = 100;
 	final double MIN_SCORE = 0;
+	final static double MAX_DELIB_THRESHOLD = 1000;
 
 	/**
 	 * Function: stateMachineSelectMove
@@ -43,9 +44,13 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		long start = System.currentTimeMillis();
+		long decisionTime = start + timeout;
+		System.out.println("Curr time = " + start + " decision time = " + decisionTime);
+		System.out.println("Timeout " + timeout);
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
-		Move action = bestmove(getRole(), currState);
+		Move action = bestmove(getRole(), currState, decisionTime);
 //		try {
 //			action = bestmove(getRole(), currState, machine);
 //		} catch(Exception e) {
@@ -57,11 +62,25 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	}
 
 	/**
+	 * Function: checkTime
+	 * ---------------------
+	 * Check if time is about to expire.
+	 */
+	public static boolean checkTime(long decisionTime) {
+		long currTime = System.currentTimeMillis(); // TODOght way to do this
+		if (decisionTime - currTime < MAX_DELIB_THRESHOLD) {
+			System.out.println("** TIME EXPIRED ** Returning decision now.");
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Function: bestmove
 	 * -------------------
 	 * Return best possible move using minimax strategy.
 	 */
-	private Move bestmove(Role role, MachineState state) throws MoveDefinitionException,
+	private Move bestmove(Role role, MachineState state, long decisionTime) throws MoveDefinitionException,
 	GoalDefinitionException, TransitionDefinitionException {
 		List<Move> actions = new ArrayList<Move>();
 		actions.addAll(getStateMachine().getLegalMoves(state, role));
@@ -70,7 +89,9 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 		Move finalMove = null;
 		System.out.println("actions: " + actions);
 		for (int ii = 0; ii < actions.size(); ii ++) {
-			double result = minscore(role, actions.get(ii), state);
+			if (checkTime(decisionTime)) break;
+
+			double result = minscore(role, actions.get(ii), state, decisionTime);
 			if (result > score) {
 				score = result;
 				finalMove = actions.get(ii);
@@ -104,13 +125,16 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	 * Recursively determine minimum score that can be achieved from choosing a given move
 	 * in a given game state (assuming rational opponent).
 	 */
-	private double minscore(Role role, Move move, MachineState state) throws MoveDefinitionException,
+	private double minscore(Role role, Move move, MachineState state, long decisionTime) throws MoveDefinitionException,
 	TransitionDefinitionException, GoalDefinitionException {
 		List<List<Move>> jointActions = getStateMachine().getLegalJointMoves(state, role, move);
 		double score = MAX_SCORE;
 		for (List<Move> jointAction : jointActions) { // Opponent's move
+			if (checkTime(decisionTime)) break;
+
+
 			MachineState nextState = getStateMachine().getNextState(state, jointAction);
-			double result = maxscore(role, nextState);
+			double result = maxscore(role, nextState, decisionTime);
 			if (result == MIN_SCORE) return result;
 			if (result < score) {
 				score = result;
@@ -126,7 +150,7 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	 * Determine max score that can be achieved from choosing a given move
 	 * in a given game state by maximizing minimum score (minimax).
 	 */
-	private double maxscore(Role role, MachineState currState) throws MoveDefinitionException,
+	private double maxscore(Role role, MachineState currState, long decisionTime) throws MoveDefinitionException,
 	GoalDefinitionException, TransitionDefinitionException {
 		if (getStateMachine().isTerminal(currState)) {
 			return getStateMachine().getGoal(currState, role);
@@ -134,7 +158,10 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
 		double score = MIN_SCORE;
 		for (Move action : actions) {
-			double result = minscore(role, action, currState);
+			if (checkTime(decisionTime)) break;
+
+
+			double result = minscore(role, action, currState, decisionTime);
 			if (result == MAX_SCORE) return result;
 			if (result > score) score = result;
 		}

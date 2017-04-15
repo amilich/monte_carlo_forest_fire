@@ -33,8 +33,6 @@ public class MyLegalPlayer extends StateMachineGamer {
 		MachineState state = getCurrentState();
 		Role role = getRole();
 		List<Move> moves = machine.getLegalMoves(state, role);
-		Move action = moves.get(0);
-		double score = 0;
 		return moves.get(0);
 	}
 

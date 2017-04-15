@@ -1,4 +1,3 @@
-import java.util.Collections;
 import java.util.List;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
@@ -42,15 +41,19 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+
+		long start = System.currentTimeMillis();
+		long decisionTime = start + timeout;
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
-		Move action = bestmove(getRole(), currState);
+		Move action = bestmove(getRole(), currState, decisionTime);
 //		try {
 //			action = bestmove(getRole(), currState, machine);
 //		} catch(Exception e) {
 //			System.out.println("Error occurred while finding action: " + e);
 //			return machine.getLegalMoves(currState, getRole()).get(0);
 //		}
+		// TODO alpha beta task
 		if (DEBUG_EN) System.out.println("Selected action (role = " + getRole() + ") = " + action);
 		return action;
 	}
@@ -60,16 +63,18 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 * -------------------
 	 * Return best possible move using minimax strategy.
 	 */
-	private Move bestmove(Role role, MachineState state) throws MoveDefinitionException,
+	private Move bestmove(Role role, MachineState state, long decisionTime) throws MoveDefinitionException,
 	GoalDefinitionException, TransitionDefinitionException {
 		List<Move> actions = getStateMachine().getLegalMoves(state, role);
-		Collections.shuffle(actions);
+
 		double alpha = MIN_SCORE;
 		double beta = MAX_SCORE;
 		Move finalMove = null;
 		System.out.println("actions: " + actions);
 		for (int ii = 0; ii < actions.size(); ii ++) {
-			double result = minscore(role, actions.get(ii), state, alpha, beta);
+			if (MyMinimaxPlayer.checkTime(decisionTime)) break;
+
+			double result = minscore(role, actions.get(ii), state, alpha, beta, decisionTime);
 			double oldAlpha = alpha;
 			alpha = Math.max(alpha, result);
 			System.out.println("result score = " + result);
@@ -106,12 +111,14 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 * Recursively determine minimum score that can be achieved from choosing a given move
 	 * in a given game state (assuming rational opponent).
 	 */
-	private double minscore(Role role, Move move, MachineState state, double alpha, double beta) throws MoveDefinitionException,
-	TransitionDefinitionException, GoalDefinitionException {
+	private double minscore(Role role, Move move, MachineState state, double alpha, double beta, long decisionTime)
+			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		List<List<Move>> jointActions = getStateMachine().getLegalJointMoves(state, role, move);
 		for (List<Move> jointAction : jointActions) { // Opponent's move
+			if (MyMinimaxPlayer.checkTime(decisionTime)) break;
+
 			MachineState nextState = getStateMachine().getNextState(state, jointAction);
-			double result = maxscore(role, nextState, alpha, beta);
+			double result = maxscore(role, nextState, alpha, beta, decisionTime);
 			beta = Math.min(beta, result);
 			if (beta <= alpha) return alpha;
 		}
@@ -124,14 +131,17 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 * Determine max score that can be achieved from choosing a given move
 	 * in a given game state by maximizing minimum score (minimax).
 	 */
-	private double maxscore(Role role, MachineState currState, double alpha, double beta) throws MoveDefinitionException,
-	GoalDefinitionException, TransitionDefinitionException {
+	private double maxscore(Role role, MachineState currState, double alpha, double beta, long decisionTime)
+			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
+
 		if (getStateMachine().isTerminal(currState)) {
 			return getStateMachine().getGoal(currState, role);
 		}
 		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
 		for (Move action : actions) {
-			double result = minscore(role, action, currState, alpha, beta);
+			if (MyMinimaxPlayer.checkTime(decisionTime)) break;
+
+			double result = minscore(role, action, currState, alpha, beta, decisionTime);
 			alpha = Math.max(alpha, result);
 			if (alpha >= beta) return beta;
 		}
