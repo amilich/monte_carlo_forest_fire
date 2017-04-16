@@ -42,18 +42,11 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
-		long start = System.currentTimeMillis();
-		long decisionTime = start + timeout;
+		long decisionTime = timeout;
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
 		Move action = bestmove(getRole(), currState, decisionTime);
-//		try {
-//			action = bestmove(getRole(), currState, machine);
-//		} catch(Exception e) {
-//			System.out.println("Error occurred while finding action: " + e);
-//			return machine.getLegalMoves(currState, getRole()).get(0);
-//		}
-		// TODO alpha beta task
+		// TODO try/catch
 		if (DEBUG_EN) System.out.println("Selected action (role = " + getRole() + ") = " + action);
 		return action;
 	}
@@ -151,19 +144,16 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	@Override
 	public void stateMachineStop() {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void stateMachineAbort() {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void preview(Game g, long timeout) throws GamePreviewException {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
