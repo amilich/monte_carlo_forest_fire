@@ -58,8 +58,8 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	 * -------------------
 	 * Return best possible move using minimax strategy.
 	 */
-	private Move bestmove(Role role, MachineState state, long decisionTime) throws MoveDefinitionException,
-	GoalDefinitionException, TransitionDefinitionException {
+	private Move bestmove(Role role, MachineState state, long decisionTime)
+			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		List<Move> actions = new ArrayList<Move>();
 		actions.addAll(getStateMachine().getLegalMoves(state, role));
 		Collections.shuffle(actions);
