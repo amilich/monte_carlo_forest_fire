@@ -25,7 +25,6 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 		// TODO Auto-generated method stub
 	}
 
-
 	/**
 	 * Controls printing of debug statements.
 	 */
@@ -45,7 +44,12 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 		long decisionTime = timeout;
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
-		Move action = bestmove(getRole(), currState, decisionTime);
+		Move action = getStateMachine().findLegalx(getRole(), currState);
+		try {
+			action = bestmove(getRole(), currState, decisionTime);
+		} catch(Exception e) {
+			System.out.println("*** Failed to get best move ***");
+		}
 		// TODO try/catch
 		if (DEBUG_EN) System.out.println("Selected action (role = " + getRole() + ") = " + action);
 		return action;
