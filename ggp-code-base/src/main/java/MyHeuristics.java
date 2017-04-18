@@ -7,6 +7,8 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
+//Andrew
+
 public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
 	final static double MAX_DELIB_THRESHOLD = 1000;

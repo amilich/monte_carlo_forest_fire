@@ -14,6 +14,8 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
+//Andrew
+
 public class MyDeliberationPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
@@ -77,8 +79,8 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 	 * Recursively determine max score that can be achieved from choosing a given move
 	 * in a given game state.
 	 */
-	private double maxscore(Role role, MachineState currState, StateMachine machine) throws MoveDefinitionException,
-		GoalDefinitionException, TransitionDefinitionException {
+	private double maxscore(Role role, MachineState currState, StateMachine machine)
+			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		if (machine.isTerminal(currState)) {
 			return machine.getGoal(currState, role); // TODO correct value
 		}
