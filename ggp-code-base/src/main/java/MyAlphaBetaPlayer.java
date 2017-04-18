@@ -13,6 +13,8 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
+// Andrew
+
 public class MyAlphaBetaPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
