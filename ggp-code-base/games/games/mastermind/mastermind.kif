@@ -1,0 +1,126 @@
+;;; Mastermind
+
+;;; components
+
+(role random)
+(role robot)
+
+(base (step 1))
+(<= (base (step ?n))
+	(stepcount ?m ?n))
+
+(<= (base (control ?r))
+	(role ?r))
+
+(<= (base (actualcolors ?c1 ?c2))
+	(color ?c1)
+	(color ?c2))
+
+(<= (base (prevcolors ?c1 ?c2))
+	(color ?c1)
+	(color ?c2))
+
+;;; input
+
+(<= (input random (setcolors ?c1 ?c2))
+	(color ?c1)
+	(color ?c2))
+
+(<= (input robot (guesscolors ?c1 ?c2))
+	(color ?c1)
+	(color ?c2))
+
+(<= (input ?r noop) (role ?r))
+
+;;; init
+
+(init (control random))
+(init (step 1))
+
+;;; legal
+
+(<= (legal random (setcolors ?c1 ?c2))
+	(true (control random))
+	(color ?c1)
+	(color ?c2))
+
+(<= (legal robot (guesscolors ?c1 ?c2))
+	(true (control robot))
+	(color ?c1)
+	(color ?c2))
+
+(<= (legal ?r noop)
+	(role ?r)
+	(not (true (control ?r))))
+
+;;; sees
+
+(<= (sees robot blank)
+	(true (prevcolors ?c1 ?c1))
+	(true (actualcolors ?c2 ?c2))
+	(distinct ?c1 ?c2))
+
+(<= (sees robot oneblack)
+	(true (prevcolors ?c1 ?c2))
+	(true (actualcolors ?c3 ?c2))
+	(distinct ?c1 ?c3))
+
+(<= (sees robot oneblack)
+	(true (prevcolors ?c1 ?c2))
+	(true (actualcolors ?c1 ?c4))
+	(distinct ?c2 ?c4))
+
+(<= (sees robot twowhite)
+	(true (prevcolors ?c1 ?c2))
+	(true (actualcolors ?c2 ?c1))
+	(distinct ?c1 ?c2))
+
+(<= (sees robot twoblack)
+	(true (prevcolors ?c1 ?c2))
+	(true (actualcolors ?c1 ?c2)))
+
+;;; next
+
+(<= (next (control robot))
+	(true (control random)))
+
+(<= (next (control robot))
+	(true (control robot)))
+
+(<= (next (step ?n))
+	(true (step ?m))
+	(stepcount ?m ?n))
+
+(<= (next (actualcolors ?c1 ?c2))
+	(does random (setcolors ?c1 ?c2))
+	(true (control random)))
+
+(<= (next (actualcolors ?c1 ?c2))
+	(true (actualcolors ?c1 ?c2)))
+
+(<= (next (prevcolors ?c1 ?c2))
+	(does robot (guesscolors ?c1 ?c2)))
+
+;;; goal
+
+(goal random 100)
+
+(<= (goal robot 100) (sees robot twoblack))
+
+(<= (goal robot 0) (not (sees robot twoblack)))
+
+;;; terminal
+
+(<= terminal (true (step 5)))
+
+(<= terminal (sees robot twoblack))
+
+;;; data
+
+(color red)
+(color blue)
+
+(stepcount 1 2)
+(stepcount 2 3)
+(stepcount 3 4)
+(stepcount 4 5)
