@@ -48,7 +48,11 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 		MachineState currState = getCurrentState();
 		Move action = getStateMachine().findLegalx(getRole(), currState);
 		try {
-			action = bestmove(getRole(), currState, decisionTime);
+			if (getStateMachine().getRoles().size() == 1) {
+				action = MyDeliberationPlayer.bestmove(getRole(), currState, decisionTime, getStateMachine());
+			} else {
+				action = bestmove(getRole(), currState, decisionTime);
+			}
 		} catch(Exception e) {
 			System.out.println("*** Failed to get best move ***");
 		}

@@ -54,7 +54,12 @@ public class MyBoundedDepthPlayer extends StateMachineGamer {
 		System.out.println("Timeout " + timeout);
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
-		Move action = bestmove(getRole(), currState, decisionTime);
+		Move action = null; // bestmove(getRole(), currState, decisionTime); TODO
+		if (getStateMachine().getRoles().size() == 1) {
+			action = MyDeliberationPlayer.bestmove(getRole(), currState, decisionTime, getStateMachine());
+		} else {
+			action = bestmove(getRole(), currState, decisionTime);
+		}
 		// TODO try/catch
 		if (DEBUG_EN) System.out.println("Selected action (role = " + getRole() + ") = " + action);
 		return action;

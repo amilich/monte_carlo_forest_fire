@@ -38,9 +38,11 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		StateMachine machine = getStateMachine();
 		MachineState currState = getCurrentState();
+		long decisionTime = timeout;
+
 		Move action = null;
 		try {
-			action = bestmove(getRole(), currState, machine);
+			action = bestmove(getRole(), currState, decisionTime, machine);
 		} catch(Exception e) {
 			System.out.println("Error occurred while finding action: " + e);
 			return machine.getLegalMoves(currState, getRole()).get(0);
@@ -54,16 +56,17 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 	 * Iterates through moves at each step and calls function to determine max
 	 * score achievable from move.
 	 */
-	private Move bestmove(Role role, MachineState state, StateMachine machine) throws MoveDefinitionException,
-		GoalDefinitionException, TransitionDefinitionException {
+	public static Move bestmove(Role role, MachineState state, long decisionTime, StateMachine machine)
+			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 
 		List<Move> actions = machine.getLegalMoves(state, role);
 		double score = 0.0;
 		Move finalMove = actions.get(0);
 		for (int ii = 0; ii < actions.size(); ii ++) {
+			if (MyHeuristics.checkTime(decisionTime)) break;
 			List<Move> tempMoves = new ArrayList<Move>();
 			tempMoves.add(actions.get(ii));
-			double result = maxscore(role, machine.getNextState(state, tempMoves), machine);
+			double result = maxscore(role, machine.getNextState(state, tempMoves), decisionTime, machine);
 			if (result == 100) return actions.get(ii);
 			if (result > score) {
 				score = result;
@@ -79,7 +82,7 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 	 * Recursively determine max score that can be achieved from choosing a given move
 	 * in a given game state.
 	 */
-	private double maxscore(Role role, MachineState currState, StateMachine machine)
+	private static double maxscore(Role role, MachineState currState, long decisionTime, StateMachine machine)
 			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		if (machine.isTerminal(currState)) {
 			return machine.getGoal(currState, role); // TODO correct value
@@ -89,7 +92,7 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 		for (int ii = 0; ii < actions.size(); ii ++) {
 			List<Move> tempMoves = new ArrayList<Move>(); // TODO add other roles
 			tempMoves.add(actions.get(ii));
-			double result = maxscore(role, machine.getNextState(currState, tempMoves), machine);
+			double result = maxscore(role, machine.getNextState(currState, tempMoves), decisionTime, machine);
 			if (result == 100) return result;
 			if (result > score) score = result; // TODO short circuit
 		}
