@@ -54,7 +54,7 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 	 * Iterates through moves at each step and calls function to determine max
 	 * score achievable from move.
 	 */
-	private Move bestmove(Role role, MachineState state, StateMachine machine) throws MoveDefinitionException,
+	public static Move bestmove(Role role, MachineState state, StateMachine machine) throws MoveDefinitionException,
 		GoalDefinitionException, TransitionDefinitionException {
 
 		List<Move> actions = machine.getLegalMoves(state, role);
@@ -79,7 +79,7 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 	 * Recursively determine max score that can be achieved from choosing a given move
 	 * in a given game state.
 	 */
-	private double maxscore(Role role, MachineState currState, StateMachine machine)
+	private static double maxscore(Role role, MachineState currState, StateMachine machine)
 			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		if (machine.isTerminal(currState)) {
 			return machine.getGoal(currState, role); // TODO correct value
