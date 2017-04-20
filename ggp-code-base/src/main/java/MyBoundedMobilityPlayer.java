@@ -57,19 +57,19 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
 		Move action = null;
-		action = bestmove(getRole(), currState, decisionTime);
-//		if (getStateMachine().getRoles().size() == 1) {
-//			action = singlePlayerBestMove(getRole(), currState, decisionTime, getStateMachine());
-//		} else {
-//			action = bestmove(getRole(), currState, decisionTime);
-//		}
-		// TODO try/catch
-//		if (DEBUG_EN) System.out.println("Selected action (role = " + getRole() + ") = " + action);
+//		action = bestmove(getRole(), currState, decisionTime);
+		if (getStateMachine().getRoles().size() == 1) {
+			System.out.println("***** SINGLE PLAYER MODE ****");
+			action = singlePlayerBestMove(getRole(), currState, decisionTime, getStateMachine());
+		} else {
+			action = bestmove(getRole(), currState, decisionTime);
+		}
+//		 TODO try/catch
 		double timeTaken = System.currentTimeMillis() - startTime;
 		double maxTime = timeout - startTime;
 		totalTimeTaken += timeTaken;
 		numMeasurements += 1;
-//		if (maxTime - totalTimeTaken / numMeasurements > MAX_DELIB_THRESHOLD * DELIB_SAFETY_CONST) {
+//		if (totalTimeTaken / numMeasurements < maxTime * 2) {
 //			max_level += 1;
 //			System.out.println("Inc max level from " + (max_level - 1) + " to " + max_level);
 //		}
@@ -100,13 +100,10 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 
 	public static double singlePlayerMaxscore(Role role, MachineState currState, long decisionTime, double level, StateMachine machine)
 			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
-//		System.out.println("Single player max at level " + level + "; max level = " + MAX_LEVEL);
 		if (machine.isTerminal(currState)) {
 			return machine.getGoal(currState, role); // TODO correct value
 		} else if (level >= STATIC_MAX_LEVEL) {
-			System.out.println("ending recursion: temp reward = " + machine.findReward(role, currState));
-			return machine.findReward(role, currState);
-//			return MyHeuristics.weightedHeuristicFunction(role, currState, machine, decisionTime);
+			return MyHeuristics.weightedHeuristicFunction(role, currState, machine, decisionTime);
 		}
 		List<Move> actions = machine.getLegalMoves(currState, role);
 		double score = 0.0;

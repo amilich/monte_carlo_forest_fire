@@ -18,8 +18,8 @@ public class MyHeuristics {
 		double finalHeuristic = 0;
 
 		try {
-			double intermedGoalCoeff = 0.5;
-			double mobilityCoeff = 0.2;
+			double intermedGoalCoeff = 0.4;
+			double mobilityCoeff = 0.3;
 			double enemyFocusCoeff = 0.1;
 			double numReachableStatesCoeff = 0.2;
 
@@ -129,7 +129,7 @@ public class MyHeuristics {
 
 	public static double nStepEnemyFocus(Role role, MachineState state, int n, StateMachine machine)
 			throws MoveDefinitionException, TransitionDefinitionException {
-		return 100 - nStepMobility(role, state, n, machine);
+		return 100 - nStepEnemyMobility(role, state, n, machine);
 	}
 
 	public static double nStepFocus(Role role, MachineState state, int n, StateMachine machine)
