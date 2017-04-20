@@ -40,6 +40,7 @@ public class MyBoundedDepthPlayer extends StateMachineGamer {
 	final double MAX_LEVEL = 4; // TODO level
 
 	final static double MAX_DELIB_THRESHOLD = 1000;
+	// TODO one player ??
 
 	/**
 	 * Function: stateMachineSelectMove
@@ -50,33 +51,17 @@ public class MyBoundedDepthPlayer extends StateMachineGamer {
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		long decisionTime = timeout;
-		System.out.println("Curr time = " + System.currentTimeMillis() + " decision time = " + decisionTime);
-		System.out.println("Timeout " + timeout);
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
 		Move action = null; // bestmove(getRole(), currState, decisionTime); TODO
 		if (getStateMachine().getRoles().size() == 1) {
-			action = MyDeliberationPlayer.bestmove(getRole(), currState, decisionTime, getStateMachine());
+			action = MyBoundedMobilityPlayer.singlePlayerBestMove(getRole(), currState, decisionTime, getStateMachine());
 		} else {
 			action = bestmove(getRole(), currState, decisionTime);
 		}
 		// TODO try/catch
 		if (DEBUG_EN) System.out.println("Selected action (role = " + getRole() + ") = " + action);
 		return action;
-	}
-
-	/**
-	 * Function: checkTime
-	 * ---------------------
-	 * Check if time is about to expire.
-	 */
-	public static boolean checkTime(long decisionTime) {
-		long currTime = System.currentTimeMillis(); // TODOght way to do this
-		if (decisionTime - currTime < MAX_DELIB_THRESHOLD) {
-			System.out.println("** TIME EXPIRED ** Returning decision now.");
-			return true;
-		}
-		return false;
 	}
 
 	/**
@@ -91,17 +76,16 @@ public class MyBoundedDepthPlayer extends StateMachineGamer {
 		Collections.shuffle(actions);
 		double score = MIN_SCORE;
 		Move finalMove = null;
-		System.out.println("actions: " + actions);
 		for (int ii = 0; ii < actions.size(); ii ++) {
-			if (checkTime(decisionTime)) break;
+			if (MyHeuristics.checkTime(decisionTime)) break;
 
 			double level = 0;
 			double result = minscore(role, actions.get(ii), state, level, decisionTime);
-			System.out.println("result = " + result + " score = " + score);
 			if (result > score) {
 				score = result;
 				finalMove = actions.get(ii);
-				System.out.println("update");
+				System.out.println("result = " + result + " score = " + score);
+				System.out.println("update to " + finalMove);
 			}
 			if (score == MAX_SCORE) return actions.get(ii);
 		}
@@ -114,20 +98,6 @@ public class MyBoundedDepthPlayer extends StateMachineGamer {
 	}
 
 	/**
-	 * Function: opponent
-	 * -------------------
-	 * Find opponent player. Unused if getLegalJointMoves is called.
-	 */
-	@SuppressWarnings("unused")
-	private Role opponent(Role role) {
-		List<Role> roles = getStateMachine().getRoles();
-		for (Role r : roles) {
-			if (!r.equals(role)) return r;
-		}
-		return role; // TODO error
-	}
-
-	/**
 	 * Function: minscore
 	 * -------------------
 	 * Recursively determine minimum score that can be achieved from choosing a given move
@@ -136,11 +106,12 @@ public class MyBoundedDepthPlayer extends StateMachineGamer {
 	private double minscore(Role role, Move move, MachineState state, double level, long decisionTime)
 			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 
-		System.out.println("Beginning minscore at level " + level);
-		List<List<Move>> jointActions = getStateMachine().getLegalJointMoves(state, role, move);
+		List<List<Move>> jointActions = new ArrayList<List<Move>>();
+		jointActions.addAll(getStateMachine().getLegalJointMoves(state, role, move));
+		Collections.shuffle(jointActions);
 		double score = MAX_SCORE;
 		for (List<Move> jointAction : jointActions) { // Opponent's move
-			if (checkTime(decisionTime)) break;
+			if (MyHeuristics.checkTime(decisionTime)) break;
 
 			MachineState nextState = getStateMachine().getNextState(state, jointAction);
 			double result = maxscore(role, nextState, level + 1, decisionTime);
@@ -169,8 +140,7 @@ public class MyBoundedDepthPlayer extends StateMachineGamer {
 		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
 		double score = MIN_SCORE;
 		for (Move action : actions) {
-			if (checkTime(decisionTime)) break;
-
+			if (MyHeuristics.checkTime(decisionTime)) break;
 
 			double result = minscore(role, action, currState, level, decisionTime);
 			if (result == MAX_SCORE) return result;

@@ -13,25 +13,33 @@ public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
 	final static double MAX_DELIB_THRESHOLD = 1500; // Timeout parameter
 
-	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine) {
+	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine, long timeout)
+			throws GoalDefinitionException {
 		double finalHeuristic = 0;
-		double mobilityCoeff = 0.2;
-		double enemyFocusCoeff = 0.5;
-		double goalSimilarityCoeff = 0.2;
-		double numReachableStatesCoeff = 0.1;
 
 		try {
+			double intermedGoalCoeff = 0.4;
+			double mobilityCoeff = 0.3;
+			double enemyFocusCoeff = 0.1;
+			double numReachableStatesCoeff = 0.2;
+
+			double tempScore = machine.findReward(role, state);
 			double mobility = nStepMobility(role, state, 0, machine);
-			double enemyFocus = nStepEnemyFocus(role, state, 0, machine);
-			double goalSimilarity = goalStateSimilarity(role, state, machine);
+//			double enemyFocus = 0;
+			if (machine.getRoles().size() <= 1) {
+				intermedGoalCoeff += enemyFocusCoeff;
+			} else {
+				double enemyFocus = nStepEnemyFocus(role, state, 0, machine);
+				finalHeuristic += enemyFocusCoeff * enemyFocus;
+			}
 			double reachableStates = numReachableStates(role, state, machine);
-			System.out.println("Mob = [" + mobility + "]; Enemy mob = [" + enemyFocus + "]");
-			System.out.println("Goal similarity = [" + goalSimilarity + "]; Reachable states = [" + reachableStates + "]");
+//			System.out.println("Mob = [" + mobility + "]"); //; Enemy mob = [" + enemyFocus + "]");
+//			System.out.println("Mob = [" + mobility + "] Temp score = [" + tempScore + "]");
+			finalHeuristic += intermedGoalCoeff * tempScore;
 			finalHeuristic += mobilityCoeff * mobility;
-			finalHeuristic += enemyFocusCoeff * enemyFocus;
-			finalHeuristic += goalSimilarityCoeff * goalSimilarity;
 			finalHeuristic += numReachableStatesCoeff * reachableStates;
 		} catch (Exception e) {
+			System.out.println("ERROR OCCURRED IN HEURISTIC FUNCTION");
 			return 0.0;
 		}
 		return finalHeuristic;
@@ -51,16 +59,24 @@ public class MyHeuristics {
 		return false;
 	}
 
-	public static double goalStateSimilarity(Role role, MachineState state, StateMachine machine)
-			throws TransitionDefinitionException, MoveDefinitionException {
+	public static double goalStateSimilarity(Role role, MachineState state, StateMachine machine, long timeout)
+			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		ArrayList<MachineState> terminalStates = new ArrayList<MachineState>();
+		int numCharges = NUM_DEPTH_CHARGES;
 		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
+			if (timeout - System.currentTimeMillis() < 2500) { // custom threshold TODO
+				System.out.println("Charging took too long");
+				numCharges = ii;
+				break;
+			}
 			int[] tempDepth = new int[1];
+			System.out.println("Start depth charge");
 			terminalStates.add(machine.performDepthCharge(state, tempDepth));
 		}
 		double similarity = 0;
 		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
-			similarity += compareStates(state, terminalStates.get(ii)) / NUM_DEPTH_CHARGES;
+			similarity += (machine.getGoal(terminalStates.get(ii), role) / 100) *
+					compareStates(state, terminalStates.get(ii)) / numCharges;
 		}
 		return similarity;
 	}
@@ -78,18 +94,18 @@ public class MyHeuristics {
 	 */
 	private static double levenshteinDist(String a, String b) {
 		int [] costs = new int [b.length() + 1];
-        for (int j = 0; j < costs.length; j++)
-            costs[j] = j;
-        for (int i = 1; i <= a.length(); i++) {
-            costs[0] = i;
-            int nw = i - 1;
-            for (int j = 1; j <= b.length(); j++) {
-                int cj = Math.min(1 + Math.min(costs[j], costs[j - 1]), a.charAt(i - 1) == b.charAt(j - 1) ? nw : nw + 1);
-                nw = costs[j];
-                costs[j] = cj;
-            }
-        }
-        return costs[b.length()];
+		for (int j = 0; j < costs.length; j++)
+			costs[j] = j;
+		for (int i = 1; i <= a.length(); i++) {
+			costs[0] = i;
+			int nw = i - 1;
+			for (int j = 1; j <= b.length(); j++) {
+				int cj = Math.min(1 + Math.min(costs[j], costs[j - 1]), a.charAt(i - 1) == b.charAt(j - 1) ? nw : nw + 1);
+				nw = costs[j];
+				costs[j] = cj;
+			}
+		}
+		return costs[b.length()];
 	}
 
 	public static double numReachableStates(Role role, MachineState state, StateMachine machine)
@@ -103,7 +119,7 @@ public class MyHeuristics {
 			double numFriendlyMoves = machine.getLegalMoves(state, role).size();
 			double numEnemyMoves = machine.getLegalJointMoves(state).size() / numFriendlyMoves;
 			double numEnemyActions = Math.pow(machine.findActions(role).size(), machine.getRoles().size() - 1); // TODO
-			 return 100 * numEnemyMoves / numEnemyActions;
+			return 100 * numEnemyMoves / numEnemyActions;
 		} else if (n == 1) {
 			return 0;
 		} else {
@@ -113,7 +129,7 @@ public class MyHeuristics {
 
 	public static double nStepEnemyFocus(Role role, MachineState state, int n, StateMachine machine)
 			throws MoveDefinitionException, TransitionDefinitionException {
-		return 100 - nStepMobility(role, state, n, machine);
+		return 100 - nStepEnemyMobility(role, state, n, machine);
 	}
 
 	public static double nStepFocus(Role role, MachineState state, int n, StateMachine machine)
@@ -130,10 +146,10 @@ public class MyHeuristics {
 	public static double nStepMobility(Role role, MachineState state, int n, StateMachine machine)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		if (n == 0) {
-			 double numLegalActions = machine.getLegalMoves(state, role).size();
-			 double numActions = machine.findActions(role).size(); // TODO TODO
-			 // double numStates = getStateMachine().getNextStates(state).size(); // TODO bad
-			 //	double numEnemyMoves = getStateMachine().getLegalJointMoves(state).size() / numActions;
+			double numLegalActions = machine.getLegalMoves(state, role).size();
+			double numActions = machine.findActions(role).size(); // TODO TODO
+			// double numStates = getStateMachine().getNextStates(state).size(); // TODO bad
+			//	double numEnemyMoves = getStateMachine().getLegalJointMoves(state).size() / numActions;
 			return 100 * numLegalActions / numActions;
 		} else if (n == 1) {
 			return 0;
