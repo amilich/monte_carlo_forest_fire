@@ -90,6 +90,7 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 		List<Move> actions = machine.getLegalMoves(currState, role);
 		double score = 0.0;
 		for (int ii = 0; ii < actions.size(); ii ++) {
+			if (MyHeuristics.checkTime(decisionTime)) break;
 			List<Move> tempMoves = new ArrayList<Move>(); // TODO add other roles
 			tempMoves.add(actions.get(ii));
 			double result = maxscore(role, machine.getNextState(currState, tempMoves), decisionTime, machine);

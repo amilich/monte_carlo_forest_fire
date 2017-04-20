@@ -94,20 +94,6 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	}
 
 	/**
-	 * Function: opponent
-	 * -------------------
-	 * Find opponent player. Unused if getLegalJointMoves is called.
-	 */
-	@SuppressWarnings("unused")
-	private Role opponent(Role role) {
-		List<Role> roles = getStateMachine().getRoles();
-		for (Role r : roles) {
-			if (!r.equals(role)) return r;
-		}
-		return role; // TODO error
-	}
-
-	/**
 	 * Function: minscore
 	 * -------------------
 	 * Recursively determine minimum score that can be achieved from choosing a given move
