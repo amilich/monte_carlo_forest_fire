@@ -49,7 +49,7 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 		Move action = getStateMachine().findLegalx(getRole(), currState);
 		try {
 			if (getStateMachine().getRoles().size() == 1) {
-				action = MyDeliberationPlayer.bestmove(getRole(), currState, getStateMachine());
+				action = MyDeliberationPlayer.bestmove(getRole(), currState, decisionTime, getStateMachine());
 			} else {
 				action = bestmove(getRole(), currState, decisionTime);
 			}
