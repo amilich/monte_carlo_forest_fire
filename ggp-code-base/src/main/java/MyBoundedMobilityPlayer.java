@@ -149,7 +149,7 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 			if (result > score) {
 				score = result;
 				finalMove = actions.get(ii);
-				System.out.println("Result from min = " + result + " action = " + finalMove);
+//				System.out.println("Result from min = " + result + " action = " + finalMove);
 			}
 			if (result == MAX_SCORE) return actions.get(ii);
 		}
