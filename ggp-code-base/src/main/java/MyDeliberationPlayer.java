@@ -59,7 +59,6 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 	 */
 	public static Move bestmove(Role role, MachineState state, long decisionTime, StateMachine machine)
 			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
-
 		List<Move> actions = new ArrayList<Move>();
 		actions.addAll(machine.getLegalMoves(state, role));
 		Collections.shuffle(actions);
