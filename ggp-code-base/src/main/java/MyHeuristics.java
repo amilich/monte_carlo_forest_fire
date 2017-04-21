@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.List;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Role;
@@ -13,6 +14,47 @@ public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
 	final static double MAX_DELIB_THRESHOLD = 1500; // Timeout parameter
 
+	public static boolean repeatedState(MachineState state, List<MachineState> prevStates) {
+		for (MachineState s : prevStates) {
+			if (s.equals(state)) return true;
+		}
+		return false;
+	}
+
+	private static boolean compareStateConvergence(Role role, MachineState state, MachineState prevState, StateMachine machine)
+			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		double prevMob = nStepMobility(role, prevState, 0, machine);
+		double currMob = nStepMobility(role, state, 0, machine);
+		double prevReachable = numReachableStates(role, prevState, machine);
+		double currReachable = numReachableStates(role, state, machine);
+		double prevGoal = machine.findReward(role, prevState);
+		double currGoal = machine.findReward(role, state);
+		boolean conv = (prevGoal == currGoal) && (Math.abs(currReachable - prevReachable) < 3) && (Math.abs(prevMob - currMob) < 5);
+//		System.out.println("\tState = " + state);
+//		System.out.println("\tPrev = " + prevState);
+//		System.out.println("\tMob old = " + prevMob + ", new = " + currMob);
+//		System.out.println("\tReach old = " + prevReachable + ", new = " + currReachable);
+//		System.out.println("\tGoal old = " + prevGoal + ", new = " + currGoal);
+//		System.out.println("Conv = [" + conv + "]");
+		//		if (prevGoal == currGoal && prevGoal != 0) return true;
+		return conv;
+	}
+
+
+	public static boolean stateConverges(Role role, MachineState state, StateMachine machine, long timeout,
+			List<MachineState> prevStates)
+					throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		if (prevStates.size() < 2) return false;
+		MachineState prevState = prevStates.get(prevStates.size() - 1);
+		boolean compOne = compareStateConvergence(role, state, prevState, machine);
+
+		MachineState backTwoStates = prevStates.get(prevStates.size() - 2);
+		boolean compTwo = compareStateConvergence(role, state, backTwoStates, machine);
+
+//		System.out.println("One = [" + compOne + "], Two = [" + compTwo + "]");
+		return compTwo || compOne;
+	}
+
 	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine, long timeout)
 			throws GoalDefinitionException {
 		double finalHeuristic = 0;
@@ -25,7 +67,7 @@ public class MyHeuristics {
 
 			double tempScore = machine.findReward(role, state);
 			double mobility = nStepMobility(role, state, 0, machine);
-//			double enemyFocus = 0;
+			//			double enemyFocus = 0;
 			if (machine.getRoles().size() <= 1) {
 				intermedGoalCoeff += enemyFocusCoeff;
 			} else {
@@ -33,8 +75,8 @@ public class MyHeuristics {
 				finalHeuristic += enemyFocusCoeff * enemyFocus;
 			}
 			double reachableStates = numReachableStates(role, state, machine);
-//			System.out.println("Mob = [" + mobility + "]"); //; Enemy mob = [" + enemyFocus + "]");
-//			System.out.println("Mob = [" + mobility + "] Temp score = [" + tempScore + "]");
+			//			System.out.println("Mob = [" + mobility + "]"); //; Enemy mob = [" + enemyFocus + "]");
+			//			System.out.println("Mob = [" + mobility + "] Temp score = [" + tempScore + "]");
 			finalHeuristic += intermedGoalCoeff * tempScore;
 			finalHeuristic += mobilityCoeff * mobility;
 			finalHeuristic += numReachableStatesCoeff * reachableStates;

@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
@@ -39,7 +40,7 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 		StateMachine machine = getStateMachine();
 		MachineState currState = getCurrentState();
 		long decisionTime = timeout;
-
+		System.out.println("***** SELECT MOVE *****");
 		Move action = null;
 		try {
 			action = bestmove(getRole(), currState, decisionTime, machine);
@@ -59,7 +60,9 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 	public static Move bestmove(Role role, MachineState state, long decisionTime, StateMachine machine)
 			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 
-		List<Move> actions = machine.getLegalMoves(state, role);
+		List<Move> actions = new ArrayList<Move>();
+		actions.addAll(machine.getLegalMoves(state, role));
+		Collections.shuffle(actions);
 		double score = 0.0;
 		Move finalMove = actions.get(0);
 		for (int ii = 0; ii < actions.size(); ii ++) {
