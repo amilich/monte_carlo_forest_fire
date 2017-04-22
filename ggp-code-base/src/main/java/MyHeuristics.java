@@ -75,8 +75,8 @@ public class MyHeuristics {
 				finalHeuristic += enemyFocusCoeff * enemyFocus;
 			}
 			double reachableStates = numReachableStates(role, state, machine);
-			//			System.out.println("Mob = [" + mobility + "]"); //; Enemy mob = [" + enemyFocus + "]");
-			//			System.out.println("Mob = [" + mobility + "] Temp score = [" + tempScore + "]");
+			//	System.out.println("Mob = [" + mobility + "]"); //; Enemy mob = [" + enemyFocus + "]");
+			//	System.out.println("Mob = [" + mobility + "] Temp score = [" + tempScore + "]");
 			finalHeuristic += intermedGoalCoeff * tempScore;
 			finalHeuristic += mobilityCoeff * mobility;
 			finalHeuristic += numReachableStatesCoeff * reachableStates;
@@ -190,8 +190,6 @@ public class MyHeuristics {
 		if (n == 0) {
 			double numLegalActions = machine.getLegalMoves(state, role).size();
 			double numActions = machine.findActions(role).size(); // TODO TODO
-			// double numStates = getStateMachine().getNextStates(state).size(); // TODO bad
-			//	double numEnemyMoves = getStateMachine().getLegalJointMoves(state).size() / numActions;
 			return 100 * numLegalActions / numActions;
 		} else if (n == 1) {
 			return 0;
