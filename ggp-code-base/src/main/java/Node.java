@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 
 import org.ggp.base.util.statemachine.MachineState;
@@ -9,7 +10,7 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class Node {
-	static final int NUM_DEPTH_CHARGES = 1; // TODO
+	static final int NUM_DEPTH_CHARGES = 3; // TODO
 
 	private Node parent;
 	private MachineState state;
@@ -65,24 +66,12 @@ public class Node {
 		return total;
 	}
 
-	public double sumCounts(boolean opponent) {
-		if (opponent) {
-			return sumArray(oCounts);
-		} else {
-			return sumArray(pCounts);
-		}
-	}
-
 	private double selectfn(int moveNum, boolean opponent) {
 		if (opponent) {
-			return -oVals[moveNum] + Math.sqrt(2 * Math.log(sumCounts(opponent)) / oCounts[moveNum]);
+			return oVals[moveNum] / oCounts[moveNum] + Math.sqrt(2 * Math.log(sumArray(oCounts)) / oCounts[moveNum]);
 		} else {
-			return pVals[moveNum] + Math.sqrt(2 * Math.log(sumCounts(opponent)) / pCounts[moveNum]);
+			return pVals[moveNum] / pCounts[moveNum] + Math.sqrt(2 * Math.log(sumArray(pCounts)) / pCounts[moveNum]);
 		}
-	}
-
-	public Node getBestNode() {
-		return null;
 	}
 
 	public Move getBestMove() throws MoveDefinitionException {
@@ -131,21 +120,27 @@ public class Node {
 	}
 
 	public Node expand() throws MoveDefinitionException, TransitionDefinitionException {
-		if (machine.findTerminalp(state)) return this;
+		if (machine.isTerminal(state)) return this;
 		for (int ii = 0; ii < numMoves; ii ++) {
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] == null) {
-					Move myMove = machine.getLegalMoves(state, player).get(ii);
-					List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 					try {
+						Move myMove = machine.getLegalMoves(state, player).get(ii);
+						List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 						MachineState nextState = machine.getNextState(state, jointMove);
 						children[ii][jj] = new Node(nextState, this, ii, jj);
 						return children[ii][jj];
 					} catch (Exception e) {
 						System.out.println("expansion failed");
-//						e.printStackTrace();
+						// TODO worked here but not above???
+						/* Move myMove = machine.getLegalMoves(state, player).get(ii);
+						List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
+						MachineState nextState = machine.getNextState(state, jointMove);
+						children[ii][jj] = new Node(nextState, this, ii, jj);
+						return children[ii][jj]; */ // WTF
+						e.printStackTrace(); // TODO what's going on
 					}
-					return this;
+					 return this;
 				}
 			}
 		}
@@ -153,27 +148,57 @@ public class Node {
 		return this; // TODO
 	}
 
-	public void backpropagate(double score) {
+	public int getRoleIndex() {
+		List<Role> roles = machine.getRoles();
+		for (int ii = 0; ii < roles.size(); ii ++) {
+			if (roles.get(ii).equals(player)) return ii;
+		}
+		return -1;
+	}
+
+	public void backpropagate(List<Double> scores) {
 		if (parent == null) return;
-		parent.pCounts[moveIndex] ++;
-		parent.oCounts[enemyMoveIndex] ++;
-		parent.pVals[moveIndex] += score;
-		parent.oVals[enemyMoveIndex] += score;
+		if (scores.size() == 1) {
+			parent.pCounts[moveIndex] ++;
+			parent.pVals[moveIndex] += scores.get(0);
+			// parent.oCounts[enemyMoveIndex] ++; // no opponent
+			// parent.oVals[enemyMoveIndex] += score;
+		} else {
+			double ourScore = scores.get(getRoleIndex());
+			double enemyAvgScore = 0;
+			for (int ii = 0; ii < scores.size(); ii ++) enemyAvgScore += scores.get(ii);
+			enemyAvgScore -= ourScore;
+			enemyAvgScore /= (machine.getRoles().size() - 1);
+			parent.pCounts[moveIndex] ++;
+			parent.pVals[moveIndex] += ourScore;
+			parent.oCounts[enemyMoveIndex] ++;
+			parent.oVals[enemyMoveIndex] += enemyAvgScore;
+		}
+
 		if (parent != null) {
-			parent.backpropagate(score);
+			parent.backpropagate(scores);
 		}
 	}
 
-	public double simulate() // Check if immediate next state is terminal TODO
+	public List<Double> simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 
-		double avgResult = 0;
+		List<Double> avgScores = new ArrayList<Double>();
+		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
+			avgScores.add(new Double(0));
+		}
 		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
 			int[] tempDepth = new int[1];
-			avgResult += machine.getGoal(machine.performDepthCharge(state, tempDepth), player);
+			MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
+			List<Integer> goals = machine.getGoals(depthCharge);
+			for (int jj = 0; jj < goals.size(); jj ++) {
+				avgScores.set(jj, avgScores.get(jj) + goals.get(jj));
+			}
 		}
-		avgResult /= NUM_DEPTH_CHARGES;
-		return avgResult;
+		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
+			avgScores.set(ii, avgScores.get(ii) / NUM_DEPTH_CHARGES);
+		}
+		return avgScores;
 	}
 
 	public Node getParent() {

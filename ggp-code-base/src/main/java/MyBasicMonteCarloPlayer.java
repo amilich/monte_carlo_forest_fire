@@ -1,3 +1,5 @@
+import java.util.List;
+
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
@@ -47,8 +49,8 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 
 		while (!MyHeuristics.checkTime(timeout)) {
 			Node selected = root.selectAndExpand();
-			double score = selected.simulate();
-			selected.backpropagate(score); // sqrt 2 for c
+			List<Double> scores = selected.simulate();
+			selected.backpropagate(scores); // sqrt 2 for c
 		}
 
 		Move m = root.getBestMove();
