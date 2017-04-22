@@ -47,9 +47,14 @@ public class Node {
 		this.parent = parent;
 		this.moveIndex = moveIndex;
 		this.enemyMoveIndex = enemyMoveIndex;
-		List<Move> myMoves = machine.getLegalMoves(state, player);
-		this.numMoves = myMoves.size();
-		this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
+		if (machine.isTerminal(state)) {
+			this.numMoves = 0;
+			this.numEnemyMoves = 0;
+		} else {
+			List<Move> myMoves = machine.getLegalMoves(state, player);
+			this.numMoves = myMoves.size();
+			this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
+		}
 		System.out.println("nm = " + numMoves + ", nem = " + numEnemyMoves);
 		pCounts = new double[numMoves];
 		pVals = new double[numMoves];
@@ -93,6 +98,7 @@ public class Node {
 	}
 
 	public Node select() {
+		if (machine.isTerminal(state)) return this; // TODO
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (this.children[ii][jj] == null) return this;
@@ -124,8 +130,8 @@ public class Node {
 		for (int ii = 0; ii < numMoves; ii ++) {
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] == null) {
+					Move myMove = machine.getLegalMoves(state, player).get(ii);
 					try {
-						Move myMove = machine.getLegalMoves(state, player).get(ii);
 						List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 						MachineState nextState = machine.getNextState(state, jointMove);
 						children[ii][jj] = new Node(nextState, this, ii, jj);
@@ -140,7 +146,7 @@ public class Node {
 						return children[ii][jj]; */ // WTF
 						e.printStackTrace(); // TODO what's going on
 					}
-					 return this;
+					return this;
 				}
 			}
 		}
@@ -182,6 +188,12 @@ public class Node {
 
 	public List<Double> simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
+		if (machine.isTerminal(state)) {
+			List<Double> avgScores = new ArrayList<Double>();
+			List<Integer> goals = machine.getGoals(state);
+			for (Integer i : goals) avgScores.add(new Double(i.intValue()));
+			return avgScores;
+		}
 
 		List<Double> avgScores = new ArrayList<Double>();
 		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
