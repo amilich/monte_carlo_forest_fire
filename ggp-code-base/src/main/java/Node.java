@@ -9,49 +9,51 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class Node {
-	static final int NUM_DEPTH_CHARGES = 10;
+	static final int NUM_DEPTH_CHARGES = 1; // TODO
 
 	private Node parent;
 	private MachineState state;
-//	private double[] pCounts;
-//	private double[] pVals;
-//	private double[] oCounts;
-//	private double[] oVals;
-
-	private double[][] vals;
-	private double[][] counts;
-
+	private double[] pCounts;
+	private double[] pVals;
+	private double[] oCounts;
+	private double[] oVals;
 	private Node[][] children;
 	private int numMoves;
 	private int numEnemyMoves;
+
 	private int moveIndex;
 	private int enemyMoveIndex;
 	static StateMachine machine;
 	static Role player;
 
-	public Node(Role role, MachineState state, StateMachine machine)
-			throws MoveDefinitionException {
-		this(role, state, machine, null, -1, -1);
+	public static void setStateMachine(StateMachine machine) {
+		Node.machine = machine;
 	}
 
-	public Node(Role role, MachineState state, StateMachine machine, Node parent, int moveIndex, int enemyMoveIndex)
+	public static void setRole(Role role) {
+		Node.player = role;
+	}
+
+	public Node(MachineState state)
+			throws MoveDefinitionException {
+		this(state, null, -1, -1);
+	}
+
+	public Node(MachineState state, Node parent, int moveIndex, int enemyMoveIndex)
 			throws MoveDefinitionException { // TODO try/catch
+		System.out.println("Creating new node, parent = " + parent + ", movei = " + moveIndex + ", emove = " + enemyMoveIndex);
 		this.state = state;
 		this.parent = parent;
 		this.moveIndex = moveIndex;
 		this.enemyMoveIndex = enemyMoveIndex;
-		Node.player = role;
-		Node.machine = machine;
-		List<Move> myMoves = machine.getLegalMoves(state, role);
+		List<Move> myMoves = machine.getLegalMoves(state, player);
 		this.numMoves = myMoves.size();
-		this.numEnemyMoves = machine.getLegalJointMoves(state, role, myMoves.get(0)).size();
-//		pCounts = new double[numMoves];
-//		pVals = new double[numMoves];
-//		oCounts = new double[numEnemyMoves];
-//		oVals = new double[numEnemyMoves];
-
-		vals = new double[numMoves][numEnemyMoves];
-		counts = new double[numMoves][numEnemyMoves];
+		this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
+		System.out.println("nm = " + numMoves + ", nem = " + numEnemyMoves);
+		pCounts = new double[numMoves];
+		pVals = new double[numMoves];
+		oCounts = new double[numEnemyMoves];
+		oVals = new double[numEnemyMoves];
 		children = new Node[numMoves][numEnemyMoves];
 	}
 
@@ -71,17 +73,34 @@ public class Node {
 		}
 	}
 
-	private double selectfn(int moveNum, int enemyMove, boolean opponent, Node childNode) {
+	private double selectfn(int moveNum, boolean opponent) {
 		if (opponent) {
-			return -vals[moveNum] + Math.sqrt(2 * Math.log(sumCounts(opponent)) / childNode.sumCounts(opponent));
+			return -oVals[moveNum] + Math.sqrt(2 * Math.log(sumCounts(opponent)) / oCounts[moveNum]);
 		} else {
-			return pVals[moveNum] + Math.sqrt(2 * Math.log(sumCounts(opponent)) / childNode.sumCounts(opponent));
+			return pVals[moveNum] + Math.sqrt(2 * Math.log(sumCounts(opponent)) / pCounts[moveNum]);
 		}
 	}
 
-	public void selectAndExpand() {
+	public Node getBestNode() {
+		return null;
+	}
+
+	public Move getBestMove() throws MoveDefinitionException {
+		double avgUtility = 0;
+		int maxMove = 0;
+		for (int ii = 0; ii < pCounts.length; ii ++) {
+			double tempAvg = pVals[ii] / pCounts[ii];
+			if (tempAvg > avgUtility) {
+				avgUtility = tempAvg;
+				maxMove = ii;
+			}
+		}
+		return machine.getLegalMoves(state, player).get(maxMove);
+	}
+
+	public Node selectAndExpand() throws MoveDefinitionException, TransitionDefinitionException {
 		Node selected = this.select();
-		selected.expand();
+		return selected.expand();
 	}
 
 	public Node select() {
@@ -90,33 +109,58 @@ public class Node {
 				if (this.children[ii][jj] == null) return this;
 			}
 		}
-		double score = 0;
-		Node result = this;
+		double pMoveScore = 0;
+		double oMoveScore = 0;
+		int resultP = 0;
+		int resultO = 0;
 		for (int ii = 0; ii < numMoves; ii ++){
+			double newscore = selectfn(ii, false);
+			if (newscore > pMoveScore) {
+				pMoveScore = newscore;
+				resultP = ii;
+			}
+		}
+		for (int jj = 0; jj < numEnemyMoves; jj ++) {
+			double newscore = selectfn(jj, true);
+			if (newscore > oMoveScore) {
+				oMoveScore = newscore;
+				resultO = jj;
+			}
+		}
+		return children[resultP][resultO].select();
+	}
+
+	public Node expand() throws MoveDefinitionException, TransitionDefinitionException {
+		if (machine.findTerminalp(state)) return this;
+		for (int ii = 0; ii < numMoves; ii ++) {
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
-				double newscore = selectfn()
-				if (newscore > score) {
-					score = newscore;
-					result = children[numMoves][numEnemyMoves];
+				if (children[ii][jj] == null) {
+					Move myMove = machine.getLegalMoves(state, player).get(ii);
+					List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
+					try {
+						MachineState nextState = machine.getNextState(state, jointMove);
+						children[ii][jj] = new Node(nextState, this, ii, jj);
+						return children[ii][jj];
+					} catch (Exception e) {
+						System.out.println("expansion failed");
+//						e.printStackTrace();
+					}
+					return this;
 				}
 			}
 		}
-		return result.select();
-	}
-
-	int expandedMove;
-	int expandedEnemyMove;
-	public void expand() {
-
+		System.out.println("Failed to expand child node");
+		return this; // TODO
 	}
 
 	public void backpropagate(double score) {
-		this.pCounts[expandedMove] ++;
-		this.oCounts[expandedEnemyMove] ++;
-		this.pVals[expandedMove] += score;
-		this.oVals[expandedEnemyMove] += score;
+		if (parent == null) return;
+		parent.pCounts[moveIndex] ++;
+		parent.oCounts[enemyMoveIndex] ++;
+		parent.pVals[moveIndex] += score;
+		parent.oVals[enemyMoveIndex] += score;
 		if (parent != null) {
-			backpropagate(score);
+			parent.backpropagate(score);
 		}
 	}
 
@@ -146,5 +190,17 @@ public class Node {
 
 	public void setState(MachineState state) {
 		this.state = state;
+	}
+
+	public Node findMatchingState(MachineState currentState) {
+		// TODO Auto-generated method stub
+		for (int ii = 0; ii < numMoves; ii ++){
+			for (int jj = 0; jj < numEnemyMoves; jj ++) {
+				if (children[ii][jj] != null) {
+					if (children[ii][jj].state.equals(currentState)) return children[ii][jj];
+				}
+			}
+		}
+		return null;
 	}
 }

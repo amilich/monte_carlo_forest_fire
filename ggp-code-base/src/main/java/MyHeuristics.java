@@ -30,12 +30,12 @@ public class MyHeuristics {
 		double prevGoal = machine.findReward(role, prevState);
 		double currGoal = machine.findReward(role, state);
 		boolean conv = (prevGoal == currGoal) && (Math.abs(currReachable - prevReachable) < 3) && (Math.abs(prevMob - currMob) < 5);
-//		System.out.println("\tState = " + state);
-//		System.out.println("\tPrev = " + prevState);
-//		System.out.println("\tMob old = " + prevMob + ", new = " + currMob);
-//		System.out.println("\tReach old = " + prevReachable + ", new = " + currReachable);
-//		System.out.println("\tGoal old = " + prevGoal + ", new = " + currGoal);
-//		System.out.println("Conv = [" + conv + "]");
+		//		System.out.println("\tState = " + state);
+		//		System.out.println("\tPrev = " + prevState);
+		//		System.out.println("\tMob old = " + prevMob + ", new = " + currMob);
+		//		System.out.println("\tReach old = " + prevReachable + ", new = " + currReachable);
+		//		System.out.println("\tGoal old = " + prevGoal + ", new = " + currGoal);
+		//		System.out.println("Conv = [" + conv + "]");
 		//		if (prevGoal == currGoal && prevGoal != 0) return true;
 		return conv;
 	}
@@ -51,7 +51,7 @@ public class MyHeuristics {
 		MachineState backTwoStates = prevStates.get(prevStates.size() - 2);
 		boolean compTwo = compareStateConvergence(role, state, backTwoStates, machine);
 
-//		System.out.println("One = [" + compOne + "], Two = [" + compTwo + "]");
+		//		System.out.println("One = [" + compOne + "], Two = [" + compTwo + "]");
 		return compTwo || compOne;
 	}
 
@@ -67,7 +67,7 @@ public class MyHeuristics {
 
 			double tempScore = machine.findReward(role, state);
 			double mobility = nStepMobility(role, state, 0, machine);
-			//			double enemyFocus = 0;
+
 			if (machine.getRoles().size() <= 1) {
 				intermedGoalCoeff += enemyFocusCoeff;
 			} else {

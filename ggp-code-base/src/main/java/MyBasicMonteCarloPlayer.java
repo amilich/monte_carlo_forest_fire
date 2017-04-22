@@ -23,17 +23,36 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 		// TODO Auto-generated method stub
 	}
 
+	public void initRoot() throws MoveDefinitionException {
+		Node.setRole(getRole());
+		Node.setStateMachine(getStateMachine());
+		root = new Node(getCurrentState());
+	}
+
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		while (!MyHeuristics.checkTime(timeout)) {
-			Node selected = root.select();
-			selected.expand();
-			double score = selected.simulate();
-			selected.backpropagate(score);
+		if (root == null) {
+			initRoot();
+		} else {
+			Node matchingChild = root.findMatchingState(getCurrentState());
+			root = matchingChild; // may be null
+			if (root != null) {
+				System.out.println("*** ADVANCED TREE ***");
+			} else {
+				initRoot();
+				System.out.println("*** FAILED TO ADVANCE TREE ***");
+			}
 		}
 
-		return null;
+		while (!MyHeuristics.checkTime(timeout)) {
+			Node selected = root.selectAndExpand();
+			double score = selected.simulate();
+			selected.backpropagate(score); // sqrt 2 for c
+		}
+
+		Move m = root.getBestMove();
+		return m;
 	}
 
 	@Override
