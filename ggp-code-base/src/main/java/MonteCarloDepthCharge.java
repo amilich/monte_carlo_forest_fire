@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
@@ -15,6 +14,8 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
+// Andrew
+
 public class MonteCarloDepthCharge extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
@@ -27,19 +28,12 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 		// TODO Auto-generated method stub
 	}
 
-
 	/**
 	 * Controls printing of debug statements.
 	 */
 	final boolean DEBUG_EN = false;
-	final static double MAX_SCORE = 100;
-	final static double MIN_SCORE = 0;
-
-	final static double MAX_DELIB_THRESHOLD = 1000;
-	final static double DELIB_SAFETY_CONST = 1.5;
-
-	double totalTimeTaken = 0;
-	double numMeasurements = 0;
+	final double MAX_SCORE = 100;
+	final double MIN_SCORE = 0;
 
 	/**
 	 * Function: stateMachineSelectMove
@@ -49,107 +43,55 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		System.out.println("***** NEW MOVE ****");
+
 		long decisionTime = timeout;
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
-		Move action = null;
-
-		int maxLevel = 5;
-		if (getStateMachine().getRoles().size() == 1) {
-			System.out.println("***** SINGLE PLAYER MODE ****");
-			try {
-				action = singlePlayerBestMove(getRole(), currState, decisionTime, maxLevel, getStateMachine());
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else {
-			try {
+		Move action = getStateMachine().findLegalx(getRole(), currState);
+		int maxLevel = 4;
+		try {
+			if (getStateMachine().getRoles().size() == 1) {
+				action = MyBoundedMobilityPlayer.singlePlayerBestMove(getRole(), currState, decisionTime, maxLevel, getStateMachine());
+			} else {
 				action = bestmove(getRole(), currState, decisionTime, maxLevel);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
+		} catch(Exception e) {
+			System.out.println("*** Failed to get best move ***");
 		}
-		System.out.println("Num dc: " + MyHeuristics.numCharges);
+		System.out.println("*** NUM CHARGES *** " + MyHeuristics.numCharges);
+
 		return action;
-	}
-
-	// TODO
-	public Move singlePlayerBestMove(Role role, MachineState state, long decisionTime, int maxLevel, StateMachine machine)
-			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException, InterruptedException {
-		List<Move> actions = new ArrayList<Move>();
-		actions.addAll(machine.getLegalMoves(state, role));
-		Collections.shuffle(actions);
-		double score = MIN_SCORE;
-		Move finalMove = actions.get(0);
-
-		for (int ii = 0; ii < actions.size(); ii ++) {
-			if (MyHeuristics.checkTime(decisionTime)) break;
-			double level = 0;
-			ArrayList<MachineState> emptyList = new ArrayList<MachineState>();
-			double result = singlePlayerMaxscore(role, state, decisionTime, level, emptyList, maxLevel, machine);
-			if (result > score) {
-				score = result;
-				finalMove = actions.get(ii);
-			}
-			if (score == MAX_SCORE) return actions.get(ii);
-		}
-		System.out.println("Score = " + score);
-		return finalMove;
-	}
-
-	public double singlePlayerMaxscore(Role role, MachineState currState, long decisionTime, double level,
-			List<MachineState> prevStates, int maxLevel, StateMachine machine)
-					throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException, InterruptedException {
-		if (machine.isTerminal(currState)) {
-			return machine.getGoal(currState, role); // TODO correct value
-		} else if (level >= maxLevel) {
-			return MyHeuristics.monteCarloHeuristic(role, currState, machine, getInitialStateMachine(), decisionTime);
-		}
-		List<Move> actions = machine.getLegalMoves(currState, role);
-		double score = 0.0;
-		for (int ii = 0; ii < actions.size(); ii ++) {
-			if (MyHeuristics.checkTime(decisionTime)) break;
-			List<Move> tempMoves = new ArrayList<Move>(); // TODO add other roles
-			tempMoves.add(actions.get(ii));
-			prevStates.add(currState);
-			double result = singlePlayerMaxscore(role, machine.getNextState(currState, tempMoves), decisionTime, level + 1
-					, prevStates, maxLevel, machine);
-			prevStates.remove(prevStates.size() - 1);
-			if (result == 100) return result;
-			if (result > score) score = result; // TODO short circuit
-		}
-		return score;
 	}
 
 	/**
 	 * Function: bestmove
 	 * -------------------
 	 * Return best possible move using minimax strategy.
-	 * @throws InterruptedException
 	 */
-	private Move bestmove(Role role, MachineState state, long decisionTime, int maxLevel)
-			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException, InterruptedException {
-		List<Move> actions = new ArrayList<Move>();
-		System.out.println("Starting bestmove with max level = " + maxLevel);
-		actions.addAll(getStateMachine().getLegalMoves(state, role));
-		Collections.shuffle(actions);
-		double score = MIN_SCORE;
+	private Move bestmove(Role role, MachineState state, long decisionTime, int maxLevel) throws MoveDefinitionException,
+	GoalDefinitionException, TransitionDefinitionException {
+		List<Move> actions = getStateMachine().getLegalMoves(state, role);
+
+		double alpha = MIN_SCORE;
+		double beta = MAX_SCORE;
 		Move finalMove = null;
+
 		for (int ii = 0; ii < actions.size(); ii ++) {
 			if (MyHeuristics.checkTime(decisionTime)) break;
 			int level = 0;
-			double result = minscore(role, actions.get(ii), state, level, decisionTime, maxLevel);
-			if (result > score) {
-				score = result;
+			ArrayList<MachineState> emptyList = new ArrayList<MachineState>();
+			double result = minscore(role, actions.get(ii), state, alpha, beta, decisionTime, level, emptyList, maxLevel);
+			double oldAlpha = alpha;
+			alpha = Math.max(alpha, result);
+			System.out.println("result score = " + result);
+			System.out.println("curr alpha = " + alpha);
+			if (alpha != oldAlpha) {
+				System.out.println("Updating alpha [" + oldAlpha + "] -> [" + alpha + "]");
 				finalMove = actions.get(ii);
 			}
-			if (result == MAX_SCORE) return actions.get(ii);
 		}
 		if (finalMove == null) {
-			System.out.println("*** NULL move selected ***");
+			System.out.println("*** NULL final move selected ***");
 			return actions.get(0);
 		}
 		return finalMove;
@@ -160,22 +102,21 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 	 * -------------------
 	 * Recursively determine minimum score that can be achieved from choosing a given move
 	 * in a given game state (assuming rational opponent).
-	 * @throws InterruptedException
 	 */
-	private double minscore(Role role, Move move, MachineState state, int level, long decisionTime, int maxLevel)
-					throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException, InterruptedException {
-		List<List<Move>> jointActions = new ArrayList<List<Move>>();
-		jointActions.addAll(getStateMachine().getLegalJointMoves(state, role, move));
-
-		double score = MAX_SCORE;
+	private double minscore(Role role, Move move, MachineState state, double alpha, double beta, long decisionTime, double level,
+			List<MachineState> prevStates, int maxLevel)
+			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		List<List<Move>> jointActions = getStateMachine().getLegalJointMoves(state, role, move);
 		for (List<Move> jointAction : jointActions) { // Opponent's move
 			if (MyHeuristics.checkTime(decisionTime)) break;
 			MachineState nextState = getStateMachine().getNextState(state, jointAction);
-			double result = maxscore(role, nextState, level + 1, decisionTime, maxLevel);
-			if (result == MIN_SCORE) return result;
-			if (result < score) score = result;
+			prevStates.add(nextState);
+			double result = maxscore(role, nextState, alpha, beta, decisionTime, level + 1, prevStates, maxLevel);
+			beta = Math.min(beta, result);
+			prevStates.remove(prevStates.size() - 1);
+			if (beta <= alpha) return alpha;
 		}
-		return score;
+		return beta;
 	}
 
 	/**
@@ -183,28 +124,35 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 	 * -------------------
 	 * Determine max score that can be achieved from choosing a given move
 	 * in a given game state by maximizing minimum score (minimax).
-	 * @throws InterruptedException
 	 */
-	private double maxscore(Role role, MachineState currState, int level, long decisionTime,
-			int maxLevel)
-					throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException, InterruptedException {
+	private double maxscore(Role role, MachineState currState, double alpha, double beta, long decisionTime, double level,
+			List<MachineState> prevStates, int maxLevel)
+			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
+
 		if (getStateMachine().isTerminal(currState)) {
 			return getStateMachine().getGoal(currState, role);
 		} else if (level >= maxLevel) {
-			return MyHeuristics.monteCarloHeuristic(role, currState, getStateMachine(), getInitialStateMachine(), decisionTime);
+			try {
+//				StateMachine machine2 = getInitialStateMachine();
+//				machine2.initialize(getMatch().getGame().getRules());
+//				double mc = MyHeuristics.monteCarloHeuristic(role, currState, getStateMachine(), machine2, decisionTime);
+				double heu = MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
+				return heu; // (mc + heu) / 2; // TODO
+			} catch (Exception e) {
+				e.printStackTrace();
+				return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
+			}
 		}
-		List<Move> actions = new ArrayList<Move>();
-		actions.addAll(getStateMachine().getLegalMoves(currState, role));
 
-		double score = MIN_SCORE;
+		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
 		for (Move action : actions) {
 			if (MyHeuristics.checkTime(decisionTime)) break;
 
-			double result = minscore(role, action, currState, level, decisionTime, maxLevel);
-			if (result == MAX_SCORE) return result;
-			if (result > score) score = result;
+			double result = minscore(role, action, currState, alpha, beta, decisionTime, level, prevStates, maxLevel);
+			alpha = Math.max(alpha, result);
+			if (alpha >= beta) return beta;
 		}
-		return score;
+		return alpha;
 	}
 
 	@Override
