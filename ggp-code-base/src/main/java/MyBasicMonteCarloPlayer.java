@@ -1,5 +1,3 @@
-import java.util.List;
-
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
@@ -25,7 +23,7 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 		// TODO Auto-generated method stub
 	}
 
-	public void initRoot() throws MoveDefinitionException {
+	private void initRoot() throws MoveDefinitionException {
 		Node.setRole(getRole());
 		Node.setStateMachine(getStateMachine());
 		root = new Node(getCurrentState());
@@ -49,7 +47,7 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 
 		while (!MyHeuristics.checkTime(timeout)) {
 			Node selected = root.selectAndExpand();
-			List<Double> scores = selected.simulate();
+			double[] scores = selected.simulate();
 			selected.backpropagate(scores); // sqrt 2 for c
 		}
 
@@ -77,6 +75,6 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 
 	@Override
 	public String getName() {
-		return "BasicMonteCarlo";
+		return "BasicMCTS";
 	}
 }
