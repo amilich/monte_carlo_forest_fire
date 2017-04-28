@@ -53,7 +53,7 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 		long decisionTime = timeout;
 		if (DEBUG_EN) System.out.println("Selecting move for " + getRole());
 		MachineState currState = getCurrentState();
-		Move action = null;
+
 		List<Move> levelMoves = new ArrayList<Move>();
 		int maxLevel;
 		for (maxLevel = 1; maxLevel < 15; maxLevel ++) {

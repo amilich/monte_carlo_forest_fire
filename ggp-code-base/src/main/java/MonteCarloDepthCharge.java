@@ -109,7 +109,6 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 		List<List<Move>> jointActions = getStateMachine().getLegalJointMoves(state, role, move);
 		for (List<Move> jointAction : jointActions) { // Opponent's move
 			if (MyHeuristics.checkTime(decisionTime)) break;
-
 			MachineState nextState = getStateMachine().getNextState(state, jointAction);
 			prevStates.add(nextState);
 			double result = maxscore(role, nextState, alpha, beta, decisionTime, level + 1, prevStates, maxLevel);
@@ -134,12 +133,12 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 			return getStateMachine().getGoal(currState, role);
 		} else if (level >= maxLevel) {
 			try {
-				StateMachine machine2 = getInitialStateMachine();
-				machine2.initialize(getMatch().getGame().getRules());
-				double mc = MyHeuristics.monteCarloHeuristic(role, currState, getStateMachine(), machine2, decisionTime);
+//				StateMachine machine2 = getInitialStateMachine();
+//				machine2.initialize(getMatch().getGame().getRules());
+//				double mc = MyHeuristics.monteCarloHeuristic(role, currState, getStateMachine(), machine2, decisionTime);
 				double heu = MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
-				return (mc + heu) / 2; // TODO
-			} catch (InterruptedException e) {
+				return heu; // (mc + heu) / 2; // TODO
+			} catch (Exception e) {
 				e.printStackTrace();
 				return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
 			}

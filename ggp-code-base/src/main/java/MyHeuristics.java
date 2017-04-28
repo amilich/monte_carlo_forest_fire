@@ -123,11 +123,7 @@ public class MyHeuristics {
 	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine, long timeout)
 			throws GoalDefinitionException {
 		double finalHeuristic = 0;
-
 		try {
-//			double dcCoeff = 0.7;
-//			double depthChargeAvg = terminalSeekingDCAvg(NUM_DC, machine, state, role);
-
 			double intermedGoalCoeff = 0.4;
 			double mobilityCoeff = 0.3;
 			double enemyFocusCoeff = 0.1;
@@ -142,9 +138,8 @@ public class MyHeuristics {
 				double enemyFocus = nStepEnemyFocus(role, state, 0, machine);
 				finalHeuristic += enemyFocusCoeff * enemyFocus;
 			}
+
 			double reachableStates = numReachableStates(role, state, machine);
-			//	System.out.println("Mob = [" + mobility + "]"); //; Enemy mob = [" + enemyFocus + "]");
-			//	System.out.println("Mob = [" + mobility + "] Temp score = [" + tempScore + "]");
 			finalHeuristic += intermedGoalCoeff * tempScore;
 			finalHeuristic += mobilityCoeff * mobility;
 			finalHeuristic += numReachableStatesCoeff * reachableStates;
