@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.List;
 
 import org.ggp.base.util.statemachine.MachineState;
@@ -10,7 +9,7 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class Node {
-	static final int NUM_DEPTH_CHARGES = 3; // TODO
+	static final int NUM_DEPTH_CHARGES = 2; // TODO
 
 	private Node parent;
 	private MachineState state;
@@ -99,6 +98,7 @@ public class Node {
 
 	public Node select() {
 		if (machine.isTerminal(state)) return this; // TODO
+
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (this.children[ii][jj] == null) return this;
@@ -162,17 +162,19 @@ public class Node {
 		return -1;
 	}
 
-	public void backpropagate(List<Double> scores) {
+	public void backpropagate(double[] scores) {
 		if (parent == null) return;
-		if (scores.size() == 1) {
+		if (scores.length == 1) {
 			parent.pCounts[moveIndex] ++;
-			parent.pVals[moveIndex] += scores.get(0);
+			parent.pVals[moveIndex] += scores[0];
 			// parent.oCounts[enemyMoveIndex] ++; // no opponent
 			// parent.oVals[enemyMoveIndex] += score;
 		} else {
-			double ourScore = scores.get(getRoleIndex());
+			double ourScore = scores[getRoleIndex()];
 			double enemyAvgScore = 0;
-			for (int ii = 0; ii < scores.size(); ii ++) enemyAvgScore += scores.get(ii);
+			for (int ii = 0; ii < scores.length; ii ++) {
+				enemyAvgScore += scores[ii];
+			}
 			enemyAvgScore -= ourScore;
 			enemyAvgScore /= (machine.getRoles().size() - 1);
 			parent.pCounts[moveIndex] ++;
@@ -186,29 +188,26 @@ public class Node {
 		}
 	}
 
-	public List<Double> simulate() // Check if immediate next state is terminal TODO
+	public double[] simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
+		double[] avgScores = new double[machine.getRoles().size()];
 		if (machine.isTerminal(state)) {
-			List<Double> avgScores = new ArrayList<Double>();
 			List<Integer> goals = machine.getGoals(state);
-			for (Integer i : goals) avgScores.add(new Double(i.intValue()));
+			for (int jj = 0; jj < goals.size(); jj ++) {
+				avgScores[jj] = goals.get(jj).doubleValue();
+			}
 			return avgScores;
-		}
-
-		List<Double> avgScores = new ArrayList<Double>();
-		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
-			avgScores.add(new Double(0));
 		}
 		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
 			int[] tempDepth = new int[1];
 			MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
 			List<Integer> goals = machine.getGoals(depthCharge);
 			for (int jj = 0; jj < goals.size(); jj ++) {
-				avgScores.set(jj, avgScores.get(jj) + goals.get(jj));
+				avgScores[jj] += goals.get(jj);
 			}
 		}
 		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
-			avgScores.set(ii, avgScores.get(ii) / NUM_DEPTH_CHARGES);
+			avgScores[ii] /= NUM_DEPTH_CHARGES;
 		}
 		return avgScores;
 	}
@@ -230,7 +229,6 @@ public class Node {
 	}
 
 	public Node findMatchingState(MachineState currentState) {
-		// TODO Auto-generated method stub
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] != null) {

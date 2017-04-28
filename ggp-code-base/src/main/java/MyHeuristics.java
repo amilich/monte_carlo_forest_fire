@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Role;
@@ -14,11 +15,49 @@ public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
 	final static double MAX_DELIB_THRESHOLD = 1500; // Timeout parameter
 
+	/**
+	 * Determine whether any previous state equals current state.
+	 */
 	public static boolean repeatedState(MachineState state, List<MachineState> prevStates) {
 		for (MachineState s : prevStates) {
 			if (s.equals(state)) return true;
 		}
 		return false;
+	}
+
+	public static MachineState tsDepthCharge(StateMachine machine, MachineState state)
+			throws TransitionDefinitionException, MoveDefinitionException {
+        Random r = new Random();
+        while (!machine.findTerminalp(state)) {
+            List<MachineState> nextStates = machine.getNextStates(state);
+            for (MachineState s : nextStates) {
+            	if (machine.findTerminalp(s)) return s;
+            }
+            state = nextStates.get(r.nextInt(nextStates.size()));
+        }
+        return state;
+    }
+
+	// set flag to whether all children have been explored in backprop
+	public static double terminalSeekingDCAvg(int numCharges, StateMachine machine, MachineState state, Role role)
+			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		double totalScore = 0;
+		for (int ii = 0; ii < numCharges; ii ++) {
+			MachineState depthCharge = tsDepthCharge(machine, state);
+			totalScore += machine.getGoal(depthCharge, role);
+		}
+		return totalScore / numCharges;
+	}
+
+	public static double avgDepthCharges(int numCharges, StateMachine machine, MachineState state, Role role)
+			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		double totalScore = 0;
+		for (int ii = 0; ii < numCharges; ii ++) {
+			int[] tempDepth = new int[1];
+			MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
+			totalScore += machine.getGoal(depthCharge, role);
+		}
+		return totalScore / numCharges;
 	}
 
 	private static boolean compareStateConvergence(Role role, MachineState state, MachineState prevState, StateMachine machine)
@@ -55,11 +94,40 @@ public class MyHeuristics {
 		return compTwo || compOne;
 	}
 
+	public static int numCharges = 0;
+	public static final int MAX_CHARGES = 4;
+
+	public static double monteCarloHeuristic(Role role, MachineState state, StateMachine machine1,
+			StateMachine machine2, long timeout) throws InterruptedException {
+		try {
+			DepthCharger d1 = new DepthCharger(machine1, state, role, MAX_CHARGES);
+			DepthCharger d2 = new DepthCharger(machine2, state, role, MAX_CHARGES);
+			Thread t1 = new Thread(d1);
+			Thread t2 = new Thread(d2);
+			t1.start();
+			t2.start();
+			t1.join();
+			t2.join();
+			double value1 = d1.getValue();
+			double value2 = d2.getValue();
+			numCharges += MAX_CHARGES * 2;
+			double avg = (value1 + value2) / 2;
+			System.out.println("Result from charges: " + avg);
+			return avg;
+		} catch (Exception e) {
+			System.out.println("Error occurred doing depth charges");
+		}
+		return 0;
+	}
+
 	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine, long timeout)
 			throws GoalDefinitionException {
 		double finalHeuristic = 0;
 
 		try {
+//			double dcCoeff = 0.7;
+//			double depthChargeAvg = terminalSeekingDCAvg(NUM_DC, machine, state, role);
+
 			double intermedGoalCoeff = 0.4;
 			double mobilityCoeff = 0.3;
 			double enemyFocusCoeff = 0.1;
