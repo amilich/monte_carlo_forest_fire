@@ -22,10 +22,14 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 		return new CachedStateMachine(new ProverStateMachine());
 	}
 
+	StateMachine machine2;
+
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		// TODO Auto-generated method stub
+		// initialize the 2nd state machine
+		machine2 = getInitialStateMachine();
+		machine2.initialize(getMatch().getGame().getRules());
 	}
 
 	/**
@@ -133,11 +137,9 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 			return getStateMachine().getGoal(currState, role);
 		} else if (level >= maxLevel) {
 			try {
-//				StateMachine machine2 = getInitialStateMachine();
-//				machine2.initialize(getMatch().getGame().getRules());
-//				double mc = MyHeuristics.monteCarloHeuristic(role, currState, getStateMachine(), machine2, decisionTime);
+				double mc = MyHeuristics.monteCarloHeuristic(role, currState, getStateMachine(), machine2, decisionTime);
 				double heu = MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
-				return heu; // (mc + heu) / 2; // TODO
+				return heu * 0.4 + mc * 0.6;
 			} catch (Exception e) {
 				e.printStackTrace();
 				return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
@@ -147,7 +149,6 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
 		for (Move action : actions) {
 			if (MyHeuristics.checkTime(decisionTime)) break;
-
 			double result = minscore(role, action, currState, alpha, beta, decisionTime, level, prevStates, maxLevel);
 			alpha = Math.max(alpha, result);
 			if (alpha >= beta) return beta;
