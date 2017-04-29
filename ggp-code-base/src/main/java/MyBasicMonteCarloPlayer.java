@@ -17,15 +17,20 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 		return new CachedStateMachine(new ProverStateMachine());
 	}
 
+	StateMachine machine2;
+
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		// TODO Auto-generated method stub
+		machine2 = getInitialStateMachine();
+		machine2.initialize(getMatch().getGame().getRules());
+		Node.numCharges = 0;
 	}
 
 	private void initRoot() throws MoveDefinitionException {
 		Node.setRole(getRole());
 		Node.setStateMachine(getStateMachine());
+		Node.setStateMachine2(machine2);
 		root = new Node(getCurrentState());
 	}
 
@@ -50,6 +55,7 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 			double[] scores = selected.simulate();
 			selected.backpropagate(scores); // sqrt 2 for c
 		}
+		System.out.println("Num charges = " + Node.numCharges);
 
 		Move m = root.getBestMove();
 		return m;
