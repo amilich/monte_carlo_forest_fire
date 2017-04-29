@@ -10,6 +10,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class Node {
 	static final int NUM_DEPTH_CHARGES = 2; // TODO
+	public static int numCharges = 0;
 
 	private Node parent;
 	private MachineState state;
@@ -24,10 +25,15 @@ public class Node {
 	private int moveIndex;
 	private int enemyMoveIndex;
 	static StateMachine machine;
+	static StateMachine machine2;
 	static Role player;
 
 	public static void setStateMachine(StateMachine machine) {
 		Node.machine = machine;
+	}
+
+	public static void setStateMachine2(StateMachine machine2) {
+		Node.machine2 = machine2;
 	}
 
 	public static void setRole(Role role) {
@@ -41,7 +47,7 @@ public class Node {
 
 	public Node(MachineState state, Node parent, int moveIndex, int enemyMoveIndex)
 			throws MoveDefinitionException { // TODO try/catch
-		System.out.println("Creating new node, parent = " + parent + ", movei = " + moveIndex + ", emove = " + enemyMoveIndex);
+		// System.out.println("Creating new node, parent = " + parent + ", movei = " + moveIndex + ", emove = " + enemyMoveIndex);
 		this.state = state;
 		this.parent = parent;
 		this.moveIndex = moveIndex;
@@ -54,7 +60,7 @@ public class Node {
 			this.numMoves = myMoves.size();
 			this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
 		}
-		System.out.println("nm = " + numMoves + ", nem = " + numEnemyMoves);
+		// System.out.println("nm = " + numMoves + ", nem = " + numEnemyMoves);
 		pCounts = new double[numMoves];
 		pVals = new double[numMoves];
 		oCounts = new double[numEnemyMoves];
@@ -138,12 +144,6 @@ public class Node {
 						return children[ii][jj];
 					} catch (Exception e) {
 						System.out.println("expansion failed");
-						// TODO worked here but not above???
-						/* Move myMove = machine.getLegalMoves(state, player).get(ii);
-						List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
-						MachineState nextState = machine.getNextState(state, jointMove);
-						children[ii][jj] = new Node(nextState, this, ii, jj);
-						return children[ii][jj]; */ // WTF
 						e.printStackTrace(); // TODO what's going on
 					}
 					return this;
@@ -198,8 +198,9 @@ public class Node {
 			}
 			return avgScores;
 		}
+		/* int[] tempDepth = new int[1];
 		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
-			int[] tempDepth = new int[1];
+			numCharges ++;
 			MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
 			List<Integer> goals = machine.getGoals(depthCharge);
 			for (int jj = 0; jj < goals.size(); jj ++) {
@@ -208,7 +209,27 @@ public class Node {
 		}
 		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
 			avgScores[ii] /= NUM_DEPTH_CHARGES;
+		} */
+		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
+		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
+		Thread t1 = new Thread(d1);
+		Thread t2 = new Thread(d2);
+		t1.start();
+		t2.start();
+		try {
+			t1.join();
+			t2.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
+		double value1[] = d1.getValues();
+		double value2[] = d2.getValues();
+		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
+			avgScores[ii] = (value1[ii] + value2[ii]) / 2;
+			// System.out.print(avgScores[ii] + ",");
+		}
+		numCharges += NUM_DEPTH_CHARGES * 2;
+		// System.out.println();
 		return avgScores;
 	}
 
