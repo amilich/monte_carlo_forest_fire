@@ -27,6 +27,7 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 		Node.numCharges = 0;
 	}
 
+
 	private void initRoot() throws MoveDefinitionException {
 		Node.setRole(getRole());
 		Node.setStateMachine(getStateMachine());
