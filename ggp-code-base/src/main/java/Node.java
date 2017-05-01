@@ -1,4 +1,9 @@
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
@@ -27,6 +32,7 @@ public class Node {
 	static StateMachine machine;
 	static StateMachine machine2;
 	static Role player;
+	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	public static void setStateMachine(StateMachine machine) {
 		Node.machine = machine;
@@ -198,6 +204,7 @@ public class Node {
 			}
 			return avgScores;
 		}
+
 		/* int[] tempDepth = new int[1];
 		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
 			numCharges ++;
@@ -210,23 +217,24 @@ public class Node {
 		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
 			avgScores[ii] /= NUM_DEPTH_CHARGES;
 		} */
+
 		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
 		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
-		Thread t1 = new Thread(d1);
-		Thread t2 = new Thread(d2);
-		t1.start();
-		t2.start();
-		try {
-			t1.join();
-			t2.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		Collection<Future<?>> futures = new LinkedList<Future<?>>();
+		futures.add(executor.submit(d1));
+		futures.add(executor.submit(d2));
+		for (Future<?> future:futures) {
+		    try {
+				future.get();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		double value1[] = d1.getValues();
 		double value2[] = d2.getValues();
 		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
 			avgScores[ii] = (value1[ii] + value2[ii]) / 2;
-			// System.out.print(avgScores[ii] + ",");
+			 // System.out.print(avgScores[ii] + ",");
 		}
 		numCharges += NUM_DEPTH_CHARGES * 2;
 		// System.out.println();

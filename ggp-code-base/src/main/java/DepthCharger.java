@@ -37,11 +37,17 @@ public class DepthCharger implements Runnable {
 				}
 			}
 			value /= numCharges;
-		} else {
+		} else { // n player case
+			List<Role> roles;
+			try {
+				roles = machine.getRoles();
+			} catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
 			for (int ii = 0; ii < numCharges; ii ++) {
 				try {
 					MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
-					List<Role> roles = machine.getRoles();
 					for (int jj = 0; jj < roles.size(); jj ++) {
 						scores[jj] += machine.getGoal(depthCharge, roles.get(jj));
 					}
