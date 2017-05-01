@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -195,7 +194,6 @@ public class Node {
 		}
 	}
 
-	List<Runnable> rb = new ArrayList<Runnable>();
 	public double[] simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		double[] avgScores = new double[machine.getRoles().size()];
