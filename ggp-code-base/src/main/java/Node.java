@@ -100,6 +100,7 @@ public class Node {
 				maxMove = ii;
 			}
 		}
+		System.out.println("Avg utility of best move = " + avgUtility);
 		return machine.getLegalMoves(state, player).get(maxMove);
 	}
 
@@ -110,7 +111,6 @@ public class Node {
 
 	public Node select() {
 		if (machine.isTerminal(state)) return this; // TODO
-
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (this.children[ii][jj] == null) return this;
@@ -204,19 +204,6 @@ public class Node {
 			}
 			return avgScores;
 		}
-
-		/* int[] tempDepth = new int[1];
-		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
-			numCharges ++;
-			MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
-			List<Integer> goals = machine.getGoals(depthCharge);
-			for (int jj = 0; jj < goals.size(); jj ++) {
-				avgScores[jj] += goals.get(jj);
-			}
-		}
-		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
-			avgScores[ii] /= NUM_DEPTH_CHARGES;
-		} */
 
 		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
 		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
