@@ -1,10 +1,14 @@
 import java.util.List;
+import java.util.Random;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
+import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
+import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
+import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-public class DepthCharger implements Runnable {
+public class SmartCharger implements Runnable {
 
 	private volatile double value = 0;
 	private MachineState state;
@@ -14,7 +18,7 @@ public class DepthCharger implements Runnable {
 	private double scores[];
 	private boolean multiPlayer;
 
-	public DepthCharger(StateMachine machine, MachineState state, Role role, int numCharges, boolean multiPlayer) {
+	public SmartCharger(StateMachine machine, MachineState state, Role role, int numCharges, boolean multiPlayer) {
 		this.machine = machine;
 		this.role = role;
 		this.state = state;
@@ -23,14 +27,32 @@ public class DepthCharger implements Runnable {
 		scores = new double[machine.getRoles().size()];
 	}
 
+	private MachineState smartCharge(MachineState state)
+			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		Random r = new Random();
+		while (!machine.isTerminal(state)) {
+			List<MachineState> states = machine.getNextStates(state);
+			boolean foundTerm = false;
+			for (MachineState s : states) {
+				if (machine.isTerminal(s) && machine.getGoal(state, role) == 0) {
+					state = s;
+					foundTerm = true;
+				}
+			}
+			if (!foundTerm) {
+				state = states.get(r.nextInt(states.size()));
+			}
+		}
+		return state;
+	}
+
 	@Override
 	public void run() {
-		int[] tempDepth = new int[1];
 		if (!multiPlayer) {
 			value = 0;
 			for (int ii = 0; ii < numCharges; ii ++) {
 				try {
-					MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
+					MachineState depthCharge = smartCharge(state);
 					value += machine.getGoal(depthCharge, role);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -47,7 +69,7 @@ public class DepthCharger implements Runnable {
 			}
 			for (int ii = 0; ii < numCharges; ii ++) {
 				try {
-					MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
+					MachineState depthCharge = smartCharge(state);
 					for (int jj = 0; jj < roles.size(); jj ++) {
 						scores[jj] += machine.getGoal(depthCharge, roles.get(jj));
 					}

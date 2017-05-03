@@ -25,6 +25,14 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 		machine2 = getInitialStateMachine();
 		machine2.initialize(getMatch().getGame().getRules());
 		Node.numCharges = 0;
+		moveNum = 0;
+		initRoot();
+		while (!MyHeuristics.checkTime(timeout)) {
+			Node selected = root.selectAndExpand();
+			double[] scores = selected.simulate();
+			selected.backpropagate(scores); // sqrt 2 for c
+		}
+		System.out.println("METAGAME charges = " + Node.numCharges);
 	}
 
 
@@ -35,12 +43,13 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 		root = new Node(getCurrentState());
 	}
 
+	int moveNum = 0;
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		if (root == null) {
 			initRoot();
-		} else {
+		} else if (moveNum != 0){
 			Node matchingChild = root.findMatchingState(getCurrentState());
 			root = matchingChild; // may be null
 			if (root != null) {
@@ -49,6 +58,8 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 				initRoot();
 				System.out.println("*** FAILED TO ADVANCE TREE ***");
 			}
+		} else {
+			System.out.println("First move: advanced tree.");
 		}
 
 		while (!MyHeuristics.checkTime(timeout)) {
@@ -57,7 +68,7 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 			selected.backpropagate(scores); // sqrt 2 for c
 		}
 		System.out.println("Num charges = " + Node.numCharges);
-
+		moveNum ++;
 		Move m = root.getBestMove();
 		return m;
 	}
