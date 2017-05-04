@@ -21,6 +21,12 @@ public class MyHeuristics {
 		while (MyHeuristics.checkTime(timeout)) { // TODO need more time after
 			terminalStates.add(machine.performDepthCharge(state, null));
 		}
+		int n = terminalStates.size();
+		// double myFocusScores[] = new double [n];
+		// double enemyFocusScores[] = new double[n];
+		for (int ii = 0; ii < n; ii ++) {
+			// myfocusScores[ii] = MyHeuristics.nStepEnemyFocus(role, state, n, machine);
+		}
 	}
 
 	/**
@@ -128,7 +134,7 @@ public class MyHeuristics {
 		return 0;
 	}
 
-	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine, long timeout)
+	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine)
 			throws GoalDefinitionException {
 		double finalHeuristic = 0;
 		try {
@@ -137,7 +143,11 @@ public class MyHeuristics {
 			double enemyFocusCoeff = 0.1;
 			double numReachableStatesCoeff = 0.2;
 
-			double tempScore = machine.findReward(role, state);
+			double tempScore = 0;
+			try {
+				tempScore = machine.findReward(role, state);
+			} catch(Exception e) { System.out.println("Goal undefined in current state."); }
+
 			double mobility = nStepMobility(role, state, 0, machine);
 
 			if (machine.getRoles().size() <= 1) {
