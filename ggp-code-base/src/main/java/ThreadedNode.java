@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,44 +14,44 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-public class Node {
+public class ThreadedNode {
 	public static int numCharges = 0;
 
-	private Node parent;
+	private ThreadedNode parent;
 	private MachineState state;
 	private double[] pCounts;
 	private double[] pVals;
 	private double[] oCounts;
 	private double[] oVals;
-	private Node[][] children;
+	private ThreadedNode[][] children;
 	private int numMoves;
 	private int numEnemyMoves;
 
 	private int moveIndex;
 	private int enemyMoveIndex;
 	static StateMachine machine;
-	static StateMachine machine2;
+	static List<StateMachine> machines;
 	static Role player;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	public static void setStateMachine(StateMachine machine) {
-		Node.machine = machine;
+		ThreadedNode.machine = machine;
 	}
 
-	public static void setStateMachine2(StateMachine machine2) {
-		Node.machine2 = machine2;
+	public static void setStateMachines(List<StateMachine> machines) {
+		ThreadedNode.machines = machines;
 	}
 
 	public static void setRole(Role role) {
-		Node.player = role;
+		ThreadedNode.player = role;
 	}
 
-	public Node(MachineState state)
+	public ThreadedNode(MachineState state)
 			throws MoveDefinitionException {
 		this(state, null, -1, -1);
 	}
 
-	public Node(MachineState state, Node parent, int moveIndex, int enemyMoveIndex)
+	public ThreadedNode(MachineState state, ThreadedNode parent, int moveIndex, int enemyMoveIndex)
 			throws MoveDefinitionException { // TODO try/catch
 		// System.out.println("Creating new node, parent = " + parent + ", movei = " + moveIndex + ", emove = " + enemyMoveIndex);
 		this.state = state;
@@ -70,7 +71,7 @@ public class Node {
 		pVals = new double[numMoves];
 		oCounts = new double[numEnemyMoves];
 		oVals = new double[numEnemyMoves];
-		children = new Node[numMoves][numEnemyMoves];
+		children = new ThreadedNode[numMoves][numEnemyMoves];
 	}
 
 	private double sumArray(double array[]) {
@@ -103,12 +104,12 @@ public class Node {
 		return machine.getLegalMoves(state, player).get(maxMove);
 	}
 
-	public Node selectAndExpand() throws MoveDefinitionException, TransitionDefinitionException {
-		Node selected = this.select();
+	public ThreadedNode selectAndExpand() throws MoveDefinitionException, TransitionDefinitionException {
+		ThreadedNode selected = this.select();
 		return selected.expand();
 	}
 
-	public Node select() {
+	public ThreadedNode select() {
 		if (machine.isTerminal(state)) return this; // TODO
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
@@ -136,7 +137,7 @@ public class Node {
 		return children[resultP][resultO].select();
 	}
 
-	public Node expand() throws MoveDefinitionException, TransitionDefinitionException {
+	public ThreadedNode expand() throws MoveDefinitionException, TransitionDefinitionException {
 		if (machine.isTerminal(state)) return this;
 		for (int ii = 0; ii < numMoves; ii ++) {
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
@@ -145,7 +146,7 @@ public class Node {
 					try {
 						List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 						MachineState nextState = machine.getNextState(state, jointMove);
-						children[ii][jj] = new Node(nextState, this, ii, jj);
+						children[ii][jj] = new ThreadedNode(nextState, this, ii, jj);
 						return children[ii][jj];
 					} catch (Exception e) {
 						System.out.println("expansion failed");
@@ -191,6 +192,7 @@ public class Node {
 		}
 	}
 
+	public static final int NUM_THREADS = 4; // EVEN NUMBER!!
 	static final int NUM_DEPTH_CHARGES = 3; // TODO
 	public double[] simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
@@ -203,12 +205,19 @@ public class Node {
 			return avgScores;
 		}
 
-		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
-		//		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
-		SmartCharger d2 = new SmartCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
+		List<Charger> rs = new ArrayList<Charger>();
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
-		futures.add(executor.submit(d1));
-		futures.add(executor.submit(d2));
+		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
+			DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+			rs.add(d);
+			futures.add(executor.submit(d));
+		}
+		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
+			SmartCharger s = new SmartCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+			rs.add(s);
+			futures.add(executor.submit(s));
+		}
+
 		for (Future<?> future:futures) {
 			try {
 				future.get();
@@ -216,23 +225,25 @@ public class Node {
 				e.printStackTrace();
 			}
 		}
-		double value1[] = d1.getValues();
-		double value2[] = d2.getValues();
-		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
-			avgScores[ii] = (value1[ii] + value2[ii]) / 2;
-			// System.out.print(avgScores[ii] + ",");
+		for (int ii = 0; ii < NUM_THREADS; ii ++) {
+			for (int jj = 0; jj < machine.getRoles().size(); jj ++) {
+				avgScores[jj] += rs.get(ii).getValues()[jj];
+			}
 		}
-		numCharges += NUM_DEPTH_CHARGES;
-		numCharges += NUM_DEPTH_CHARGES;
+		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
+			avgScores[ii] /= (NUM_THREADS * NUM_DEPTH_CHARGES);
+		}
+
+		numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
 //		System.out.println("NEW TURN");
 		return avgScores;
 	}
 
-	public Node getParent() {
+	public ThreadedNode getParent() {
 		return parent;
 	}
 
-	public void setParent(Node parent) {
+	public void setParent(ThreadedNode parent) {
 		this.parent = parent;
 	}
 
@@ -244,7 +255,7 @@ public class Node {
 		this.state = state;
 	}
 
-	public Node findMatchingState(MachineState currentState) {
+	public ThreadedNode findMatchingState(MachineState currentState) {
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] != null) {

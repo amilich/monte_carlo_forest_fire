@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
@@ -9,64 +12,77 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-public class MyBasicMonteCarloPlayer extends StateMachineGamer {
-	Node root = null;
+public class MyThreadedMonteCarlo extends StateMachineGamer {
+	ThreadedNode root = null;
 
 	@Override
 	public StateMachine getInitialStateMachine() {
 		return new CachedStateMachine(new ProverStateMachine());
 	}
 
+	List<StateMachine> machines = new ArrayList<StateMachine>();
 	StateMachine machine2;
-
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+
 		machine2 = getInitialStateMachine();
 		machine2.initialize(getMatch().getGame().getRules());
-		Node.numCharges = 0;
+		ThreadedNode.numCharges = 0;
 		moveNum = 0;
 		initRoot();
 		while (!MyHeuristics.checkTime(timeout)) {
-			Node selected = root.selectAndExpand();
+			ThreadedNode selected = root.selectAndExpand();
 			double[] scores = selected.simulate();
 			selected.backpropagate(scores); // sqrt 2 for c
 		}
-		System.out.println("METAGAME charges = " + Node.numCharges);
+		System.out.println("METAGAME charges = " + ThreadedNode.numCharges);
+	}
+
+
+	private void createMachines() {
+		for (int ii = 0; ii < ThreadedNode.NUM_THREADS; ii ++) {
+			StateMachine m = getInitialStateMachine();
+			m.initialize(getMatch().getGame().getRules());
+			machines.add(m);
+		}
 	}
 
 	private void initRoot() throws MoveDefinitionException {
-		Node.setRole(getRole());
-		Node.setStateMachine(getStateMachine());
-		Node.setStateMachine2(machine2);
-		root = new Node(getCurrentState());
+		ThreadedNode.setRole(getRole());
+		ThreadedNode.setRole(getRole());
+		ThreadedNode.setStateMachine(getStateMachine());
+		createMachines();
+		ThreadedNode.setStateMachines(machines);
+		root = new ThreadedNode(getCurrentState());
 	}
 
 	int moveNum = 0;
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+
 		if (root == null) {
 			initRoot();
 		} else if (moveNum != 0){
-			Node matchingChild = root.findMatchingState(getCurrentState());
+			ThreadedNode matchingChild = root.findMatchingState(getCurrentState());
 			root = matchingChild; // may be null
 			if (root != null) {
-				System.out.println("*** ADVANCED TREE ***");
+				System.out.println("*** [THREADED] ADVANCED TREE ***");
 			} else {
 				initRoot();
-				System.out.println("*** FAILED TO ADVANCE TREE ***");
+				System.out.println("*** [THREADED] FAILED TO ADVANCE TREE ***");
 			}
 		} else {
-			System.out.println("First move: advanced tree.");
+			System.out.println("[THREADED] First move: advanced tree.");
 		}
 
 		while (!MyHeuristics.checkTime(timeout)) {
-			Node selected = root.selectAndExpand();
+			ThreadedNode selected = root.selectAndExpand();
 			double[] scores = selected.simulate();
 			selected.backpropagate(scores); // sqrt 2 for c
 		}
-		System.out.println("Num charges = " + Node.numCharges);
+		System.out.println("[THREADED] Num charges = " + ThreadedNode.numCharges);
 		moveNum ++;
 		Move m = root.getBestMove();
 		return m;
@@ -92,6 +108,6 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 
 	@Override
 	public String getName() {
-		return "BasicMCTS";
+		return "Threaded MCTS";
 	}
 }
