@@ -100,7 +100,7 @@ public class ThreadedNode {
 				maxMove = ii;
 			}
 		}
-		System.out.println("Avg utility of best move = " + avgUtility);
+		System.out.println("[THREADED] Avg utility of best move = " + avgUtility);
 		return machine.getLegalMoves(state, player).get(maxMove);
 	}
 
@@ -199,25 +199,22 @@ public class ThreadedNode {
 		double[] avgScores = new double[machine.getRoles().size()];
 		if (machine.isTerminal(state)) {
 			List<Integer> goals = machine.getGoals(state);
-			for (int jj = 0; jj < goals.size(); jj ++) {
-				avgScores[jj] = goals.get(jj).doubleValue();
-			}
+			for (int jj = 0; jj < goals.size(); jj ++) avgScores[jj] = goals.get(jj).doubleValue();
 			return avgScores;
 		}
 
 		List<Charger> rs = new ArrayList<Charger>();
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
-		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
+		for (int ii = 0; ii < NUM_THREADS; ii ++) {
 			DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
 			rs.add(d);
 			futures.add(executor.submit(d));
 		}
-		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
-			SmartCharger s = new SmartCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
-			rs.add(s);
-			futures.add(executor.submit(s));
-		}
-
+//		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
+//			SmartCharger s = new SmartCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+//			rs.add(s);
+//			futures.add(executor.submit(s));
+//		}
 		for (Future<?> future:futures) {
 			try {
 				future.get();
@@ -225,17 +222,10 @@ public class ThreadedNode {
 				e.printStackTrace();
 			}
 		}
-		for (int ii = 0; ii < NUM_THREADS; ii ++) {
-			for (int jj = 0; jj < machine.getRoles().size(); jj ++) {
-				avgScores[jj] += rs.get(ii).getValues()[jj];
-			}
-		}
-		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
-			avgScores[ii] /= (NUM_THREADS * NUM_DEPTH_CHARGES);
-		}
-
+		for (int ii = 0; ii < NUM_THREADS; ii ++)
+			for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += rs.get(ii).getValues()[jj];
+		for (int ii = 0; ii < machine.getRoles().size(); ii ++) avgScores[ii] /= NUM_THREADS;
 		numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
-//		System.out.println("NEW TURN");
 		return avgScores;
 	}
 

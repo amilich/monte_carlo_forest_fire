@@ -31,12 +31,18 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 		ThreadedNode.numCharges = 0;
 		moveNum = 0;
 		initRoot();
+		expandTree(timeout);
+		System.out.println("[THREADED] METAGAME charges = " + ThreadedNode.numCharges);
+	}
+
+	public void expandTree(long timeout) {
 		while (!MyHeuristics.checkTime(timeout)) {
+			try {
 			ThreadedNode selected = root.selectAndExpand();
 			double[] scores = selected.simulate();
 			selected.backpropagate(scores); // sqrt 2 for c
+			} catch(Exception e) { e.printStackTrace(); }
 		}
-		System.out.println("METAGAME charges = " + ThreadedNode.numCharges);
 	}
 
 
@@ -77,11 +83,7 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 			System.out.println("[THREADED] First move: advanced tree.");
 		}
 
-		while (!MyHeuristics.checkTime(timeout)) {
-			ThreadedNode selected = root.selectAndExpand();
-			double[] scores = selected.simulate();
-			selected.backpropagate(scores); // sqrt 2 for c
-		}
+		expandTree(timeout);
 		System.out.println("[THREADED] Num charges = " + ThreadedNode.numCharges);
 		moveNum ++;
 		Move m = root.getBestMove();

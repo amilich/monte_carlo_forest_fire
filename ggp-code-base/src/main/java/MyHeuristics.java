@@ -15,6 +15,14 @@ public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
 	final static double MAX_DELIB_THRESHOLD = 1500; // Timeout parameter
 
+	public static void determineHeuristics(MachineState state, StateMachine machine, long timeout)
+			throws TransitionDefinitionException, MoveDefinitionException {
+		List<MachineState> terminalStates = new ArrayList<MachineState>();
+		while (MyHeuristics.checkTime(timeout)) { // TODO need more time after
+			terminalStates.add(machine.performDepthCharge(state, null));
+		}
+	}
+
 	/**
 	 * Determine whether any previous state equals current state.
 	 */
