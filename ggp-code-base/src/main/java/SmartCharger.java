@@ -8,7 +8,7 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-public class SmartCharger implements Runnable {
+public class SmartCharger implements Runnable, Charger {
 
 	private volatile double value = 0;
 	private MachineState state;
@@ -34,9 +34,11 @@ public class SmartCharger implements Runnable {
 			List<MachineState> states = machine.getNextStates(state);
 			boolean foundTerm = false;
 			for (MachineState s : states) {
-				if (machine.isTerminal(s) && machine.getGoal(state, role) == 0) {
-					state = s;
-					foundTerm = true;
+				if (machine.isTerminal(s)) {
+					if (machine.getGoal(state, role) == 0) {
+						state = s;
+						foundTerm = true;
+					}
 				}
 			}
 			if (!foundTerm) {
@@ -81,12 +83,15 @@ public class SmartCharger implements Runnable {
 				scores[ii] /= numCharges;
 			}
 		}
+//		System.out.println("SMART CHARGER FINISHED: [" + System.currentTimeMillis() + "]");
 	}
 
+	@Override
 	public double[] getValues() {
 		return scores;
 	}
 
+	@Override
 	public double getValue() {
 		return value;
 	}

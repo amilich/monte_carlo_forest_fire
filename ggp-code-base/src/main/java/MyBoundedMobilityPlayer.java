@@ -108,9 +108,9 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 		if (machine.isTerminal(currState)) {
 			return machine.getGoal(currState, role); // TODO correct value
 		} else if (level >= maxLevel) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, machine, decisionTime);
+			return MyHeuristics.weightedHeuristicFunction(role, currState, machine);
 		} else if (level > 2 && MyHeuristics.stateConverges(role, currState, machine, decisionTime, prevStates)) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, machine, decisionTime);
+			return MyHeuristics.weightedHeuristicFunction(role, currState, machine);
 		}
 		List<Move> actions = machine.getLegalMoves(currState, role);
 		double score = 0.0;
@@ -200,9 +200,9 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 		if (getStateMachine().isTerminal(currState)) {
 			return getStateMachine().getGoal(currState, role);
 		} else if (level >= maxLevel) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
+			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
 		} else if (level > 2 && MyHeuristics.stateConverges(role, currState, getStateMachine(), decisionTime, prevStates)) {
-			 return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
+			 return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
 		}
 		List<Move> actions = new ArrayList<Move>();
 		actions.addAll(getStateMachine().getLegalMoves(currState, role));

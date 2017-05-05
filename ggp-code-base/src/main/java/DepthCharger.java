@@ -4,7 +4,7 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 
-public class DepthCharger implements Runnable {
+public class DepthCharger implements Runnable, Charger {
 
 	private volatile double value = 0;
 	private MachineState state;
@@ -59,12 +59,15 @@ public class DepthCharger implements Runnable {
 				scores[ii] /= numCharges;
 			}
 		}
+//		System.out.println("D CHARGER FINISHED: [" + System.currentTimeMillis() + "]");
 	}
 
+	@Override
 	public double[] getValues() {
 		return scores;
 	}
 
+	@Override
 	public double getValue() {
 		return value;
 	}
