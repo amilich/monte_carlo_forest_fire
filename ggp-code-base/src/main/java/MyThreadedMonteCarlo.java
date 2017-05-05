@@ -21,13 +21,9 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 	}
 
 	List<StateMachine> machines = new ArrayList<StateMachine>();
-	StateMachine machine2;
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-
-		machine2 = getInitialStateMachine();
-		machine2.initialize(getMatch().getGame().getRules());
 		ThreadedNode.numCharges = 0;
 		moveNum = 0;
 		initRoot();
@@ -47,6 +43,7 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 
 
 	private void createMachines() {
+		machines.clear();
 		for (int ii = 0; ii < ThreadedNode.NUM_THREADS; ii ++) {
 			StateMachine m = getInitialStateMachine();
 			m.initialize(getMatch().getGame().getRules());

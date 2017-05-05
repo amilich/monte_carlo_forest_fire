@@ -26,6 +26,7 @@ public class ThreadedNode {
 	private ThreadedNode[][] children;
 	private int numMoves;
 	private int numEnemyMoves;
+	boolean explored = false;
 
 	private int moveIndex;
 	private int enemyMoveIndex;
@@ -173,8 +174,7 @@ public class ThreadedNode {
 		if (scores.length == 1) {
 			parent.pCounts[moveIndex] ++;
 			parent.pVals[moveIndex] += scores[0];
-			// parent.oCounts[enemyMoveIndex] ++; // no opponent
-			// parent.oVals[enemyMoveIndex] += score;
+			// No opponent
 		} else {
 			double ourScore = scores[getRoleIndex()];
 			double enemyAvgScore = 0;
@@ -185,6 +185,56 @@ public class ThreadedNode {
 			parent.pVals[moveIndex] += ourScore;
 			parent.oCounts[enemyMoveIndex] ++;
 			parent.oVals[enemyMoveIndex] += enemyAvgScore;
+
+			if (parent != null) {
+				if (explored) {
+					boolean moveIndexExp = true;
+					for (int ii = 0; ii < parent.numEnemyMoves; ii ++) {
+						if (parent.children[moveIndex][ii] == null) {
+							moveIndexExp = false;
+							break;
+						} else if (!parent.children[moveIndex][ii].explored) {
+							moveIndexExp = false;
+							break;
+						}
+					}
+					// now, the parent has this move index fully explored: update array
+					if (moveIndexExp) {
+						parent.pVals[moveIndex] = ourScore * parent.pCounts[moveIndex];
+					}
+
+					boolean eMoveIndexExp = true;
+					for (int ii = 0; ii < parent.numMoves; ii ++) {
+						if (parent.children[ii][enemyMoveIndex] == null) {
+							eMoveIndexExp = false;
+							break;
+						} else if (!parent.children[ii][enemyMoveIndex].explored) {
+							eMoveIndexExp = false;
+							break;
+						}
+					}
+					// now, the parent has this enemy move index fully explored: update arrays
+					if (eMoveIndexExp) {
+						parent.oVals[enemyMoveIndex] = enemyAvgScore * parent.oCounts[enemyMoveIndex];
+					}
+
+					boolean allExp = true;
+					for (int ii = 0; ii < parent.numMoves; ii ++) {
+						for (int jj = 0; jj < parent.numEnemyMoves; jj ++) {
+							if (parent.children[ii][jj] == null) {
+								allExp = false;
+							} else if (!parent.children[ii][jj].explored) {
+								allExp = false;
+							}
+						}
+					}
+
+					if (allExp) {
+						parent.explored = true;
+						// System.out.println("[THREADED] Parent EXP!");
+					}
+				}
+			}
 		}
 
 		if (parent != null) {
@@ -199,6 +249,7 @@ public class ThreadedNode {
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		double[] avgScores = new double[machine.getRoles().size()];
 		if (machine.isTerminal(state)) {
+			explored = true;
 			List<Integer> goals = machine.getGoals(state);
 			for (int jj = 0; jj < goals.size(); jj ++) avgScores[jj] = goals.get(jj).doubleValue();
 			return avgScores;
@@ -211,11 +262,11 @@ public class ThreadedNode {
 			rs.add(d);
 			futures.add(executor.submit(d));
 		}
-//		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
-//			SmartCharger s = new SmartCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
-//			rs.add(s);
-//			futures.add(executor.submit(s));
-//		}
+		//		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
+		//			SmartCharger s = new SmartCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+		//			rs.add(s);
+		//			futures.add(executor.submit(s));
+		//		}
 
 		for (Future<?> future:futures) {
 			try {
@@ -227,11 +278,8 @@ public class ThreadedNode {
 		if (useHeuristic) {
 			List<Role> roles = machine.findRoles();
 			double heuristics[] = new double[roles.size()];
-			if (useHeuristic) {
-				for (int ii = 0; ii < roles.size(); ii ++) // TODO
-					heuristics[ii] = MyHeuristics.weightedHeuristicFunction(roles.get(ii), state, machine);
-			}
-
+			for (int ii = 0; ii < roles.size(); ii ++) // TODO
+				heuristics[ii] = MyHeuristics.weightedHeuristicFunction(roles.get(ii), state, machine);
 			for (int ii = 0; ii < NUM_THREADS; ii ++)
 				for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += rs.get(ii).getValues()[jj];
 			for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += 2 * heuristics[jj];
