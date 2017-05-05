@@ -95,13 +95,24 @@ public class ThreadedNode {
 	public Move getBestMove() throws MoveDefinitionException {
 		double avgUtility = 0;
 		int maxMove = 0;
-		for (int ii = 0; ii < pCounts.length; ii ++) {
-			double tempAvg = pVals[ii] / pCounts[ii];
-			if (tempAvg > avgUtility) {
-				avgUtility = tempAvg;
-				maxMove = ii;
+		if (explored && rootMins != null) {
+			for (int ii = 0; ii < numMoves; ii ++) {
+				double score = rootMins[ii];
+				if (score > avgUtility) {
+					avgUtility = score;
+					maxMove = ii;
+				}
+			}
+		} else {
+			for (int ii = 0; ii < pCounts.length; ii ++) {
+				double tempAvg = pVals[ii] / pCounts[ii];
+				if (tempAvg > avgUtility) {
+					avgUtility = tempAvg;
+					maxMove = ii;
+				}
 			}
 		}
+
 		System.out.println("[THREADED] Avg utility of best move = " + avgUtility);
 		return machine.getLegalMoves(state, player).get(maxMove);
 	}
@@ -118,8 +129,8 @@ public class ThreadedNode {
 				if (this.children[ii][jj] == null) return this;
 			}
 		}
-		double pMoveScore = 0;
-		double oMoveScore = 0;
+		double pMoveScore = Double.NEGATIVE_INFINITY;
+		double oMoveScore = Double.NEGATIVE_INFINITY;
 		int resultP = 0;
 		int resultO = 0;
 		for (int ii = 0; ii < numMoves; ii ++){
@@ -130,7 +141,11 @@ public class ThreadedNode {
 			}
 		}
 		for (int jj = 0; jj < numEnemyMoves; jj ++) {
-			double newscore = selectfn(resultP, jj, true);
+			double newscore = 0;
+			 if (children[resultP][jj].explored) newscore = -100; // TODO
+			 else newscore = selectfn(resultP, jj, true);
+			 //			newscore = selectfn(resultP, jj, true);
+
 			if (newscore > oMoveScore) {
 				oMoveScore = newscore;
 				resultO = jj;
@@ -171,78 +186,85 @@ public class ThreadedNode {
 	}
 
 	private static double arrayMax(double array[]) {
-		double max = Double.MIN_VALUE;
+		double max = Double.NEGATIVE_INFINITY;
 		for (int ii = 0; ii < array.length; ii ++)
 			if (array[ii] > max) max = array[ii];
 		return max;
 	}
 
 	private static double arrayMin(double array[]) {
-		double min = Double.MAX_VALUE;
+		double min = Double.POSITIVE_INFINITY;
 		for (int ii = 0; ii < array.length; ii ++)
 			if (array[ii] < min) min = array[ii];
 		return min;
 	}
 
-	public void backpropagate(double[] scores) {
+	static int numInc = 0;
+	double rootMins[] = null;
+	public void backpropagate(double score) {
 		if (parent == null) return;
-		if (scores.length == 1) {
+		if (machine.getRoles().size() == 1) {
 			parent.pCounts[moveIndex] ++;
-			parent.pVals[moveIndex] += scores[0];
+			parent.pVals[moveIndex] += score;
 			// No opponent
 		} else {
-			double ourScore = scores[getRoleIndex()];
-			double enemyAvgScore = 0;
-			for (int ii = 0; ii < scores.length; ii ++) enemyAvgScore += scores[ii];
-			enemyAvgScore -= ourScore;
-			enemyAvgScore /= (machine.getRoles().size() - 1);
+			numInc ++;
 			parent.pCounts[moveIndex] ++;
-			parent.pVals[moveIndex] += ourScore;
+			parent.pVals[moveIndex] += score;
+			parent.oCounts[moveIndex][enemyMoveIndex] ++;
+			parent.oVals[moveIndex][enemyMoveIndex] += score;
 			if (!explored) {
 				parent.oCounts[moveIndex][enemyMoveIndex] ++;
-				parent.oVals[moveIndex][enemyMoveIndex] += enemyAvgScore;
+				parent.oVals[moveIndex][enemyMoveIndex] += score;
 			} else {
-				parent.oCounts[moveIndex][enemyMoveIndex] ++;
-				parent.oVals[moveIndex][enemyMoveIndex] = enemyAvgScore * parent.oCounts[moveIndex][enemyMoveIndex];
-
 				boolean parentExplored = true;
-				for (int ii = 0; ii < parent.numMoves; ii ++) {
-					for (int jj = 0; jj < parent.numEnemyMoves; jj ++) {
-						if (parent.children[ii][jj] == null) {
-							parentExplored = false;
-							break;
-						} else if (!parent.children[ii][jj].explored) {
-							parentExplored = false;
-							break;
+				if (!parent.explored) {
+					for (int ii = 0; ii < parent.numMoves; ii ++) {
+						for (int jj = 0; jj < parent.numEnemyMoves; jj ++) {
+							if (parent.children[ii][jj] == null) {
+								parentExplored = false;
+								break;
+							} else if (!parent.children[ii][jj].explored) {
+								parentExplored = false;
+								break;
+							}
 						}
+						if (!parentExplored) break;
 					}
-					if (!parentExplored) break;
 				}
 				if (parentExplored) {
+					// System.out.println("[THREADED] Parent explored");
 					double enemyMin[] = new double[parent.numMoves];
 					for (int ii = 0; ii < parent.numMoves; ii ++)
 						enemyMin[ii] = arrayMin(parent.oVals[ii]);
+					rootMins = enemyMin;
+
 					parent.utility = arrayMax(enemyMin);
+					parent.oCounts[moveIndex][enemyMoveIndex] ++;
+					parent.oVals[moveIndex][enemyMoveIndex] = score * parent.oCounts[moveIndex][enemyMoveIndex];
+					parent.explored = true;
+				} else {
+					parent.oCounts[moveIndex][enemyMoveIndex] ++;
+					parent.oVals[moveIndex][enemyMoveIndex] += score;
 				}
 			}
 		}
 
 		if (parent != null) {
-			parent.backpropagate(scores);
+			// if (parent.explored) parent.backpropagate(parent.utility);
+			// else parent.backpropagate(score);
+			parent.backpropagate(score);
 		}
 	}
 
 	public static final int NUM_THREADS = 4; // EVEN NUMBER!!
 	static final int NUM_DEPTH_CHARGES = 3; // TODO
 	static final boolean useHeuristic = false;
-	public double[] simulate() // Check if immediate next state is terminal TODO
+	public double simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
-		double[] avgScores = new double[machine.getRoles().size()];
 		if (machine.isTerminal(state)) {
 			explored = true;
-			List<Integer> goals = machine.getGoals(state);
-			for (int jj = 0; jj < goals.size(); jj ++) avgScores[jj] = goals.get(jj).doubleValue();
-			return avgScores;
+			return machine.getGoal(state, player);
 		}
 
 		List<Charger> rs = new ArrayList<Charger>();
@@ -265,6 +287,7 @@ public class ThreadedNode {
 				e.printStackTrace();
 			}
 		}
+		double avgScore = 0;
 		if (useHeuristic) {
 			//			List<Role> roles = machine.findRoles();
 			//			double heuristics[] = new double[roles.size()];
@@ -275,12 +298,13 @@ public class ThreadedNode {
 			//			for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += 2 * heuristics[jj];
 			//			for (int ii = 0; ii < machine.getRoles().size(); ii ++) avgScores[ii] /= (NUM_THREADS + 2);
 		} else {
+			int index = getRoleIndex();
 			for (int ii = 0; ii < NUM_THREADS; ii ++)
-				for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += rs.get(ii).getValues()[jj];
-			for (int ii = 0; ii < machine.getRoles().size(); ii ++) avgScores[ii] /= NUM_THREADS;
+				avgScore += rs.get(ii).getValues()[index];
+			avgScore /= NUM_THREADS;
 		}
 		numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
-		return avgScores;
+		return avgScore;
 	}
 
 	public ThreadedNode getParent() {

@@ -24,21 +24,29 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		root = null;
 		ThreadedNode.numCharges = 0;
 		moveNum = 0;
 		initRoot();
-		expandTree(timeout);
+		expandTree(timeout); // TODO
 		System.out.println("[THREADED] METAGAME charges = " + ThreadedNode.numCharges);
 	}
 
 	public void expandTree(long timeout) {
+		int numLoops = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
+			numLoops ++;
 			try {
-			ThreadedNode selected = root.selectAndExpand();
-			double[] scores = selected.simulate();
-			selected.backpropagate(scores); // sqrt 2 for c
-			} catch(Exception e) { e.printStackTrace(); }
+				ThreadedNode selected = root.selectAndExpand();
+				double score = selected.simulate();
+				// System.out.println(selected);
+				selected.backpropagate(score); // sqrt 2 for c
+			} catch(Exception e) {
+				// System.out.println("ERROR");
+				e.printStackTrace();
+			}
 		}
+		System.out.println(numLoops);
 	}
 
 
