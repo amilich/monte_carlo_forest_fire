@@ -204,8 +204,8 @@ public class Node {
 		}
 
 		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
-		//		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
-		SmartCharger d2 = new SmartCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
+		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
+//		SmartCharger d2 = new SmartCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		futures.add(executor.submit(d1));
 		futures.add(executor.submit(d2));

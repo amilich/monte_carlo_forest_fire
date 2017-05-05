@@ -194,6 +194,7 @@ public class ThreadedNode {
 
 	public static final int NUM_THREADS = 4; // EVEN NUMBER!!
 	static final int NUM_DEPTH_CHARGES = 3; // TODO
+	static final boolean useHeuristic = false;
 	public double[] simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		double[] avgScores = new double[machine.getRoles().size()];
@@ -215,6 +216,7 @@ public class ThreadedNode {
 //			rs.add(s);
 //			futures.add(executor.submit(s));
 //		}
+
 		for (Future<?> future:futures) {
 			try {
 				future.get();
@@ -222,9 +224,23 @@ public class ThreadedNode {
 				e.printStackTrace();
 			}
 		}
-		for (int ii = 0; ii < NUM_THREADS; ii ++)
-			for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += rs.get(ii).getValues()[jj];
-		for (int ii = 0; ii < machine.getRoles().size(); ii ++) avgScores[ii] /= NUM_THREADS;
+		if (useHeuristic) {
+			List<Role> roles = machine.findRoles();
+			double heuristics[] = new double[roles.size()];
+			if (useHeuristic) {
+				for (int ii = 0; ii < roles.size(); ii ++) // TODO
+					heuristics[ii] = MyHeuristics.weightedHeuristicFunction(roles.get(ii), state, machine);
+			}
+
+			for (int ii = 0; ii < NUM_THREADS; ii ++)
+				for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += rs.get(ii).getValues()[jj];
+			for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += 2 * heuristics[jj];
+			for (int ii = 0; ii < machine.getRoles().size(); ii ++) avgScores[ii] /= (NUM_THREADS + 2);
+		} else {
+			for (int ii = 0; ii < NUM_THREADS; ii ++)
+				for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += rs.get(ii).getValues()[jj];
+			for (int ii = 0; ii < machine.getRoles().size(); ii ++) avgScores[ii] /= NUM_THREADS;
+		}
 		numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
 		return avgScores;
 	}

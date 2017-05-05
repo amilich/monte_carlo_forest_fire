@@ -41,16 +41,16 @@ public class MyHeuristics {
 
 	public static MachineState tsDepthCharge(StateMachine machine, MachineState state)
 			throws TransitionDefinitionException, MoveDefinitionException {
-        Random r = new Random();
-        while (!machine.findTerminalp(state)) {
-            List<MachineState> nextStates = machine.getNextStates(state);
-            for (MachineState s : nextStates) {
-            	if (machine.findTerminalp(s)) return s;
-            }
-            state = nextStates.get(r.nextInt(nextStates.size()));
-        }
-        return state;
-    }
+		Random r = new Random();
+		while (!machine.findTerminalp(state)) {
+			List<MachineState> nextStates = machine.getNextStates(state);
+			for (MachineState s : nextStates) {
+				if (machine.findTerminalp(s)) return s;
+			}
+			state = nextStates.get(r.nextInt(nextStates.size()));
+		}
+		return state;
+	}
 
 	// set flag to whether all children have been explored in backprop
 	public static double terminalSeekingDCAvg(int numCharges, StateMachine machine, MachineState state, Role role)
@@ -76,8 +76,8 @@ public class MyHeuristics {
 
 	private static boolean compareStateConvergence(Role role, MachineState state, MachineState prevState, StateMachine machine)
 			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		double prevMob = nStepMobility(role, prevState, 0, machine);
-		double currMob = nStepMobility(role, state, 0, machine);
+		double prevMob = myMobility(role, prevState, machine);
+		double currMob = myMobility(role, state, machine);
 		double prevReachable = numReachableStates(role, prevState, machine);
 		double currReachable = numReachableStates(role, state, machine);
 		double prevGoal = machine.findReward(role, prevState);
@@ -134,8 +134,7 @@ public class MyHeuristics {
 		return 0;
 	}
 
-	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine)
-			throws GoalDefinitionException {
+	public static double weightedHeuristicFunction(Role role, MachineState state, StateMachine machine) {
 		double finalHeuristic = 0;
 		try {
 			double intermedGoalCoeff = 0.4;
@@ -148,12 +147,12 @@ public class MyHeuristics {
 				tempScore = machine.findReward(role, state);
 			} catch(Exception e) { System.out.println("Goal undefined in current state."); }
 
-			double mobility = nStepMobility(role, state, 0, machine);
+			double mobility = myMobility(role, state, machine);
 
 			if (machine.getRoles().size() <= 1) {
 				intermedGoalCoeff += enemyFocusCoeff;
 			} else {
-				double enemyFocus = nStepEnemyFocus(role, state, 0, machine);
+				double enemyFocus = enemyFocus(role, state, machine);
 				finalHeuristic += enemyFocusCoeff * enemyFocus;
 			}
 
@@ -236,28 +235,22 @@ public class MyHeuristics {
 		return machine.getNextStates(state).size(); // TODO division
 	}
 
-	public static double nStepEnemyMobility(Role role, MachineState state, int n, StateMachine machine)
+	public static double enemyMobility(Role role, MachineState state, StateMachine machine)
 			throws MoveDefinitionException {
-		if (n == 0) {
-			double numFriendlyMoves = machine.getLegalMoves(state, role).size();
-			double numEnemyMoves = machine.getLegalJointMoves(state).size() / numFriendlyMoves;
-			double numEnemyActions = Math.pow(machine.findActions(role).size(), machine.getRoles().size() - 1); // TODO
-			return 100 * numEnemyMoves / numEnemyActions;
-		} else if (n == 1) {
-			return 0;
-		} else {
-			return 0;
-		}
+		double numFriendlyMoves = machine.getLegalMoves(state, role).size();
+		double numEnemyMoves = machine.getLegalJointMoves(state).size() / numFriendlyMoves;
+		double numEnemyActions = Math.pow(machine.findActions(role).size(), machine.getRoles().size() - 1); // TODO
+		return 100 * numEnemyMoves / numEnemyActions;
 	}
 
-	public static double nStepEnemyFocus(Role role, MachineState state, int n, StateMachine machine)
+	public static double enemyFocus(Role role, MachineState state, StateMachine machine)
 			throws MoveDefinitionException, TransitionDefinitionException {
-		return 100 - nStepEnemyMobility(role, state, n, machine);
+		return 100 - enemyMobility(role, state, machine);
 	}
 
-	public static double nStepFocus(Role role, MachineState state, int n, StateMachine machine)
+	public static double myFocus(Role role, MachineState state, StateMachine machine)
 			throws MoveDefinitionException, TransitionDefinitionException {
-		return 100 - nStepMobility(role, state, n, machine);
+		return 100 - myMobility(role, state, machine);
 	}
 
 	public static double goalValue(Role role, MachineState state, StateMachine machine)
@@ -266,16 +259,10 @@ public class MyHeuristics {
 	}
 
 	// TODO enemy mobility
-	public static double nStepMobility(Role role, MachineState state, int n, StateMachine machine)
+	public static double myMobility(Role role, MachineState state, StateMachine machine)
 			throws MoveDefinitionException, TransitionDefinitionException {
-		if (n == 0) {
-			double numLegalActions = machine.getLegalMoves(state, role).size();
-			double numActions = machine.findActions(role).size(); // TODO TODO
-			return 100 * numLegalActions / numActions;
-		} else if (n == 1) {
-			return 0;
-		} else {
-			return 0;
-		}
+		double numLegalActions = machine.getLegalMoves(state, role).size();
+		double numActions = machine.findActions(role).size(); // TODO TODO
+		return 100 * numLegalActions / numActions;
 	}
 }

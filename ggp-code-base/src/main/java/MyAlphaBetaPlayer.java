@@ -133,9 +133,9 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 		if (getStateMachine().isTerminal(currState)) {
 			return getStateMachine().getGoal(currState, role);
 		} else if (level >= maxLevel) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
+			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
 		} else if (level > 2 && MyHeuristics.stateConverges(role, currState, getStateMachine(), decisionTime, prevStates)) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
+			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
 		}
 
 		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
