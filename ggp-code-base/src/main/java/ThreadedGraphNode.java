@@ -88,9 +88,9 @@ public class ThreadedGraphNode {
 
 	private double selectfn(int pMove, int oMove, boolean opponent) {
 		if (opponent) {
-			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + 50 * Math.sqrt(Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + 40 * Math.sqrt(Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		} else {
-			return pVals[pMove] / pCounts[pMove] + 50 * Math.sqrt(Math.log(sumArray(pCounts)) / pCounts[pMove]);
+			return pVals[pMove] / pCounts[pMove] + 40 * Math.sqrt(Math.log(sumArray(pCounts)) / pCounts[pMove]);
 		}
 	}
 
@@ -199,22 +199,22 @@ public class ThreadedGraphNode {
 		}
 		for (int ii = path.size() - 2; ii >= 0; ii --) {
 			if (onePlayer) {
-				path.get(ii).pCounts[tempMoveIndex] ++;
-				path.get(ii).pVals[tempMoveIndex] += score;
+				path.get(ii).pCounts[tempMoveIndex] += NUM_THREADS * NUM_DEPTH_CHARGES;
+				path.get(ii).pVals[tempMoveIndex] += score * NUM_THREADS * NUM_DEPTH_CHARGES;
 				// No opponent
 			} else {
-				path.get(ii).pCounts[tempMoveIndex] ++;
-				path.get(ii).pVals[tempMoveIndex] += score;
-				path.get(ii).oCounts[tempMoveIndex][tempEnemyMoveIndex] ++;
-				path.get(ii).oVals[tempMoveIndex][tempEnemyMoveIndex] += score;
+				path.get(ii).pCounts[tempMoveIndex] += NUM_THREADS * NUM_DEPTH_CHARGES;;
+				path.get(ii).pVals[tempMoveIndex] += score *  NUM_THREADS * NUM_DEPTH_CHARGES;;
+				path.get(ii).oCounts[tempMoveIndex][tempEnemyMoveIndex] += NUM_THREADS * NUM_DEPTH_CHARGES;;
+				path.get(ii).oVals[tempMoveIndex][tempEnemyMoveIndex] += score *  NUM_THREADS * NUM_DEPTH_CHARGES;;
 			}
 			tempMoveIndex = path.get(ii).moveIndex;
 			tempEnemyMoveIndex = path.get(ii).enemyMoveIndex;
 		}
 	}
 
-	public static final int NUM_THREADS = 3; // EVEN NUMBER!!
-	static final int NUM_DEPTH_CHARGES = 2; // TODO
+	public static final int NUM_THREADS = 4; // EVEN NUMBER!!
+	static final int NUM_DEPTH_CHARGES = 4; // TODO
 	public double simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		if (machine.isTerminal(state)) {
