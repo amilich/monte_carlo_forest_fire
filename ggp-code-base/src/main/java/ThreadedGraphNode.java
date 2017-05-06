@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -14,17 +15,18 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-public class ThreadedNode {
+public class ThreadedGraphNode {
+	public static HashMap<MachineState, ThreadedGraphNode> stateMap = new HashMap<MachineState, ThreadedGraphNode>();
 	public static int numCharges = 0;
 	public double utility = 0;
 
-	private ThreadedNode parent;
+	private ThreadedGraphNode parent;
 	private MachineState state;
 	private double[] pCounts;
 	private double[] pVals;
 	private double[][] oCounts;
 	private double[][] oVals;
-	private ThreadedNode[][] children;
+	private ThreadedGraphNode[][] children;
 	private int numMoves;
 	private int numEnemyMoves;
 	boolean explored = false;
@@ -37,23 +39,23 @@ public class ThreadedNode {
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	public static void setStateMachine(StateMachine machine) {
-		ThreadedNode.machine = machine;
+		ThreadedGraphNode.machine = machine;
 	}
 
 	public static void setStateMachines(List<StateMachine> machines) {
-		ThreadedNode.machines = machines;
+		ThreadedGraphNode.machines = machines;
 	}
 
 	public static void setRole(Role role) {
-		ThreadedNode.player = role;
+		ThreadedGraphNode.player = role;
 	}
 
-	public ThreadedNode(MachineState state)
+	public ThreadedGraphNode(MachineState state)
 			throws MoveDefinitionException {
 		this(state, null, -1, -1);
 	}
 
-	public ThreadedNode(MachineState state, ThreadedNode parent, int moveIndex, int enemyMoveIndex)
+	public ThreadedGraphNode(MachineState state, ThreadedGraphNode parent, int moveIndex, int enemyMoveIndex)
 			throws MoveDefinitionException { // TODO try/catch
 		// System.out.println("Creating new node, parent = " + parent + ", movei = " + moveIndex + ", emove = " + enemyMoveIndex);
 		this.state = state;
@@ -73,7 +75,7 @@ public class ThreadedNode {
 		pVals = new double[numMoves];
 		oCounts = new double[numMoves][numEnemyMoves];
 		oVals = new double[numMoves][numEnemyMoves];
-		children = new ThreadedNode[numMoves][numEnemyMoves];
+		children = new ThreadedGraphNode[numMoves][numEnemyMoves];
 	}
 
 	private double sumArray(double array[]) {
@@ -95,39 +97,37 @@ public class ThreadedNode {
 	public Move getBestMove() throws MoveDefinitionException {
 		double avgUtility = 0;
 		int maxMove = 0;
-		if (explored && rootMins != null) {
-			System.out.println("[THREADED] Choosing explored move");
-			for (int ii = 0; ii < numMoves; ii ++) {
-				double score = rootMins[ii];
-				if (score > avgUtility) {
-					avgUtility = score;
-					maxMove = ii;
-				}
-			}
-		} else {
-			for (int ii = 0; ii < pCounts.length; ii ++) {
-				double tempAvg = pVals[ii] / pCounts[ii];
-				if (tempAvg > avgUtility) {
-					avgUtility = tempAvg;
-					maxMove = ii;
-				}
+		for (int ii = 0; ii < pCounts.length; ii ++) {
+			double tempAvg = pVals[ii] / pCounts[ii];
+			if (tempAvg > avgUtility) {
+				avgUtility = tempAvg;
+				maxMove = ii;
 			}
 		}
 
-		System.out.println("[THREADED] Avg utility of best move = " + avgUtility);
+		System.out.println("[GRAPH] Avg utility of best move = " + avgUtility);
 		return machine.getLegalMoves(state, player).get(maxMove);
 	}
 
-	public ThreadedNode selectAndExpand() throws MoveDefinitionException, TransitionDefinitionException {
-		ThreadedNode selected = this.select();
-		return selected.expand();
+	public ThreadedGraphNode selectAndExpand(ArrayList<ThreadedGraphNode> path) throws MoveDefinitionException, TransitionDefinitionException {
+		ThreadedGraphNode selected = this.select(path);
+		ThreadedGraphNode expanded = selected.expand();
+		if (!expanded.equals(path.get(path.size() - 1))) {
+			path.add(expanded);
+		}
+		return expanded;
 	}
 
-	public ThreadedNode select() {
-		if (machine.isTerminal(state)) return this; // TODO
+	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) {
+		path.add(this);
+		if (machine.isTerminal(state)) {
+			return this; // TODO
+		}
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
-				if (this.children[ii][jj] == null) return this;
+				if (this.children[ii][jj] == null) {
+					return this;
+				}
 			}
 		}
 		double pMoveScore = Double.NEGATIVE_INFINITY;
@@ -152,10 +152,10 @@ public class ThreadedNode {
 				resultO = jj;
 			}
 		}
-		return children[resultP][resultO].select();
+		return children[resultP][resultO].select(path);
 	}
 
-	public ThreadedNode expand() throws MoveDefinitionException, TransitionDefinitionException {
+	public ThreadedGraphNode expand() throws MoveDefinitionException, TransitionDefinitionException {
 		if (machine.isTerminal(state)) return this;
 		for (int ii = 0; ii < numMoves; ii ++) {
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
@@ -164,7 +164,11 @@ public class ThreadedNode {
 					try {
 						List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 						MachineState nextState = machine.getNextState(state, jointMove);
-						children[ii][jj] = new ThreadedNode(nextState, this, ii, jj);
+						if (stateMap.containsKey(nextState)) {
+							children[ii][jj] = stateMap.get(nextState);
+						} else {
+							children[ii][jj] = new ThreadedGraphNode(nextState, this, ii, jj);
+						}
 						return children[ii][jj];
 					} catch (Exception e) {
 						System.out.println("expansion failed");
@@ -186,87 +190,31 @@ public class ThreadedNode {
 		return -1;
 	}
 
-	private static double arrayMax(double array[]) {
-		double max = Double.NEGATIVE_INFINITY;
-		for (int ii = 0; ii < array.length; ii ++)
-			if (array[ii] > max) max = array[ii];
-		return max;
-	}
-
-	private static double arrayMin(double array[]) {
-		double min = Double.POSITIVE_INFINITY;
-		for (int ii = 0; ii < array.length; ii ++)
-			if (array[ii] < min) min = array[ii];
-		return min;
-	}
-
-	static int numInc = 0;
-	double rootMins[] = null;
-	public void backpropagate(double score) {
-		if (parent == null) return;
-		if (machine.getRoles().size() == 1) {
-			parent.pCounts[moveIndex] ++;
-			parent.pVals[moveIndex] += score;
-			// No opponent
-		} else {
-			numInc ++;
-			parent.pCounts[moveIndex] ++;
-			parent.pVals[moveIndex] += score;
-			// parent.oCounts[moveIndex][enemyMoveIndex] ++;
-			// parent.oVals[moveIndex][enemyMoveIndex] += score;
-			if (!explored) {
-				parent.oCounts[moveIndex][enemyMoveIndex] ++;
-				parent.oVals[moveIndex][enemyMoveIndex] += score;
-			} else {
-				boolean parentExplored = true;
-				if (!parent.explored) {
-					for (int ii = 0; ii < parent.numMoves; ii ++) {
-						for (int jj = 0; jj < parent.numEnemyMoves; jj ++) {
-							if (parent.children[ii][jj] == null) {
-								parentExplored = false;
-								break;
-							} else if (!parent.children[ii][jj].explored) {
-								parentExplored = false;
-								break;
-							}
-						}
-						if (!parentExplored) break;
-					}
-				}
-				if (parentExplored) {
-					// System.out.println("[THREADED] Parent explored");
-					double enemyMin[] = new double[parent.numMoves];
-					double tempUtilities[][] = new double[parent.numMoves][parent.numEnemyMoves];
-					for (int ii = 0; ii < parent.numMoves; ii ++) {
-						for (int jj = 0; jj < parent.numEnemyMoves; jj ++) {
-							tempUtilities[ii][jj] = parent.oVals[ii][jj] / parent.oCounts[ii][jj];
-						}
-					}
-					for (int ii = 0; ii < parent.numMoves; ii ++) {
-						enemyMin[ii] = arrayMin(tempUtilities[ii]);
-					}
-					parent.rootMins = enemyMin;
-					parent.utility = arrayMax(enemyMin);
-					parent.oCounts[moveIndex][enemyMoveIndex] ++;
-					parent.oVals[moveIndex][enemyMoveIndex] = score * parent.oCounts[moveIndex][enemyMoveIndex];
-					parent.explored = true;
-				} else {
-					parent.oCounts[moveIndex][enemyMoveIndex] ++;
-					parent.oVals[moveIndex][enemyMoveIndex] += score;
-				}
-			}
+	public void backpropagate(ArrayList<ThreadedGraphNode> path, double score) {
+		boolean onePlayer = machine.getRoles().size() == 1;
+		int tempMoveIndex = path.get(path.size() - 1).moveIndex;
+		int tempEnemyMoveIndex = path.get(path.size() - 1).enemyMoveIndex;
+		if (path.size() < 2) {
+			System.out.println("Error: path length < 2");
 		}
-
-		if (parent != null) {
-			// if (parent.explored) parent.backpropagate(parent.utility);
-			// else parent.backpropagate(score);
-			parent.backpropagate(score);
+		for (int ii = path.size() - 2; ii >= 0; ii --) {
+			if (onePlayer) {
+				path.get(ii).pCounts[tempMoveIndex] ++;
+				path.get(ii).pVals[tempMoveIndex] += score;
+				// No opponent
+			} else {
+				path.get(ii).pCounts[tempMoveIndex] ++;
+				path.get(ii).pVals[tempMoveIndex] += score;
+				path.get(ii).oCounts[tempMoveIndex][tempEnemyMoveIndex] ++;
+				path.get(ii).oVals[tempMoveIndex][tempEnemyMoveIndex] += score;
+			}
+			tempMoveIndex = path.get(ii + 1).moveIndex;
+			tempEnemyMoveIndex = path.get(ii + 1).enemyMoveIndex;
 		}
 	}
 
 	public static final int NUM_THREADS = 4; // EVEN NUMBER!!
 	static final int NUM_DEPTH_CHARGES = 3; // TODO
-	static final boolean useHeuristic = false;
 	public double simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		if (machine.isTerminal(state)) {
@@ -295,30 +243,19 @@ public class ThreadedNode {
 			}
 		}
 		double avgScore = 0;
-		if (useHeuristic) {
-			//			List<Role> roles = machine.findRoles();
-			//			double heuristics[] = new double[roles.size()];
-			//			for (int ii = 0; ii < roles.size(); ii ++) // TODO
-			//				heuristics[ii] = MyHeuristics.weightedHeuristicFunction(roles.get(ii), state, machine);
-			//			for (int ii = 0; ii < NUM_THREADS; ii ++)
-			//				for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += rs.get(ii).getValues()[jj];
-			//			for (int jj = 0; jj < machine.getRoles().size(); jj ++) avgScores[jj] += 2 * heuristics[jj];
-			//			for (int ii = 0; ii < machine.getRoles().size(); ii ++) avgScores[ii] /= (NUM_THREADS + 2);
-		} else {
-			int index = getRoleIndex();
-			for (int ii = 0; ii < NUM_THREADS; ii ++)
-				avgScore += rs.get(ii).getValues()[index];
-			avgScore /= NUM_THREADS;
-		}
+		int index = getRoleIndex();
+		for (int ii = 0; ii < NUM_THREADS; ii ++)
+			avgScore += rs.get(ii).getValues()[index];
+		avgScore /= NUM_THREADS;
 		numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
 		return avgScore;
 	}
 
-	public ThreadedNode getParent() {
+	public ThreadedGraphNode getParent() {
 		return parent;
 	}
 
-	public void setParent(ThreadedNode parent) {
+	public void setParent(ThreadedGraphNode parent) {
 		this.parent = parent;
 	}
 
@@ -330,7 +267,7 @@ public class ThreadedNode {
 		this.state = state;
 	}
 
-	public ThreadedNode findMatchingState(MachineState currentState) {
+	public ThreadedGraphNode findMatchingState(MachineState currentState) {
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] != null) {
