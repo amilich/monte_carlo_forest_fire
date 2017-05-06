@@ -12,8 +12,8 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-public class MyThreadedMonteCarlo extends StateMachineGamer {
-	ThreadedNode root = null;
+public class MCTSGraphPlayer extends StateMachineGamer {
+	ThreadedGraphNode root = null;
 
 	@Override
 	public StateMachine getInitialStateMachine() {
@@ -25,21 +25,22 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		root = null;
-		ThreadedNode.numCharges = 0;
+		ThreadedGraphNode.numCharges = 0;
 		moveNum = 0;
 		initRoot();
 		expandTree(timeout); // TODO
-		System.out.println("[THREADED] METAGAME charges = " + ThreadedNode.numCharges);
+		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 	}
 
 	public void expandTree(long timeout) {
 		int numLoops = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
+			ArrayList<ThreadedGraphNode> path = new ArrayList<ThreadedGraphNode>();
 			numLoops ++;
 			try {
-				ThreadedNode selected = root.selectAndExpand();
+				ThreadedGraphNode selected = root.selectAndExpand(path);
 				double score = selected.simulate();
-				selected.backpropagate(score); // sqrt 2 for c
+				selected.backpropagate(path, score); // sqrt 2 for c
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -50,7 +51,7 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 
 	private void createMachines() {
 		machines.clear();
-		for (int ii = 0; ii < ThreadedNode.NUM_THREADS; ii ++) {
+		for (int ii = 0; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
 			StateMachine m = getInitialStateMachine();
 			m.initialize(getMatch().getGame().getRules());
 			machines.add(m);
@@ -58,12 +59,12 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 	}
 
 	private void initRoot() throws MoveDefinitionException {
-		ThreadedNode.setRole(getRole());
-		ThreadedNode.setRole(getRole());
-		ThreadedNode.setStateMachine(getStateMachine());
+		ThreadedGraphNode.setRole(getRole());
+		ThreadedGraphNode.setRole(getRole());
+		ThreadedGraphNode.setStateMachine(getStateMachine());
 		createMachines();
-		ThreadedNode.setStateMachines(machines);
-		root = new ThreadedNode(getCurrentState());
+		ThreadedGraphNode.setStateMachines(machines);
+		root = new ThreadedGraphNode(getCurrentState());
 	}
 
 	int moveNum = 0;
@@ -74,20 +75,20 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 		if (root == null) {
 			initRoot();
 		} else if (moveNum != 0){
-			ThreadedNode matchingChild = root.findMatchingState(getCurrentState());
+			ThreadedGraphNode matchingChild = root.findMatchingState(getCurrentState());
 			root = matchingChild; // may be null
 			if (root != null) {
-				System.out.println("*** [THREADED] ADVANCED TREE ***");
+				System.out.println("*** [GRAPH] ADVANCED TREE ***");
 			} else {
 				initRoot();
-				System.out.println("*** [THREADED] FAILED TO ADVANCE TREE ***");
+				System.out.println("*** [GRAPH] FAILED TO ADVANCE TREE ***");
 			}
 		} else {
-			System.out.println("[THREADED] First move: advanced tree.");
+			System.out.println("[GRAPH] First move: advanced tree.");
 		}
 
 		expandTree(timeout);
-		System.out.println("[THREADED] Num charges = " + ThreadedNode.numCharges);
+		System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
 		moveNum ++;
 		Move m = root.getBestMove();
 		return m;
@@ -113,6 +114,6 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 
 	@Override
 	public String getName() {
-		return "Threaded MCTS";
+		return "GraphMCTSPlayer";
 	}
 }
