@@ -208,13 +208,13 @@ public class ThreadedGraphNode {
 				path.get(ii).oCounts[tempMoveIndex][tempEnemyMoveIndex] ++;
 				path.get(ii).oVals[tempMoveIndex][tempEnemyMoveIndex] += score;
 			}
-			tempMoveIndex = path.get(ii + 1).moveIndex;
-			tempEnemyMoveIndex = path.get(ii + 1).enemyMoveIndex;
+			tempMoveIndex = path.get(ii).moveIndex;
+			tempEnemyMoveIndex = path.get(ii).enemyMoveIndex;
 		}
 	}
 
-	public static final int NUM_THREADS = 4; // EVEN NUMBER!!
-	static final int NUM_DEPTH_CHARGES = 3; // TODO
+	public static final int NUM_THREADS = 3; // EVEN NUMBER!!
+	static final int NUM_DEPTH_CHARGES = 2; // TODO
 	public double simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		if (machine.isTerminal(state)) {
