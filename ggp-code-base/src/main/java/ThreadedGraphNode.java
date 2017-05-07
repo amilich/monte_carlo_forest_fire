@@ -30,7 +30,7 @@ public class ThreadedGraphNode {
 	private int numMoves;
 	private int numEnemyMoves;
 	boolean explored = false;
-
+	static int roleIndex = -1;
 	private int moveIndex;
 	private int enemyMoveIndex;
 	static StateMachine machine;
@@ -70,7 +70,6 @@ public class ThreadedGraphNode {
 			this.numMoves = myMoves.size();
 			this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
 		}
-		// System.out.println("nm = " + numMoves + ", nem = " + numEnemyMoves);
 		pCounts = new double[numMoves];
 		pVals = new double[numMoves];
 		oCounts = new double[numMoves][numEnemyMoves];
@@ -86,48 +85,43 @@ public class ThreadedGraphNode {
 		return total;
 	}
 
+	static final int C = 40;
 	private double selectfn(int pMove, int oMove, boolean opponent) {
 		if (opponent) {
-			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + 40 * Math.sqrt(Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + C * Math.sqrt(Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		} else {
-			return pVals[pMove] / pCounts[pMove] + 40 * Math.sqrt(Math.log(sumArray(pCounts)) / pCounts[pMove]);
+			return pVals[pMove] / pCounts[pMove] + C * Math.sqrt(Math.log(sumArray(pCounts)) / pCounts[pMove]);
 		}
 	}
 
 	public Move getBestMove() throws MoveDefinitionException {
-		double avgUtility = 0;
+		double maxUtility = 0;
 		int maxMove = 0;
-		for (int ii = 0; ii < pCounts.length; ii ++) {
-			double tempAvg = pVals[ii] / pCounts[ii];
-			if (tempAvg > avgUtility) {
-				avgUtility = tempAvg;
+		for (int ii = 0; ii < pVals.length; ii ++) {
+			double tempUtility = pVals[ii] / pCounts[ii];
+			if (tempUtility > maxUtility) {
+				maxUtility = tempUtility;
 				maxMove = ii;
 			}
 		}
-
-		System.out.println("[GRAPH] Avg utility of best move = " + avgUtility);
+		System.out.println("[GRAPH] Utility of best move = " + maxUtility);
 		return machine.getLegalMoves(state, player).get(maxMove);
 	}
 
-	public ThreadedGraphNode selectAndExpand(ArrayList<ThreadedGraphNode> path) throws MoveDefinitionException, TransitionDefinitionException {
+	public ThreadedGraphNode selectAndExpand(ArrayList<ThreadedGraphNode> path)
+			throws MoveDefinitionException, TransitionDefinitionException {
 		ThreadedGraphNode selected = this.select(path);
 		ThreadedGraphNode expanded = selected.expand();
-		if (!expanded.equals(path.get(path.size() - 1))) {
-			path.add(expanded);
-		}
+		if (!expanded.equals(path.get(path.size() - 1))) path.add(expanded); // May have expanded itself (and not added new node)
 		return expanded;
 	}
 
 	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) {
 		path.add(this);
-		if (machine.isTerminal(state)) {
-			return this; // TODO
-		}
+		if (machine.isTerminal(state)) return this;
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
-				if (this.children[ii][jj] == null) {
-					return this;
-				}
+				if (this.children[ii][jj] == null) return this;
 			}
 		}
 		double pMoveScore = Double.NEGATIVE_INFINITY;
@@ -142,11 +136,9 @@ public class ThreadedGraphNode {
 			}
 		}
 		for (int jj = 0; jj < numEnemyMoves; jj ++) {
-			double newscore = 0;
-			 if (children[resultP][jj].explored) newscore = -100; // TODO
-			 else newscore = selectfn(resultP, jj, true);
-			 //			newscore = selectfn(resultP, jj, true);
-
+			double newscore = selectfn(resultP, jj, true);
+			 // if (children[resultP][jj].explored) newscore = -100; // TODO
+			 // else newscore = selectfn(resultP, jj, true);
 			if (newscore > oMoveScore) {
 				oMoveScore = newscore;
 				resultO = jj;
@@ -161,17 +153,17 @@ public class ThreadedGraphNode {
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] == null) {
 					Move myMove = machine.getLegalMoves(state, player).get(ii);
+					List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 					try {
-						List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 						MachineState nextState = machine.getNextState(state, jointMove);
-						if (stateMap.containsKey(nextState)) {
-							children[ii][jj] = stateMap.get(nextState);
-						} else {
+						if (stateMap.containsKey(nextState)) children[ii][jj] = stateMap.get(nextState);
+						else {
 							children[ii][jj] = new ThreadedGraphNode(nextState, this, ii, jj);
+							stateMap.put(nextState, children[ii][jj]);
 						}
 						return children[ii][jj];
 					} catch (Exception e) {
-						System.out.println("expansion failed");
+						System.out.println("Expansion failed");
 						e.printStackTrace(); // TODO what's going on
 					}
 					return this;
@@ -182,7 +174,7 @@ public class ThreadedGraphNode {
 		return this; // TODO
 	}
 
-	public int getRoleIndex() {
+	public static int getRoleIndex() {
 		List<Role> roles = machine.getRoles();
 		for (int ii = 0; ii < roles.size(); ii ++) {
 			if (roles.get(ii).equals(player)) return ii;
@@ -192,21 +184,22 @@ public class ThreadedGraphNode {
 
 	public void backpropagate(ArrayList<ThreadedGraphNode> path, double score) {
 		boolean onePlayer = machine.getRoles().size() == 1;
-		int tempMoveIndex = path.get(path.size() - 1).moveIndex;
+		int tempMoveIndex = path.get(path.size() - 1).moveIndex; // Starting at end of path
 		int tempEnemyMoveIndex = path.get(path.size() - 1).enemyMoveIndex;
 		if (path.size() < 2) {
-			System.out.println("Error: path length < 2");
+			System.out.println("GraphNode backprop error: path length < 2");
+			return;
 		}
 		for (int ii = path.size() - 2; ii >= 0; ii --) {
 			if (onePlayer) {
-				path.get(ii).pCounts[tempMoveIndex] += NUM_THREADS * NUM_DEPTH_CHARGES;
-				path.get(ii).pVals[tempMoveIndex] += score * NUM_THREADS * NUM_DEPTH_CHARGES;
+				path.get(ii).pCounts[tempMoveIndex] ++;
+				path.get(ii).pVals[tempMoveIndex] += score;
 				// No opponent
 			} else {
-				path.get(ii).pCounts[tempMoveIndex] += NUM_THREADS * NUM_DEPTH_CHARGES;;
-				path.get(ii).pVals[tempMoveIndex] += score *  NUM_THREADS * NUM_DEPTH_CHARGES;;
-				path.get(ii).oCounts[tempMoveIndex][tempEnemyMoveIndex] += NUM_THREADS * NUM_DEPTH_CHARGES;;
-				path.get(ii).oVals[tempMoveIndex][tempEnemyMoveIndex] += score *  NUM_THREADS * NUM_DEPTH_CHARGES;;
+				path.get(ii).pCounts[tempMoveIndex] ++;
+				path.get(ii).pVals[tempMoveIndex] += score;
+				path.get(ii).oCounts[tempMoveIndex][tempEnemyMoveIndex] ++;
+				path.get(ii).oVals[tempMoveIndex][tempEnemyMoveIndex] += score;
 			}
 			tempMoveIndex = path.get(ii).moveIndex;
 			tempEnemyMoveIndex = path.get(ii).enemyMoveIndex;
@@ -229,11 +222,6 @@ public class ThreadedGraphNode {
 			rs.add(d);
 			futures.add(executor.submit(d));
 		}
-		//		for (int ii = 0; ii < NUM_THREADS / 2; ii ++) {
-		//			SmartCharger s = new SmartCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
-		//			rs.add(s);
-		//			futures.add(executor.submit(s));
-		//		}
 
 		for (Future<?> future:futures) {
 			try {
@@ -243,7 +231,11 @@ public class ThreadedGraphNode {
 			}
 		}
 		double avgScore = 0;
-		int index = getRoleIndex();
+
+		if (roleIndex < 0) {
+			roleIndex = getRoleIndex();
+		}
+		int index = roleIndex;
 		for (int ii = 0; ii < NUM_THREADS; ii ++)
 			avgScore += rs.get(ii).getValues()[index];
 		avgScore /= NUM_THREADS;

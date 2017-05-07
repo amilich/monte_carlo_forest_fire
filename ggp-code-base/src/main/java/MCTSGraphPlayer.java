@@ -44,6 +44,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
+			if (numLoops > 1000000) break; // TODO
 		}
 		System.out.println(numLoops);
 	}
