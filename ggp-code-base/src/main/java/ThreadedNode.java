@@ -86,9 +86,9 @@ public class ThreadedNode {
 
 	private double selectfn(int pMove, int oMove, boolean opponent) {
 		if (opponent) {
-			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + 50 * Math.sqrt(Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + Math.sqrt(50 * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		} else {
-			return pVals[pMove] / pCounts[pMove] + 50 * Math.sqrt(Math.log(sumArray(pCounts)) / pCounts[pMove]);
+			return pVals[pMove] / pCounts[pMove] + Math.sqrt(50 * Math.log(sumArray(pCounts)) / pCounts[pMove]);
 		}
 	}
 
