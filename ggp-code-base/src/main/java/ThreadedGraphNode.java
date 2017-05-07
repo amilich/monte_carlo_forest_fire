@@ -20,22 +20,28 @@ public class ThreadedGraphNode {
 	public static int numCharges = 0;
 	public double utility = 0;
 
+	boolean explored = false;
 	private ThreadedGraphNode parent;
 	private MachineState state;
+
+	// Scores, counts, and children
 	private double[] pCounts;
 	private double[] pVals;
 	private double[][] oCounts;
 	private double[][] oVals;
 	private ThreadedGraphNode[][] children;
+
+	// Move information
 	private int numMoves;
 	private int numEnemyMoves;
-	boolean explored = false;
-	static int roleIndex = -1;
 	private int moveIndex;
 	private int enemyMoveIndex;
+
+	// Static graph variables
+	static Role player;
+	static int roleIndex = -1;
 	static StateMachine machine;
 	static List<StateMachine> machines;
-	static Role player;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	public static void setStateMachine(StateMachine machine) {
@@ -56,8 +62,7 @@ public class ThreadedGraphNode {
 	}
 
 	public ThreadedGraphNode(MachineState state, ThreadedGraphNode parent, int moveIndex, int enemyMoveIndex)
-			throws MoveDefinitionException { // TODO try/catch
-		// System.out.println("Creating new node, parent = " + parent + ", movei = " + moveIndex + ", emove = " + enemyMoveIndex);
+			throws MoveDefinitionException {
 		this.state = state;
 		this.parent = parent;
 		this.moveIndex = moveIndex;

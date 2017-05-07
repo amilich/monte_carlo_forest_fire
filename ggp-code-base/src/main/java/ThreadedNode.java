@@ -212,6 +212,7 @@ public class ThreadedNode {
 			numInc ++;
 			parent.pCounts[moveIndex] ++;
 			parent.pVals[moveIndex] += score;
+			// Use these two lines for no "solving"; otherwise comment them out
 			// parent.oCounts[moveIndex][enemyMoveIndex] ++;
 			// parent.oVals[moveIndex][enemyMoveIndex] += score;
 			if (!explored) {
