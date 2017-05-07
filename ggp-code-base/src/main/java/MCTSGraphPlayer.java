@@ -72,7 +72,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-
 		if (root == null) {
 			initRoot();
 		} else if (moveNum != 0){

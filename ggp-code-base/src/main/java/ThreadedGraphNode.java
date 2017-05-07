@@ -90,12 +90,12 @@ public class ThreadedGraphNode {
 		return total;
 	}
 
-	static final int C = 40;
+	static final int C = 50;
 	private double selectfn(int pMove, int oMove, boolean opponent) {
 		if (opponent) {
-			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + C * Math.sqrt(Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + Math.sqrt(C * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		} else {
-			return pVals[pMove] / pCounts[pMove] + C * Math.sqrt(Math.log(sumArray(pCounts)) / pCounts[pMove]);
+			return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
 		}
 	}
 
@@ -187,47 +187,62 @@ public class ThreadedGraphNode {
 		return -1;
 	}
 
+	public class Pair {
+		int first;
+		int second;
+		public Pair(int one, int two) { this.first = one; this.second = two; };
+	}
+
+	public Pair getMoveIndex(ThreadedGraphNode parent, ThreadedGraphNode child) {
+		for (int ii = 0; ii < parent.numMoves; ii ++) {
+			for (int jj = 0; jj < parent.numEnemyMoves; jj ++) {
+				if (parent.children[ii][jj] != null) {
+					if (parent.children[ii][jj].equals(child)) {
+						return new Pair(ii, jj);
+					}
+				}
+			}
+		}
+		return null;
+	}
+
 	public void backpropagate(ArrayList<ThreadedGraphNode> path, double score) {
 		boolean onePlayer = machine.getRoles().size() == 1;
-		int tempMoveIndex = path.get(path.size() - 1).moveIndex; // Starting at end of path
-		int tempEnemyMoveIndex = path.get(path.size() - 1).enemyMoveIndex;
 		if (path.size() < 2) {
 			System.out.println("GraphNode backprop error: path length < 2");
 			return;
 		}
+		// Pair pair = getMoveIndex(path.get(path.size() - 2), path.get(path.size() - 1));
 		for (int ii = path.size() - 2; ii >= 0; ii --) {
+			Pair pair = getMoveIndex(path.get(ii), path.get(ii + 1));
 			if (onePlayer) {
-				path.get(ii).pCounts[tempMoveIndex] ++;
-				path.get(ii).pVals[tempMoveIndex] += score;
+				path.get(ii).pCounts[pair.first] ++;
+				path.get(ii).pVals[pair.first] += score;
 				// No opponent
 			} else {
-				path.get(ii).pCounts[tempMoveIndex] ++;
-				path.get(ii).pVals[tempMoveIndex] += score;
-				path.get(ii).oCounts[tempMoveIndex][tempEnemyMoveIndex] ++;
-				path.get(ii).oVals[tempMoveIndex][tempEnemyMoveIndex] += score;
+				path.get(ii).pCounts[pair.first] ++;
+				path.get(ii).pVals[pair.first] += score;
+				path.get(ii).oCounts[pair.first][pair.second] ++;
+				path.get(ii).oVals[pair.first][pair.second] += score;
 			}
-			tempMoveIndex = path.get(ii).moveIndex;
-			tempEnemyMoveIndex = path.get(ii).enemyMoveIndex;
 		}
 	}
 
 	public static final int NUM_THREADS = 4; // EVEN NUMBER!!
 	static final int NUM_DEPTH_CHARGES = 4; // TODO
-	public double simulate() // Check if immediate next state is terminal TODO
+	Charger rs[] = new Charger[NUM_THREADS];
+	public double simulate()
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		if (machine.isTerminal(state)) {
 			explored = true;
 			return machine.getGoal(state, player);
 		}
-
-		List<Charger> rs = new ArrayList<Charger>();
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		for (int ii = 0; ii < NUM_THREADS; ii ++) {
 			DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
-			rs.add(d);
+			rs[ii] = d;
 			futures.add(executor.submit(d));
 		}
-
 		for (Future<?> future:futures) {
 			try {
 				future.get();
@@ -235,33 +250,13 @@ public class ThreadedGraphNode {
 				e.printStackTrace();
 			}
 		}
+		if (roleIndex < 0) roleIndex = getRoleIndex();
 		double avgScore = 0;
-
-		if (roleIndex < 0) {
-			roleIndex = getRoleIndex();
-		}
 		int index = roleIndex;
-		for (int ii = 0; ii < NUM_THREADS; ii ++)
-			avgScore += rs.get(ii).getValues()[index];
+		for (int ii = 0; ii < NUM_THREADS; ii ++) avgScore += rs[ii].getValues()[index];
 		avgScore /= NUM_THREADS;
 		numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
 		return avgScore;
-	}
-
-	public ThreadedGraphNode getParent() {
-		return parent;
-	}
-
-	public void setParent(ThreadedGraphNode parent) {
-		this.parent = parent;
-	}
-
-	public MachineState getState() {
-		return state;
-	}
-
-	public void setState(MachineState state) {
-		this.state = state;
 	}
 
 	public ThreadedGraphNode findMatchingState(MachineState currentState) {
