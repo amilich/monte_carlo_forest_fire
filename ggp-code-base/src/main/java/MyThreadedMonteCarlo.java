@@ -44,7 +44,7 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 				e.printStackTrace();
 			}
 		}
-		System.out.println(numLoops);
+		// System.out.println(numLoops);
 	}
 
 
