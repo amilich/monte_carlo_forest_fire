@@ -4,6 +4,7 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 
+// Perform random depth charge to terminal state.
 public class DepthCharger implements Runnable, Charger {
 
 	private volatile double value = 0;
@@ -14,6 +15,7 @@ public class DepthCharger implements Runnable, Charger {
 	private double scores[];
 	private boolean multiPlayer;
 
+	// Initialize depth charger with given state machine and state
 	public DepthCharger(StateMachine machine, MachineState state, Role role, int numCharges, boolean multiPlayer) {
 		this.machine = machine;
 		this.role = role;
@@ -23,6 +25,7 @@ public class DepthCharger implements Runnable, Charger {
 		scores = new double[machine.getRoles().size()];
 	}
 
+	// Perform depth charges
 	@Override
 	public void run() {
 		int[] tempDepth = new int[1];
@@ -59,14 +62,15 @@ public class DepthCharger implements Runnable, Charger {
 				scores[ii] /= numCharges;
 			}
 		}
-//		System.out.println("D CHARGER FINISHED: [" + System.currentTimeMillis() + "]");
 	}
 
+	// Return average scores for all players
 	@Override
 	public double[] getValues() {
 		return scores;
 	}
 
+	// Return average score for one player
 	@Override
 	public double getValue() {
 		return value;

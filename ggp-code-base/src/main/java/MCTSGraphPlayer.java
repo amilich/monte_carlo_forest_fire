@@ -4,6 +4,7 @@ import java.util.List;
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
+import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
@@ -14,24 +15,44 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 public class MCTSGraphPlayer extends StateMachineGamer {
 	ThreadedGraphNode root = null;
+	List<Gdl> prevRules = null;
 
 	@Override
 	public StateMachine getInitialStateMachine() {
 		return new CachedStateMachine(new ProverStateMachine());
 	}
 
+	// Must be called in order to reset static information regarding the game.
+	private void resetGraphNode() throws MoveDefinitionException {
+		ThreadedGraphNode.setRole(getRole());
+		ThreadedGraphNode.setStateMachine(getStateMachine());
+		int currRoleIndex = ThreadedGraphNode.getRoleIndex();
+		List<Gdl> g = getMatch().getGame().getRules();
+		if (currRoleIndex != ThreadedGraphNode.roleIndex || !g.equals(prevRules)) {
+			ThreadedGraphNode.roleIndex = -1; // Otherwise it's ok to keep TODO
+			ThreadedGraphNode.stateMap.clear();
+			System.out.println("Clearing game tree!");
+		} else {
+			System.out.println("Keeping game tree!");
+		}
+		ThreadedGraphNode.numCharges = 0;
+		createMachines(); // Clears and adds new machines
+		initRoot();
+
+	}
+
+	// List of machines used for depth charges
 	List<StateMachine> machines = new ArrayList<StateMachine>();
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		root = null;
-		ThreadedGraphNode.numCharges = 0;
+		resetGraphNode();
 		moveNum = 0;
-		initRoot();
 		expandTree(timeout); // TODO
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 	}
 
+	private final int MAX_ITERATIONS = 5000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
 		int numLoops = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
@@ -44,7 +65,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
-			if (numLoops > 1000000) break; // TODO
+			if (numLoops > MAX_ITERATIONS) break; // TODO
 		}
 		System.out.println(numLoops);
 	}
@@ -60,9 +81,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	}
 
 	private void initRoot() throws MoveDefinitionException {
-		ThreadedGraphNode.setRole(getRole());
-		ThreadedGraphNode.setRole(getRole());
-		ThreadedGraphNode.setStateMachine(getStateMachine());
 		createMachines();
 		ThreadedGraphNode.setStateMachines(machines);
 		root = new ThreadedGraphNode(getCurrentState());
