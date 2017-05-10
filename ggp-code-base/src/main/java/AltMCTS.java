@@ -85,6 +85,14 @@ public class AltMCTS extends StateMachineGamer {
 		return getStateMachine().findReward(getRole(), end);
 	}
 
+	private void backpropagate(AltNode node, double score) {
+		node.visits += 1;
+		node.cumUtility += score;
+		if (node.parent != null) {
+			backpropagate(node, score);
+		}
+	}
+
 	@Override
 	public void stateMachineStop() {
 		// TODO Auto-generated method stub
