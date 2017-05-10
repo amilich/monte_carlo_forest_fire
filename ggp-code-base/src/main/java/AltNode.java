@@ -5,23 +5,21 @@ import org.ggp.base.util.statemachine.StateMachine;
 public class AltNode {
 	public static int numCharges = 0;
 
-	private AltNode parent;
+	public AltNode parent;
 	private MachineState state;
-	private double[] pCounts;
-	private double[] pVals;
-	private double[] oCounts;
-	private double[] oVals;
 	public AltNode[] children;
 	private int numMoves;
 	private int numEnemyMoves;
 	public int visits;
+	public double cumUtility;
 
 	private int moveIndex;
 	private int enemyMoveIndex;
 	static StateMachine machine;
 	static Role player;
 
-	public AltNode(StateMachine sm) {
-		visits = 0;
+	public AltNode(StateMachine sm, AltNode parent) {
+		this.visits = 0;
+		this.parent = parent;
 	}
 }

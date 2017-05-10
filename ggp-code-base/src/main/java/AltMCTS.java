@@ -42,15 +42,23 @@ public class AltMCTS extends StateMachineGamer {
 		}
 		double score = 0;
 		AltNode result = node;
-		for (int j = 0; j < node.children.length; j++) {
+		for (int i = 0; i < node.children.length; i++) {
 			double newscore = selectfn(node.children[i]);
 			if (newscore > score) {
 				score = newscore;
-				result = node.children[j];
+				result = node.children[i];
 			}
 		}
 		return select(result);
 	}
+
+	private double selectfn(AltNode node) {
+		double c = 2.0;
+		return node.cumUtility / node.visits +
+				Math.sqrt(c * Math.log(node.parent.visits) / node.visits);
+	}
+
+
 
 	@Override
 	public void stateMachineStop() {
