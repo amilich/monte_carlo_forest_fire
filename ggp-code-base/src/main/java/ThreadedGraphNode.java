@@ -50,8 +50,8 @@ public class ThreadedGraphNode {
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 2;
-	public static final int NUM_DEPTH_CHARGES = 3; // TODO
+	public static final int NUM_THREADS = 3;
+	public static final int NUM_DEPTH_CHARGES = 2; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
 
 	// Set the static, single state machine used for move determination (not for depth charges)
@@ -121,11 +121,13 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
+	static final int C = 50;
+	static final double C1 = 0.6;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
-		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + Math.sqrt(stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
+				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
-	static final int C = 30;
 	protected double selectfn(int pMove, int oMove) {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
 	}
