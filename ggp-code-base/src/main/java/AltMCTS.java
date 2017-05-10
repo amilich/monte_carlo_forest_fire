@@ -12,8 +12,6 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-import com.ziclix.python.sql.Procedure;
-
 public class AltMCTS extends StateMachineGamer {
 
 	@Override
@@ -31,9 +29,6 @@ public class AltMCTS extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-
-
-
 
 		return null;
 	}
@@ -64,27 +59,30 @@ public class AltMCTS extends StateMachineGamer {
 				Math.sqrt(c * Math.log(node.parent.visits) / node.visits);
 	}
 
-	private void expand(AltNode node) {
+	private void expand(AltNode node) throws MoveDefinitionException, TransitionDefinitionException {
 		List<Move> myMoves = getStateMachine().getLegalMoves(node.state, getRole());
-		for (Move m : myMoves) {
-			try {
-				List<List<Move>> actions = getStateMachine().getLegalJointMoves(node.state, getRole(), m);
-				for (int i = 0; i < actions.size(); i++) {
-					MachineState newState = getStateMachine().getNextState(node.state, actions.get(i));
-					AltNode newNode = new AltNode(newState, node);
-				}
-
+		for (int i = 0; i < myMoves.size(); i++) {
+			List<List<Move>> actions = getStateMachine().getLegalJointMoves(node.state, getRole(), myMoves.get(i));
+			for (int j = 0; j < actions.size(); j++) {
+				MachineState newState = getStateMachine().getNextState(node.state, actions.get(j));
+				AltNode newNode = new AltNode(newState, node);
+				node.children[i][j] = newNode;
+			}
 		}
+	}
 
-
-
-
-
-
-		} catch (MoveDefinitionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	private double monteCarlo(MachineState state, int count) throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
+		double total = 0.0;
+		for (int i = 0; i < count; i++) {
+			total += depthCharge(state);
 		}
+		return total / count;
+	}
+
+	private int depthCharge(MachineState state) throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
+		MachineState stateClone = state.clone(); // Because performDepthCharge may destroy the state
+		MachineState end = getStateMachine().performDepthCharge(stateClone, /*theDepth=*/null);
+		return getStateMachine().findReward(getRole(), end);
 	}
 
 	@Override
