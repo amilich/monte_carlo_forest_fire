@@ -7,16 +7,15 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
+import org.ggp.base.util.statemachine.implementation.propnet.SamplePropNetStateMachine;
 
 public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new CachedStateMachine(new ProverStateMachine());
+		return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 	}
 
 	@Override
@@ -56,6 +55,6 @@ public class MyLegalPlayer extends StateMachineGamer {
 
 	@Override
 	public String getName() {
-		return "monte_carlo_forest_fire legal player";
+		return "LegalPlayer";
 	}
 }
