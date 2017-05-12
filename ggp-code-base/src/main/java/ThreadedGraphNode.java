@@ -50,8 +50,8 @@ public class ThreadedGraphNode {
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 3;
-	public static final int NUM_DEPTH_CHARGES = 2; // TODO
+	public static final int NUM_THREADS = 1;
+	public static final int NUM_DEPTH_CHARGES = 1; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
 
 	// Set the static, single state machine used for move determination (not for depth charges)
@@ -125,6 +125,9 @@ public class ThreadedGraphNode {
 	static final double C1 = 0.6;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
+		if (Double.isNaN(stddev)) {
+			stddev = C;
+		}
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
 				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}

@@ -69,6 +69,8 @@ import org.ggp.base.util.statemachine.Role;
 public final class PropNet
 {
 	private final Set<Proposition> allLegalProps; // ADDED TODO
+	private final Set<Proposition> allBaseProps; // ADDED TODO
+	private final Set<Proposition> allInputProps; // ADDED TODO
 
 	/** References to every component in the PropNet. */
 	private final Set<Component> components;
@@ -116,6 +118,8 @@ public final class PropNet
 	public PropNet(List<Role> roles, Set<Component> components)
 	{
 		allLegalProps = new HashSet<Proposition>();
+		allBaseProps = new HashSet<Proposition>();
+		allInputProps = new HashSet<Proposition>();
 
 	    this.roles = roles;
 		this.components = components;
@@ -305,6 +309,8 @@ public final class PropNet
 			Component component = proposition.getSingleInput();
 			if (component instanceof Transition) {
 				basePropositions.put(proposition.getName(), proposition);
+
+				allBaseProps.add(proposition);
 			}
 		}
 
@@ -382,6 +388,8 @@ public final class PropNet
 			GdlRelation relation = (GdlRelation) proposition.getName();
 			if (relation.getName().getValue().equals("does")) {
 				inputPropositions.put(proposition.getName(), proposition);
+
+				allInputProps.add(proposition);
 			}
 		}
 
@@ -390,6 +398,14 @@ public final class PropNet
 
 	public Set<Proposition> getAllLegalPropositions() {
 		return allLegalProps;
+	}
+
+	public Set<Proposition> getAllBasePropositions() {
+		return allBaseProps;
+	}
+
+	public Set<Proposition> getAllInputProps() {
+		return allInputProps;
 	}
 
 	/**

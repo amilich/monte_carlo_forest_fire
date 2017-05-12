@@ -25,7 +25,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// TODO Auto-generated method stub
 		machine = (SamplePropNetStateMachine) getStateMachine();
-		machine.getPropnet().renderToFile("propnetfile");
+		// machine.getPropnet().renderToFile("propnetfile");
 	}
 
 	@Override
@@ -35,6 +35,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		MachineState state = getCurrentState();
 		Role role = getRole();
 		List<Move> moves = machine.getLegalMoves(state, role);
+		System.out.println(moves);
 		// getInitialStateMachine().
 		return moves.get(0);
 	}
