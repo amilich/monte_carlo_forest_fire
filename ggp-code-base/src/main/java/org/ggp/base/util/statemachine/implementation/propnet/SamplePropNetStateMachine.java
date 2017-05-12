@@ -97,11 +97,13 @@ public class SamplePropNetStateMachine extends StateMachine {
     	} else if (c instanceof Not) {
     		return propmarknegation((Not) c);
     	} else if (c instanceof Constant) {
-    		System.out.println("ERROR");
+    		System.out.println("[PropNet] CONSTANT - error");
     	} else if (c instanceof Transition){
     		return propmarkp(c.getSingleInput());
-    	} else {
+    	} else if (c.equals(propNet.getInitProposition())) {
     		return c.getValue();
+    	} else if (c instanceof Proposition) {
+    		return propmarkp(c.getSingleInput());
     	}
     	System.out.println("UNKNOWN PROPOSITION: " + c);
     	return false;
