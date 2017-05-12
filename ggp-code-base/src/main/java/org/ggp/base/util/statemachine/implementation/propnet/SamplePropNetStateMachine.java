@@ -18,6 +18,7 @@ import org.ggp.base.util.propnet.architecture.components.Constant;
 import org.ggp.base.util.propnet.architecture.components.Not;
 import org.ggp.base.util.propnet.architecture.components.Or;
 import org.ggp.base.util.propnet.architecture.components.Proposition;
+import org.ggp.base.util.propnet.architecture.components.Transition;
 import org.ggp.base.util.propnet.factory.OptimizingPropNetFactory;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
@@ -89,8 +90,6 @@ public class SamplePropNetStateMachine extends StateMachine {
     		return ((Proposition) c).getValue();
     	} else if (propNet.getAllLegalPropositions().contains(c)) { // TODO
     		return propmarkp(((Proposition) c).getSingleInput());
-    	} else if (c instanceof Proposition) {
-    		return propmarkp(c.getSingleInput());
     	} else if (c instanceof And) {
     		return propmarkconjunction((And) c);
     	} else if (c instanceof Or) {
@@ -99,6 +98,10 @@ public class SamplePropNetStateMachine extends StateMachine {
     		return propmarknegation((Not) c);
     	} else if (c instanceof Constant) {
     		System.out.println("ERROR");
+    	} else if (c instanceof Transition){
+    		return propmarkp(c.getSingleInput());
+    	} else {
+    		return c.getValue();
     	}
     	System.out.println("UNKNOWN PROPOSITION: " + c);
     	return false;
@@ -185,6 +188,7 @@ public class SamplePropNetStateMachine extends StateMachine {
     			sentences.add(base.getName());
     		}
     	}
+    	propNet.getInitProposition().setValue(false);
         return new MachineState(sentences);
     }
 

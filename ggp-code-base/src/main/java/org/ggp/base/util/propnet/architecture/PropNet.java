@@ -388,6 +388,10 @@ public final class PropNet
 		return inputPropositions;
 	}
 
+	public Set<Proposition> getAllLegalPropositions() {
+		return allLegalProps;
+	}
+
 	/**
 	 * Builds an index over the LegalPropositions in the PropNet.
 	 *
