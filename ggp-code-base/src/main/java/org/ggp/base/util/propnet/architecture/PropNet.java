@@ -68,6 +68,8 @@ import org.ggp.base.util.statemachine.Role;
 
 public final class PropNet
 {
+	private final Set<Proposition> allLegalProps; // ADDED TODO
+
 	/** References to every component in the PropNet. */
 	private final Set<Component> components;
 
@@ -113,6 +115,7 @@ public final class PropNet
 	 */
 	public PropNet(List<Role> roles, Set<Component> components)
 	{
+		allLegalProps = new HashSet<Proposition>();
 
 	    this.roles = roles;
 		this.components = components;
@@ -407,6 +410,8 @@ public final class PropNet
 					legalPropositions.put(r, new HashSet<Proposition>());
 				}
 				legalPropositions.get(r).add(proposition);
+
+				allLegalProps.add(proposition);
 			}
 		}
 

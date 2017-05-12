@@ -38,6 +38,10 @@ public class SamplePropNetStateMachine extends StateMachine {
     /** The player roles */
     private List<Role> roles;
 
+    public PropNet getPropnet() {
+    	return propNet;
+    }
+
     /**
      * Initializes the PropNetStateMachine. You should compute the topological
      * ordering here. Additionally you may compute the initial state here, at
@@ -74,13 +78,19 @@ public class SamplePropNetStateMachine extends StateMachine {
     	return !propmarkp(a.getSingleInput());
     }
 
+    public void setInitFalse() {
+    	propNet.getInitProposition().setValue(true);
+    }
+
     public boolean propmarkp(Component c) {
     	if (propNet.getBasePropositions().containsValue(c)) {
     		return ((Proposition) c).getValue();
     	} else if (propNet.getInputPropositions().containsValue(c)) {
     		return ((Proposition) c).getValue();
-    	} else if (propNet.getLegalPropositions().containsValue(c)) { // TODO
+    	} else if (propNet.getAllLegalPropositions().contains(c)) { // TODO
     		return propmarkp(((Proposition) c).getSingleInput());
+    	} else if (c instanceof Proposition) {
+    		return propmarkp(c.getSingleInput());
     	} else if (c instanceof And) {
     		return propmarkconjunction((And) c);
     	} else if (c instanceof Or) {
@@ -90,7 +100,7 @@ public class SamplePropNetStateMachine extends StateMachine {
     	} else if (c instanceof Constant) {
     		System.out.println("ERROR");
     	}
-    	System.out.println("UNKNOWN PROPOSITION");
+    	System.out.println("UNKNOWN PROPOSITION: " + c);
     	return false;
     }
 
@@ -141,8 +151,6 @@ public class SamplePropNetStateMachine extends StateMachine {
             throws GoalDefinitionException {
     	// TODO
     	markbases(state);
-    	int reward = 0;
-
     	List<Role> roles = propNet.getRoles();
     	Set<Proposition> rewards = null;
     	for (Role r : roles) {
@@ -153,7 +161,7 @@ public class SamplePropNetStateMachine extends StateMachine {
     	for (Proposition p : rewards) {
     		if (propmarkp(p)) {
     			System.out.println(p);
-    			return Integer.parseInt(p.getName().toString());
+    			return Integer.parseInt(p.getName().get(1).toString());
     		}
     	}
         return 0;
@@ -170,7 +178,14 @@ public class SamplePropNetStateMachine extends StateMachine {
     	// clearpropnet();
     	propNet.getInitProposition().setValue(true);
     	// ???
-        return null;
+    	Map<GdlSentence, Proposition> bases = propNet.getBasePropositions();
+    	Set<GdlSentence> sentences = new HashSet<GdlSentence>();
+    	for (Proposition base : bases.values()) {
+    		if (propmarkp(base.getSingleInput())) {
+    			sentences.add(base.getName());
+    		}
+    	}
+        return new MachineState(sentences);
     }
 
     /**
@@ -202,7 +217,7 @@ public class SamplePropNetStateMachine extends StateMachine {
     	for (Proposition p : legals) {
     		if (propmarkp(p)) {
     			System.out.println(p);
-    			legalMoves.add(new Move(p.getName().get(0)));
+    			legalMoves.add(new Move(p.getName().get(1)));
     		}
     	}
         return legalMoves;

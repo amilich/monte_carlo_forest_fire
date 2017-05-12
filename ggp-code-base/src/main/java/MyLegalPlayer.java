@@ -18,11 +18,14 @@ public class MyLegalPlayer extends StateMachineGamer {
 		return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 	}
 
+	SamplePropNetStateMachine machine = null;
+
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// TODO Auto-generated method stub
-
+		machine = (SamplePropNetStateMachine) getStateMachine();
+		machine.getPropnet().renderToFile("propnetfile");
 	}
 
 	@Override
@@ -32,6 +35,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		MachineState state = getCurrentState();
 		Role role = getRole();
 		List<Move> moves = machine.getLegalMoves(state, role);
+		// getInitialStateMachine().
 		return moves.get(0);
 	}
 
