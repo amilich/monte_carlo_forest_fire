@@ -50,8 +50,8 @@ public class ThreadedGraphNode {
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 1;
-	public static final int NUM_DEPTH_CHARGES = 1; // TODO
+	public static final int NUM_THREADS = 3;
+	public static final int NUM_DEPTH_CHARGES = 2; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
 
 	// Set the static, single state machine used for move determination (not for depth charges)
