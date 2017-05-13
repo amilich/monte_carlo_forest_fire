@@ -18,8 +18,8 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
-//		return new CachedStateMachine(new ProverStateMachine());
+		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
+		return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	SamplePropNetStateMachine machineP = null;
@@ -40,17 +40,16 @@ public class MyLegalPlayer extends StateMachineGamer {
 
 	int moveNum = 0;
 
-	 public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
-	        int nDepth = 0;
-	        Random r = new Random();
-	        System.out.println(state);
-	        while(!getStateMachine().isTerminal(state)) {
-	        	List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
-	            state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
-	            System.out.println("\t " + state);
-	        }
-	        return state;
-	    }
+	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
+		Random r = new Random();
+		System.out.println(state);
+		while(!getStateMachine().isTerminal(state)) {
+			List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
+			state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
+			System.out.println("\t " + state);
+		}
+		return state;
+	}
 
 	@Override
 	public Move stateMachineSelectMove(long timeout)
@@ -62,8 +61,12 @@ public class MyLegalPlayer extends StateMachineGamer {
 		List<Move> moves = machine.getLegalMoves(state, role);
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
-		MachineState m = customdc(state);
-		System.out.println("DC: " + m);
+		for (int ii = 0; ii < 2; ii ++) {
+			MachineState m = customdc(state);
+			System.out.println("DC: " + m);
+		}
+		System.out.println(machine.getNextStates(getCurrentState()));
+		System.out.println(machine.getLegalJointMoves(getCurrentState()));
 		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		// getInitialStateMachine().
 		// Random r = new Random();

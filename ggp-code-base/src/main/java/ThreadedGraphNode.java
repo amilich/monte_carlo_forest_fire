@@ -17,6 +17,11 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 // Graph based MCTS Node
 public class ThreadedGraphNode {
+	// Depth charging parameters/objects
+	public static final int NUM_THREADS = 3;
+	public static final int NUM_DEPTH_CHARGES = 3; // TODO
+	Charger rs[] = new Charger[NUM_THREADS];
+
 	public static HashMap<MachineState, ThreadedGraphNode> stateMap = new HashMap<MachineState, ThreadedGraphNode>();
 	public static int numCharges = 0;
 	public double utility = 0;
@@ -48,11 +53,6 @@ public class ThreadedGraphNode {
 	static StateMachine machine;
 	static List<StateMachine> machines;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-
-	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 3;
-	public static final int NUM_DEPTH_CHARGES = 2; // TODO
-	Charger rs[] = new Charger[NUM_THREADS];
 
 	// Set the static, single state machine used for move determination (not for depth charges)
 	public static void setStateMachine(StateMachine machine) {
@@ -255,6 +255,7 @@ public class ThreadedGraphNode {
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		for (int ii = 0; ii < NUM_THREADS; ii ++) {
 			DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+			// DepthCharger d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
 			rs[ii] = d;
 			futures.add(executor.submit(d));
 		}
@@ -263,9 +264,19 @@ public class ThreadedGraphNode {
 				future.get();
 			} catch (Exception e) { e.printStackTrace(); }
 		}
+		// DepthCharger d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
+		// d.run();
+
 		if (roleIndex < 0) roleIndex = getRoleIndex();
 		double avgScore = 0;
 		int index = roleIndex;
+//		for (int ii = 0; ii < 1; ii ++) {
+//			double val = d.getValues()[index];
+//			avgScore += val;
+//			s0 ++;
+//			s1 += val;
+//			s2 += val * val;
+//		}
 		for (int ii = 0; ii < NUM_THREADS; ii ++) {
 			double val = rs[ii].getValues()[index];
 			avgScore += val;

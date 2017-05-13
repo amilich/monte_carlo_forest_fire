@@ -159,7 +159,16 @@ public class SamplePropNetStateMachine extends StateMachine {
 	public List<Move> findActions(Role role)
 			throws MoveDefinitionException {
 		// TODO: Compute all moves.
-		return null;
+		List<Role> roles = propNet.getRoles();
+		List<Move> legalMoves = new ArrayList<Move>();
+		Set<Proposition> legals = null;
+		for (Role r : roles) {
+			if (r.equals(role)) legals = propNet.getLegalPropositions().get(r);
+		}
+		for (Proposition p : legals) {
+			legalMoves.add(new Move(p.getName().get(1)));
+		}
+		return legalMoves;
 	}
 
 	/**

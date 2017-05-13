@@ -1,8 +1,12 @@
 import java.util.List;
+import java.util.Random;
 
 import org.ggp.base.util.statemachine.MachineState;
+import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
+import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
+import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 // Perform random depth charge to terminal state.
 public class DepthCharger implements Runnable, Charger {
@@ -25,15 +29,25 @@ public class DepthCharger implements Runnable, Charger {
 		scores = new double[machine.getRoles().size()];
 	}
 
+	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
+        Random r = new Random();
+        // System.out.println(state);
+        while(!machine.isTerminal(state)) {
+        	List<List<Move>> jmoves = machine.getLegalJointMoves(state);
+            state = machine.getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
+            // System.out.println("\t " + state);
+        }
+        return state;
+    }
+
 	// Perform depth charges
 	@Override
 	public void run() {
-		int[] tempDepth = new int[1];
 		if (!multiPlayer) {
 			value = 0;
 			for (int ii = 0; ii < numCharges; ii ++) {
 				try {
-					MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
+					MachineState depthCharge = customdc(state); // new
 					value += machine.getGoal(depthCharge, role);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -50,7 +64,7 @@ public class DepthCharger implements Runnable, Charger {
 			}
 			for (int ii = 0; ii < numCharges; ii ++) {
 				try {
-					MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
+					MachineState depthCharge = customdc(state); // machine.performDepthCharge(state, tempDepth);
 					for (int jj = 0; jj < roles.size(); jj ++) {
 						scores[jj] += machine.getGoal(depthCharge, roles.get(jj));
 					}
