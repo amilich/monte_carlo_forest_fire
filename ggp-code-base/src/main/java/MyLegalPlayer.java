@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.Random;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
@@ -26,6 +27,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// TODO Auto-generated method stub
+		moveNum = 0;
 		machineP = (SamplePropNetStateMachine) getStateMachine();
 		machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
 
@@ -50,9 +52,8 @@ public class MyLegalPlayer extends StateMachineGamer {
 
 		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		// getInitialStateMachine().
-		// Random r = new Random();
-		System.out.println(moves);
-		return moves.get(0);
+		Random r = new Random();
+		return moves.get(r.nextInt(moves.size()));
 	}
 
 	@Override

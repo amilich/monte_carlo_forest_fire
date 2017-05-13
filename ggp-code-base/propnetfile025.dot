@@ -339,7 +339,7 @@ digraph propNet
 	"@c540f12"[shape=circle, style= filled, fillcolor=white, label="( next_tmp6 3 2 2 3 )"]; "@c540f12"->"@56bdec9c"; "@c540f12"->"@11c9d4"; "@c540f12"->"@4e06a7e1"; "@c540f12"->"@24a398ab"; "@c540f12"->"@d2df6e5"; "@c540f12"->"@587980f"; "@c540f12"->"@3c6d2bc4"; "@c540f12"->"@7c4d8a66"; "@c540f12"->"@7063a44e"; "@c540f12"->"@8e77289"; "@c540f12"->"@32d2e25c"; "@c540f12"->"@3fc242c"; "@c540f12"->"@58b0f281"; "@c540f12"->"@27913d03"; "@c540f12"->"@a37fe"; "@c540f12"->"@33829176"; "@c540f12"->"@17ce1156"; "@c540f12"->"@72936a8a"; "@c540f12"->"@2595c08c"; "@c540f12"->"@52fb0ce1"; "@c540f12"->"@772ad871"; "@c540f12"->"@1cd959c2"; "@c540f12"->"@17ec5053"; "@c540f12"->"@33d2a3ad"; 
 	"@3f78fc3e"[shape=circle, style= filled, fillcolor=white, label="( does red ( move 3 3 4 2 ) )"]; "@3f78fc3e"->"@52286280"; "@3f78fc3e"->"@1604b9bf"; "@3f78fc3e"->"@69ffc621"; "@3f78fc3e"->"@12dd1912"; 
 	"@aff09b6"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 4 3 2 4 )"]; "@aff09b6"->"@34cc5034"; 
-	"@ab509f8"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 3 4 4 ) )"]; 
+	"@ab509f8"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 3 4 4 ) )"]; 
 	"@4e524d04"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 2 5 3 3 )"]; "@4e524d04"->"@41b92565"; 
 	"@433b4063"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@433b4063"->"@163709e4"; 
 	"@455e4602"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 5 2 1 2 3 )"]; "@455e4602"->"@5236dcc6"; 
@@ -513,7 +513,7 @@ digraph propNet
 	"@50d855d8"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 3 2 3 2 3 )"]; "@50d855d8"->"@18841ed8"; 
 	"@49abcca8"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 4 2 1 1 4 )"]; "@49abcca8"->"@71a7f466"; 
 	"@281cad19"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 3 5 3 1 )"]; "@281cad19"->"@434c9b94"; 
-	"@39273c20"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 1 5 2 ) )"]; 
+	"@39273c20"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 1 5 2 ) )"]; 
 	"@51965491"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@51965491"->"@52430056"; 
 	"@cfd49f0"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 4 1 5 1 )"]; "@cfd49f0"->"@6f9510e2"; 
 	"@3470f17e"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@3470f17e"->"@52a48cc9"; 
@@ -680,7 +680,7 @@ digraph propNet
 	"@22c6a44d"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 2 2 1 1 2 )"]; "@22c6a44d"->"@8895c71"; 
 	"@603de6ad"[shape=circle, style= filled, fillcolor=white, label="( does red ( move 5 1 5 2 ) )"]; "@603de6ad"->"@3970ad10"; "@603de6ad"->"@97333bb"; "@603de6ad"->"@6cdd48f1"; "@603de6ad"->"@12dd1912"; 
 	"@2a1d2c8c"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 2 4 1 1 3 )"]; "@2a1d2c8c"->"@346253b2"; 
-	"@35ff336a"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 3 5 2 ) )"]; 
+	"@35ff336a"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 3 5 2 ) )"]; 
 	"@bd70d40"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@bd70d40"->"@29bcb2e1"; 
 	"@17ce1156"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@17ce1156"->"@464bace4"; 
 	"@454c83d5"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 3 4 1 2 3 )"]; "@454c83d5"->"@1d041fcb"; 
@@ -732,7 +732,7 @@ digraph propNet
 	"@57851169"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@57851169"->"@67030a6a"; 
 	"@59125ffd"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@59125ffd"->"@1ae91dbc"; 
 	"@3eb3b842"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@3eb3b842"->"@69daf34f"; 
-	"@5c159ae6"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@5c159ae6"->"@104a1238"; 
+	"@5c159ae6"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@5c159ae6"->"@104a1238"; 
 	"@2599a36a"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@2599a36a"->"@2d3af7f0"; 
 	"@d180a1d"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 2 1 3 )"]; "@d180a1d"->"@574b8355"; 
 	"@26ab61a0"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 3 4 4 2 )"]; "@26ab61a0"->"@40428c31"; 
@@ -1038,7 +1038,7 @@ digraph propNet
 	"@1a4893ae"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 3 5 1 2 )"]; "@1a4893ae"->"@622d8de"; 
 	"@3ed0b73c"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 5 3 5 2 )"]; "@3ed0b73c"->"@1e97459b"; 
 	"@e5b47b6"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@e5b47b6"->"@3d926618"; 
-	"@a3a83ca"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@a3a83ca"->"@10e85b59"; 
+	"@a3a83ca"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@a3a83ca"->"@10e85b59"; 
 	"@840977"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 5 1 1 5 )"]; "@840977"->"@5933de57"; 
 	"@302179d9"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 2 4 4 4 2 )"]; "@302179d9"->"@611a9e86"; 
 	"@1f13d6ef"[shape=circle, style= filled, fillcolor=white, label="( next_tmp6 2 1 2 2 )"]; "@1f13d6ef"->"@64df271f"; "@1f13d6ef"->"@6cb241d2"; "@1f13d6ef"->"@123bb89b"; "@1f13d6ef"->"@5a35ddb7"; "@1f13d6ef"->"@4a3c3d19"; "@1f13d6ef"->"@5e183a3d"; "@1f13d6ef"->"@67c6eba"; "@1f13d6ef"->"@6a0f4249"; "@1f13d6ef"->"@431accd2"; "@1f13d6ef"->"@50db8912"; "@1f13d6ef"->"@4ebb56f1"; "@1f13d6ef"->"@2eccd607"; "@1f13d6ef"->"@7661274d"; "@1f13d6ef"->"@741a9597"; "@1f13d6ef"->"@75ce7b3d"; "@1f13d6ef"->"@411f5169"; "@1f13d6ef"->"@4b7fd728"; "@1f13d6ef"->"@11f5612c"; "@1f13d6ef"->"@78b09e09"; "@1f13d6ef"->"@31fe4e67"; "@1f13d6ef"->"@764eacb2"; "@1f13d6ef"->"@51291dd4"; "@1f13d6ef"->"@4786ab19"; "@1f13d6ef"->"@1037a668"; 
@@ -1083,7 +1083,7 @@ digraph propNet
 	"@40a98acf"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@40a98acf"->"@33b606b1"; 
 	"@57a29dd2"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 5 4 1 1 1 )"]; "@57a29dd2"->"@cb734e4"; 
 	"@891c2e0"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@891c2e0"->"@38751c96"; 
-	"@7877b200"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@7877b200"->"@7375cf0d"; 
+	"@7877b200"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@7877b200"->"@7375cf0d"; 
 	"@1e5d1420"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@1e5d1420"->"@41012e93"; 
 	"@5c16d669"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@5c16d669"->"@16943eb3"; 
 	"@22f2688d"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@22f2688d"->"@81e67dc"; 
@@ -1300,7 +1300,7 @@ digraph propNet
 	"@45d1890d"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 4 3 4 3 4 )"]; "@45d1890d"->"@122ecde0"; 
 	"@408e0c53"[shape=circle, style= filled, fillcolor=white, label="( next_tmp22 3 3 3 1 3 2 )"]; "@408e0c53"->"@682c948c"; "@408e0c53"->"@2bb9391d"; "@408e0c53"->"@1ad668b2"; "@408e0c53"->"@5615a730"; "@408e0c53"->"@7691f317"; "@408e0c53"->"@1ef05bd6"; "@408e0c53"->"@460e8c27"; "@408e0c53"->"@61e8c221"; "@408e0c53"->"@640bda41"; "@408e0c53"->"@38fc1fd7"; "@408e0c53"->"@1ee75f6c"; "@408e0c53"->"@48ab68e7"; "@408e0c53"->"@71527f1c"; "@408e0c53"->"@49eb1ec4"; "@408e0c53"->"@6c3aae8a"; "@408e0c53"->"@5cfd14cd"; "@408e0c53"->"@6b73185"; "@408e0c53"->"@6f374fe2"; "@408e0c53"->"@5a3a296d"; "@408e0c53"->"@6900fa18"; "@408e0c53"->"@56f97e43"; "@408e0c53"->"@18288d93"; "@408e0c53"->"@40a71439"; "@408e0c53"->"@7091838e"; 
 	"@57b899a"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@57b899a"->"@356eb47b"; 
-	"@53c55f27"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 2 5 3 ) )"]; 
+	"@53c55f27"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 2 5 3 ) )"]; 
 	"@29a4a549"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 3 1 1 4 )"]; "@29a4a549"->"@3c6a418c"; 
 	"@444ca9"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@444ca9"->"@778d9b16"; 
 	"@53a89d4"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 2 4 5 4 3 )"]; "@53a89d4"->"@342533a0"; 
@@ -1330,7 +1330,7 @@ digraph propNet
 	"@2d29a01f"[shape=circle, style= filled, fillcolor=white, label="( does black ( move 4 4 3 4 ) )"]; "@2d29a01f"->"@61319654"; "@2d29a01f"->"@179705dd"; "@2d29a01f"->"@32f275af"; "@2d29a01f"->"@12dd1912"; 
 	"@27c0eaf8"[shape=circle, style= filled, fillcolor=white, label="( does red ( move 2 4 2 3 ) )"]; "@27c0eaf8"->"@55170d3d"; "@27c0eaf8"->"@596003"; "@27c0eaf8"->"@29e570b9"; "@27c0eaf8"->"@12dd1912"; 
 	"@3551386a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 4 2 3 4 3 )"]; "@3551386a"->"@10825618"; 
-	"@803453f"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@803453f"->"@5c33de89"; 
+	"@803453f"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@803453f"->"@5c33de89"; 
 	"@4b7ac639"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 3 4 5 5 2 )"]; "@4b7ac639"->"@1ea8f4d1"; 
 	"@2839657a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 2 4 1 2 5 )"]; "@2839657a"->"@20e85cb6"; 
 	"@6758ea1b"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 4 5 2 5 )"]; "@6758ea1b"->"@6c01086b"; 
@@ -1431,7 +1431,7 @@ digraph propNet
 	"@31dcffe1"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 4 2 2 3 2 )"]; "@31dcffe1"->"@58f2530f"; 
 	"@476a092b"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 5 2 4 4 4 )"]; "@476a092b"->"@3f23b161"; 
 	"@3f23b161"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@3f23b161"->"@39745b20"; 
-	"@40c40e87"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@40c40e87"->"@52ed001b"; 
+	"@40c40e87"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@40c40e87"->"@52ed001b"; 
 	"@2a4be40d"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@2a4be40d"->"@2aecd33c"; 
 	"@178059c7"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 2 3 5 3 )"]; "@178059c7"->"@2944a2fb"; 
 	"@aaec4e6"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 4 3 2 2 1 )"]; "@aaec4e6"->"@7dc37073"; 
@@ -1474,7 +1474,7 @@ digraph propNet
 	"@47248989"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@47248989"->"@4a6e6c8c"; 
 	"@780bb6bb"[shape=circle, style= filled, fillcolor=white, label="( legal red ( jump 1 1 2 2 3 3 ) )"]; 
 	"@4288a9b"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 4 2 2 2 1 )"]; "@4288a9b"->"@2f97449f"; 
-	"@174a99f9"[shape=circle, style= filled, fillcolor=white, label="( true ( step 22 ) )"]; "@174a99f9"->"@1bb9f86f"; 
+	"@174a99f9"[shape=circle, style= filled, fillcolor=red, label="( true ( step 22 ) )"]; "@174a99f9"->"@1bb9f86f"; 
 	"@13979d24"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@13979d24"->"@1db8cfaa"; 
 	"@27cba97e"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@27cba97e"->"@5c3e7482"; 
 	"@7a58912"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 2 3 4 4 )"]; "@7a58912"->"@71e13483"; 
@@ -1520,7 +1520,7 @@ digraph propNet
 	"@63ad2ca8"[shape=circle, style= filled, fillcolor=white, label="( legal red ( jump 2 1 2 2 2 3 ) )"]; 
 	"@5e83118a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 3 2 4 4 2 )"]; "@5e83118a"->"@570f0f72"; 
 	"@5d70d261"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 2 4 3 3 5 )"]; "@5d70d261"->"@6c8ee3a7"; 
-	"@403ccf2e"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 4 5 3 ) )"]; 
+	"@403ccf2e"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 4 5 3 ) )"]; 
 	"@50cc1fde"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 4 2 3 2 3 )"]; "@50cc1fde"->"@330a5c39"; 
 	"@195d164e"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@195d164e"->"@2f90aa41"; 
 	"@7c53b346"[shape=circle, style= filled, fillcolor=white, label="( does black ( move 3 3 2 4 ) )"]; "@7c53b346"->"@66aae51f"; "@7c53b346"->"@52286280"; "@7c53b346"->"@342b8ff7"; "@7c53b346"->"@12dd1912"; 
@@ -1828,7 +1828,7 @@ digraph propNet
 	"@481319f0"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 2 5 3 1 )"]; "@481319f0"->"@1fa4ca73"; 
 	"@3e4befae"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 1 2 4 )"]; "@3e4befae"->"@3c6a418c"; 
 	"@448c1569"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@448c1569"->"@1d32777"; 
-	"@29fb3813"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@29fb3813"->"@7d502c33"; 
+	"@29fb3813"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@29fb3813"->"@7d502c33"; 
 	"@68b3f95b"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@68b3f95b"->"@28c35783"; 
 	"@72a06349"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@72a06349"->"@62a81d2a"; 
 	"@6368b283"[shape=circle, style= filled, fillcolor=red, label="( true ( cell 4 1 red ) )"]; "@6368b283"->"@120921a8"; "@6368b283"->"@50101251"; "@6368b283"->"@54517025"; "@6368b283"->"@1ece41e8"; "@6368b283"->"@6fec5b5b"; "@6368b283"->"@1d37a8b"; "@6368b283"->"@6e1301a8"; "@6368b283"->"@6808ab85"; "@6368b283"->"@589b3594"; 
@@ -1837,7 +1837,7 @@ digraph propNet
 	"@2d037cf9"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 1 5 4 )"]; "@2d037cf9"->"@3c6a418c"; 
 	"@2800b9fa"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@2800b9fa"->"@1ab948a"; 
 	"@5367429c"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 5 3 1 1 2 )"]; "@5367429c"->"@16a997c0"; 
-	"@356c2497"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 2 5 3 ) )"]; 
+	"@356c2497"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 2 5 3 ) )"]; 
 	"@2d437cbf"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 1 3 1 4 ) )"]; 
 	"@455c14a0"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@455c14a0"->"@205220b1"; 
 	"@68eab917"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@68eab917"->"@341ac806"; 
@@ -1907,7 +1907,7 @@ digraph propNet
 	"@521ec097"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 1 1 2 3 3 )"]; 
 	"@7968abe1"[shape=box, style= filled, fillcolor=grey, label="TRANSITION"]; "@7968abe1"->"@26068646"; 
 	"@1d300fbc"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 4 2 4 1 )"]; "@1d300fbc"->"@554eee6d"; 
-	"@4cbd9e2c"[shape=circle, style= filled, fillcolor=red, label="( true ( cell 4 4 blank ) )"]; "@4cbd9e2c"->"@293175d1"; "@4cbd9e2c"->"@32b33eb"; "@4cbd9e2c"->"@1b790159"; "@4cbd9e2c"->"@4c106d92"; "@4cbd9e2c"->"@38376353"; "@4cbd9e2c"->"@6b392d3d"; "@4cbd9e2c"->"@7613be4"; "@4cbd9e2c"->"@608cc345"; "@4cbd9e2c"->"@716d8544"; "@4cbd9e2c"->"@6cb075fa"; "@4cbd9e2c"->"@244359cf"; "@4cbd9e2c"->"@519ccf73"; "@4cbd9e2c"->"@42385cc"; "@4cbd9e2c"->"@79ffa170"; "@4cbd9e2c"->"@3b28da2"; "@4cbd9e2c"->"@22e35410"; "@4cbd9e2c"->"@ca066b4"; "@4cbd9e2c"->"@d39ddcc"; "@4cbd9e2c"->"@11a44ec"; "@4cbd9e2c"->"@36eb357c"; "@4cbd9e2c"->"@7240ff3a"; "@4cbd9e2c"->"@13f8e623"; "@4cbd9e2c"->"@1dc9340"; "@4cbd9e2c"->"@428bad95"; 
+	"@4cbd9e2c"[shape=circle, style= filled, fillcolor=white, label="( true ( cell 4 4 blank ) )"]; "@4cbd9e2c"->"@293175d1"; "@4cbd9e2c"->"@32b33eb"; "@4cbd9e2c"->"@1b790159"; "@4cbd9e2c"->"@4c106d92"; "@4cbd9e2c"->"@38376353"; "@4cbd9e2c"->"@6b392d3d"; "@4cbd9e2c"->"@7613be4"; "@4cbd9e2c"->"@608cc345"; "@4cbd9e2c"->"@716d8544"; "@4cbd9e2c"->"@6cb075fa"; "@4cbd9e2c"->"@244359cf"; "@4cbd9e2c"->"@519ccf73"; "@4cbd9e2c"->"@42385cc"; "@4cbd9e2c"->"@79ffa170"; "@4cbd9e2c"->"@3b28da2"; "@4cbd9e2c"->"@22e35410"; "@4cbd9e2c"->"@ca066b4"; "@4cbd9e2c"->"@d39ddcc"; "@4cbd9e2c"->"@11a44ec"; "@4cbd9e2c"->"@36eb357c"; "@4cbd9e2c"->"@7240ff3a"; "@4cbd9e2c"->"@13f8e623"; "@4cbd9e2c"->"@1dc9340"; "@4cbd9e2c"->"@428bad95"; 
 	"@295cfbc9"[shape=circle, style= filled, fillcolor=red, label="( true ( cell 3 5 red ) )"]; "@295cfbc9"->"@4a8e920e"; "@295cfbc9"->"@5c4d51af"; "@295cfbc9"->"@2329122b"; "@295cfbc9"->"@582d7ace"; "@295cfbc9"->"@67577cf4"; "@295cfbc9"->"@19618342"; "@295cfbc9"->"@318c3df"; "@295cfbc9"->"@244359cf"; "@295cfbc9"->"@3b87506b"; "@295cfbc9"->"@63397176"; "@295cfbc9"->"@24c59474"; "@295cfbc9"->"@4ada5409"; "@295cfbc9"->"@67cc5a31"; "@295cfbc9"->"@5b87c758"; 
 	"@5b8d72e"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@5b8d72e"->"@563f9835"; 
 	"@ae29878"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@ae29878"->"@58a2a035"; 
@@ -1938,7 +1938,7 @@ digraph propNet
 	"@f6f5daf"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 1 4 5 4 4 )"]; "@f6f5daf"->"@433b11d9"; 
 	"@6c823e43"[shape=circle, style= filled, fillcolor=white, label="( legal black ( move 4 1 4 2 ) )"]; 
 	"@3be4292d"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@3be4292d"->"@301b8b1e"; 
-	"@6af8f832"[shape=circle, style= filled, fillcolor=white, label="( true ( step 24 ) )"]; "@6af8f832"->"@29fb3813"; 
+	"@6af8f832"[shape=circle, style= filled, fillcolor=red, label="( true ( step 24 ) )"]; "@6af8f832"->"@29fb3813"; 
 	"@27f7753c"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 3 1 3 4 5 )"]; "@27f7753c"->"@695dadfc"; 
 	"@57598592"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 1 4 1 1 4 )"]; "@57598592"->"@4f8febcf"; 
 	"@3eebac27"[shape=circle, style= filled, fillcolor=white, label="( goal black 80 )"]; 
@@ -2034,7 +2034,7 @@ digraph propNet
 	"@631fb0bf"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@631fb0bf"->"@181ae042"; 
 	"@5afa495b"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@5afa495b"->"@34ac96ef"; 
 	"@7183e227"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@7183e227"->"@3cabb713"; 
-	"@7a2d2988"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@7a2d2988"->"@48ade0c8"; 
+	"@7a2d2988"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@7a2d2988"->"@48ade0c8"; 
 	"@4f021ca8"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@4f021ca8"->"@5141d324"; 
 	"@3d4d2ee1"[shape=circle, style= filled, fillcolor=white, label="( goal black 100 )"]; 
 	"@19e68a4a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 5 3 3 3 1 )"]; "@19e68a4a"->"@6ed9d2b"; 
@@ -2073,7 +2073,7 @@ digraph propNet
 	"@b6e589a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 3 2 3 3 1 )"]; "@b6e589a"->"@3b448fd3"; 
 	"@13adc059"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 5 1 2 )"]; "@13adc059"->"@622d8de"; 
 	"@3fbdec47"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@3fbdec47"->"@723f96dd"; 
-	"@102043db"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@102043db"->"@3643297d"; 
+	"@102043db"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@102043db"->"@3643297d"; 
 	"@137a0084"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 5 4 3 2 4 )"]; "@137a0084"->"@64b642d0"; 
 	"@198b0d8f"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 3 4 3 )"]; "@198b0d8f"->"@1a38c3e8"; 
 	"@3adf2ed9"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 3 1 1 2 2 )"]; "@3adf2ed9"->"@5cb49f73"; 
@@ -2105,7 +2105,7 @@ digraph propNet
 	"@44a3109c"[shape=circle, style= filled, fillcolor=white, label="( legal black ( jump 1 5 1 4 1 3 ) )"]; 
 	"@b899fc9"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 2 2 1 1 4 )"]; "@b899fc9"->"@5bcb736c"; 
 	"@47641324"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 5 5 2 3 1 )"]; "@47641324"->"@1e936545"; 
-	"@210d651"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@210d651"->"@72f13739"; 
+	"@210d651"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@210d651"->"@72f13739"; 
 	"@4eb10aa"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 5 3 1 2 )"]; "@4eb10aa"->"@34f069c3"; 
 	"@1c9348d1"[shape=circle, style= filled, fillcolor=white, label="( legal black ( move 2 2 1 2 ) )"]; 
 	"@4484d0c7"[shape=circle, style= filled, fillcolor=white, label="( does black ( move 4 4 4 3 ) )"]; "@4484d0c7"->"@4648dbee"; "@4484d0c7"->"@32f275af"; "@4484d0c7"->"@14b116ae"; "@4484d0c7"->"@12dd1912"; 
@@ -2509,7 +2509,7 @@ digraph propNet
 	"@5d014ab1"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@5d014ab1"->"@5f4c88f7"; 
 	"@da55a10"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 2 3 5 4 3 )"]; "@da55a10"->"@342533a0"; 
 	"@347823cd"[shape=circle, style= filled, fillcolor=white, label="( legal black ( jump 5 3 4 2 3 1 ) )"]; 
-	"@11920624"[shape=circle, style= filled, fillcolor=white, label="( true ( step 21 ) )"]; "@11920624"->"@6f4f567b"; 
+	"@11920624"[shape=circle, style= filled, fillcolor=red, label="( true ( step 21 ) )"]; "@11920624"->"@6f4f567b"; 
 	"@73bae402"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 2 2 5 3 )"]; "@73bae402"->"@53432978"; 
 	"@d4ddaf5"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@d4ddaf5"->"@611157b6"; 
 	"@5b08ccb2"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 5 4 5 5 4 )"]; "@5b08ccb2"->"@368043a9"; 
@@ -2544,7 +2544,7 @@ digraph propNet
 	"@32fee505"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@32fee505"->"@1f8156ff"; 
 	"@6a913d6c"[shape=circle, style= filled, fillcolor=white, label="( does red ( move 3 2 2 2 ) )"]; "@6a913d6c"->"@7396e222"; "@6a913d6c"->"@7d1ba1df"; "@6a913d6c"->"@45f3a884"; "@6a913d6c"->"@12dd1912"; 
 	"@17ad8faf"[shape=circle, style= filled, fillcolor=white, label="( legal black ( jump 2 1 3 1 4 1 ) )"]; 
-	"@2b107313"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 5 4 4 ) )"]; 
+	"@2b107313"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 5 4 4 ) )"]; 
 	"@15dbcddf"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 4 3 3 3 1 )"]; "@15dbcddf"->"@54233418"; 
 	"@5c71dc3"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@5c71dc3"->"@23947dcd"; 
 	"@9b1d1b7"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 5 2 3 2 5 )"]; "@9b1d1b7"->"@7de615e7"; 
@@ -2590,7 +2590,7 @@ digraph propNet
 	"@6467bc3e"[shape=circle, style= filled, fillcolor=white, label="( does red ( move 5 4 5 3 ) )"]; "@6467bc3e"->"@7dea66c8"; "@6467bc3e"->"@637f5ea6"; "@6467bc3e"->"@44ba6c54"; "@6467bc3e"->"@12dd1912"; 
 	"@432b1b72"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@432b1b72"->"@22c0dddf"; 
 	"@34176c4d"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@34176c4d"->"@791ed6d8"; 
-	"@3e5e2603"[shape=circle, style= filled, fillcolor=white, label="( true ( step 19 ) )"]; "@3e5e2603"->"@210d651"; 
+	"@3e5e2603"[shape=circle, style= filled, fillcolor=red, label="( true ( step 19 ) )"]; "@3e5e2603"->"@210d651"; 
 	"@23287b77"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 5 5 2 4 )"]; "@23287b77"->"@468a0b39"; 
 	"@13ae4bcf"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 1 4 3 4 3 )"]; "@13ae4bcf"->"@10a00589"; 
 	"@4e3ad658"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 4 1 3 5 )"]; "@4e3ad658"->"@2cbb7b86"; 
@@ -2809,7 +2809,7 @@ digraph propNet
 	"@4d7e972f"[shape=circle, style= filled, fillcolor=red, label="( true ( step 2 ) )"]; "@4d7e972f"->"@783cbc4b"; 
 	"@1bd6c185"[shape=circle, style= filled, fillcolor=white, label="( next_tmp22 3 5 4 5 5 5 )"]; "@1bd6c185"->"@3c47b6a7"; "@1bd6c185"->"@3f8ed7ce"; "@1bd6c185"->"@4cdca0bc"; "@1bd6c185"->"@6dcfa54c"; "@1bd6c185"->"@4b7ac639"; "@1bd6c185"->"@536ba7ae"; "@1bd6c185"->"@65a25325"; "@1bd6c185"->"@7f161afe"; "@1bd6c185"->"@364dbec1"; "@1bd6c185"->"@5aca41e4"; "@1bd6c185"->"@62b8fb96"; "@1bd6c185"->"@49f5f59a"; "@1bd6c185"->"@4f7d054d"; "@1bd6c185"->"@14a04ad0"; "@1bd6c185"->"@7eb07ec4"; "@1bd6c185"->"@65ef4a5b"; "@1bd6c185"->"@56742220"; "@1bd6c185"->"@64c384f5"; "@1bd6c185"->"@4ad630c1"; "@1bd6c185"->"@5b08ccb2"; "@1bd6c185"->"@442869b4"; "@1bd6c185"->"@2d86a5ba"; "@1bd6c185"->"@3f10c24e"; "@1bd6c185"->"@70f3d62d"; 
 	"@2f32356b"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 3 3 2 2 5 )"]; "@2f32356b"->"@1e4c5c16"; 
-	"@4ae490b9"[shape=circle, style= filled, fillcolor=red, label="( legal black ( jump 3 1 4 2 5 3 ) )"]; 
+	"@4ae490b9"[shape=circle, style= filled, fillcolor=white, label="( legal black ( jump 3 1 4 2 5 3 ) )"]; 
 	"@3f22257d"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 4 5 5 4 1 )"]; "@3f22257d"->"@667ed715"; 
 	"@26347c55"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 4 1 5 3 )"]; "@26347c55"->"@5f42d07a"; 
 	"@645e3e3a"[shape=circle, style= filled, fillcolor=white, label="( legal red ( jump 4 5 4 4 4 3 ) )"]; 
@@ -2831,7 +2831,7 @@ digraph propNet
 	"@3798ed0c"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 5 4 4 3 1 )"]; "@3798ed0c"->"@1fc1852b"; 
 	"@69daf34f"[shape=circle, style= filled, fillcolor=white, label="( next_tmp22 1 3 2 3 5 4 )"]; "@69daf34f"->"@3e6df0cc"; "@69daf34f"->"@469521b7"; "@69daf34f"->"@31e8db6c"; "@69daf34f"->"@62431ec7"; "@69daf34f"->"@40cd32ea"; "@69daf34f"->"@1866826e"; "@69daf34f"->"@1307ebed"; "@69daf34f"->"@2cdb2831"; "@69daf34f"->"@3383f189"; "@69daf34f"->"@2cbd6376"; "@69daf34f"->"@4372ab59"; "@69daf34f"->"@64a9c525"; "@69daf34f"->"@b81ea0c"; "@69daf34f"->"@5a6d077d"; "@69daf34f"->"@6e76017"; "@69daf34f"->"@21ee741d"; "@69daf34f"->"@1a99a00d"; "@69daf34f"->"@30e98abd"; "@69daf34f"->"@6d236936"; "@69daf34f"->"@4d8b1513"; "@69daf34f"->"@4f19c4a0"; "@69daf34f"->"@63f50aef"; "@69daf34f"->"@2fd51b48"; "@69daf34f"->"@26775808"; 
 	"@21b0bb2b"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 4 5 2 2 )"]; "@21b0bb2b"->"@561978f7"; 
-	"@26718f8"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 3 5 3 ) )"]; 
+	"@26718f8"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 3 5 3 ) )"]; 
 	"@30846a1b"[shape=circle, style= filled, fillcolor=red, label="( next_tmp6 1 2 1 1 )"]; "@30846a1b"->"@4c2f68ae"; "@30846a1b"->"@373a915f"; "@30846a1b"->"@1d075f42"; "@30846a1b"->"@3b5d573a"; "@30846a1b"->"@3d4f87c7"; "@30846a1b"->"@227d30d5"; "@30846a1b"->"@7e29b0c0"; "@30846a1b"->"@585592fb"; "@30846a1b"->"@6755fefa"; "@30846a1b"->"@54eb3ca4"; "@30846a1b"->"@65ce2901"; "@30846a1b"->"@bcee65e"; "@30846a1b"->"@69938881"; "@30846a1b"->"@3f0cef5f"; "@30846a1b"->"@83c756"; "@30846a1b"->"@51ff6e09"; "@30846a1b"->"@64010976"; "@30846a1b"->"@7314c743"; "@30846a1b"->"@15fadd82"; "@30846a1b"->"@32df8504"; "@30846a1b"->"@506944d2"; "@30846a1b"->"@45612ddd"; "@30846a1b"->"@3548e315"; "@30846a1b"->"@57fe41a1"; 
 	"@51534bf7"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 5 1 1 1 )"]; "@51534bf7"->"@1adc876a"; 
 	"@6ec0f468"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@6ec0f468"->"@28dc85dc"; 
@@ -2985,8 +2985,8 @@ digraph propNet
 	"@c6c9792"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 2 2 2 3 3 )"]; 
 	"@40ea1b15"[shape=circle, style= filled, fillcolor=white, label="( next_tmp38 1 2 )"]; "@40ea1b15"->"@7c29fa18"; "@40ea1b15"->"@6d0a0426"; "@40ea1b15"->"@7701687c"; 
 	"@1ddb01db"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 1 4 2 3 4 )"]; "@1ddb01db"->"@50dc1c67"; 
-	"@2e70f271"[shape=circle, style= filled, fillcolor=white, label="( true ( step 20 ) )"]; "@2e70f271"->"@5c159ae6"; 
-	"@15f809f9"[shape=circle, style= filled, fillcolor=white, label="( true ( step 25 ) )"]; "@15f809f9"->"@7729481e"; 
+	"@2e70f271"[shape=circle, style= filled, fillcolor=red, label="( true ( step 20 ) )"]; "@2e70f271"->"@5c159ae6"; 
+	"@15f809f9"[shape=circle, style= filled, fillcolor=red, label="( true ( step 25 ) )"]; "@15f809f9"->"@7729481e"; 
 	"@7fd663d4"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 5 4 1 2 5 )"]; "@7fd663d4"->"@562c589b"; 
 	"@5fa943a0"[shape=circle, style= filled, fillcolor=white, label="( does red ( move 1 3 2 3 ) )"]; "@5fa943a0"->"@5549942e"; "@5fa943a0"->"@14182911"; "@5fa943a0"->"@29e570b9"; "@5fa943a0"->"@12dd1912"; 
 	"@19fd05f1"[shape=circle, style= filled, fillcolor=white, label="( next_tmp6 4 4 4 3 )"]; "@19fd05f1"->"@4b1697b2"; "@19fd05f1"->"@a2732e2"; "@19fd05f1"->"@55f1bb39"; "@19fd05f1"->"@68b3f95b"; "@19fd05f1"->"@4fd7169e"; "@19fd05f1"->"@48d0a95a"; "@19fd05f1"->"@1d7d7af6"; "@19fd05f1"->"@773a4031"; "@19fd05f1"->"@64cb4be0"; "@19fd05f1"->"@576152ad"; "@19fd05f1"->"@5fe9b026"; "@19fd05f1"->"@6c297939"; "@19fd05f1"->"@30fd086c"; "@19fd05f1"->"@1970fa21"; "@19fd05f1"->"@2f7bd528"; "@19fd05f1"->"@3c98a0cd"; "@19fd05f1"->"@5d16f100"; "@19fd05f1"->"@278df23a"; "@19fd05f1"->"@654f4e78"; "@19fd05f1"->"@43fc7366"; "@19fd05f1"->"@29025398"; "@19fd05f1"->"@eb2f809"; "@19fd05f1"->"@576becb6"; "@19fd05f1"->"@66cd2c30"; 
@@ -3004,7 +3004,7 @@ digraph propNet
 	"@57418b68"[shape=circle, style= filled, fillcolor=white, label="( legal red ( jump 3 1 3 2 3 3 ) )"]; 
 	"@2f28f301"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 1 3 4 3 4 )"]; "@2f28f301"->"@3d068340"; 
 	"@1ea90280"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 3 2 4 4 5 )"]; "@1ea90280"->"@3fe8a49e"; 
-	"@1b6c0747"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 3 4 4 ) )"]; 
+	"@1b6c0747"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 3 4 4 ) )"]; 
 	"@2c14b020"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 3 1 1 1 )"]; "@2c14b020"->"@1adc876a"; 
 	"@51394d0f"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 5 4 2 3 2 )"]; "@51394d0f"->"@1bbacd1b"; 
 	"@2423b819"[shape=circle, style= filled, fillcolor=white, label="( does black ( move 5 5 4 4 ) )"]; "@2423b819"->"@2ee500e3"; "@2423b819"->"@746fa3a6"; "@2423b819"->"@292aec74"; "@2423b819"->"@12dd1912"; 
@@ -3238,7 +3238,7 @@ digraph propNet
 	"@25067b35"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@25067b35"->"@52f58a4e"; 
 	"@7908673d"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@7908673d"->"@627d6d48"; 
 	"@28e876d1"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 3 4 3 2 5 )"]; "@28e876d1"->"@2850aa8e"; 
-	"@292a3716"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 3 4 3 ) )"]; 
+	"@292a3716"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 3 4 3 ) )"]; 
 	"@160dc832"[shape=circle, style= filled, fillcolor=white, label="( next_tmp38 3 1 )"]; "@160dc832"->"@4e701c30"; "@160dc832"->"@38f752c5"; "@160dc832"->"@7f1f5de0"; 
 	"@79ba2785"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 1 2 3 3 1 )"]; "@79ba2785"->"@4f5380a7"; 
 	"@2c1bb25a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 5 3 4 3 5 )"]; "@2c1bb25a"->"@29a90b3c"; 
@@ -3570,7 +3570,7 @@ digraph propNet
 	"@373a5606"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@373a5606"->"@7552ebaa"; 
 	"@4bc8aa8a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 1 3 3 4 2 )"]; "@4bc8aa8a"->"@5dc16fd5"; 
 	"@1725f661"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 4 2 2 4 )"]; "@1725f661"->"@75d521f1"; 
-	"@503a717e"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 4 5 3 ) )"]; 
+	"@503a717e"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 4 5 3 ) )"]; 
 	"@6a444b03"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@6a444b03"->"@3abdab22"; 
 	"@2cb98df0"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@2cb98df0"->"@198f246b"; 
 	"@119370d8"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@119370d8"->"@2d0bb263"; 
@@ -3742,7 +3742,7 @@ digraph propNet
 	"@233201c1"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@233201c1"->"@6ee0b7a0"; 
 	"@33829176"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@33829176"->"@4d901202"; 
 	"@6b790981"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 5 2 4 4 2 )"]; "@6b790981"->"@5ef4215d"; 
-	"@4baea954"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 3 5 4 4 ) )"]; 
+	"@4baea954"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 3 5 4 4 ) )"]; 
 	"@7f1f5de0"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@7f1f5de0"->"@253579ca"; 
 	"@a41a943"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@a41a943"->"@2e08c8f2"; 
 	"@4469276a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 5 2 5 5 2 )"]; "@4469276a"->"@6147ce8"; 
@@ -3843,7 +3843,7 @@ digraph propNet
 	"@68c6cb16"[shape=circle, style= filled, fillcolor=white, label="( does black ( jump 1 3 2 3 3 3 ) )"]; "@68c6cb16"->"@2fffc83f"; "@68c6cb16"->"@5549942e"; "@68c6cb16"->"@175139c8"; "@68c6cb16"->"@935b02e"; "@68c6cb16"->"@7f0ceb47"; 
 	"@56d0f503"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@56d0f503"->"@1b3966eb"; 
 	"@72f01126"[shape=circle, style= filled, fillcolor=white, label="( next_tmp6 4 4 5 4 )"]; "@72f01126"->"@1d4824a8"; "@72f01126"->"@1dfd169d"; "@72f01126"->"@4f952bb4"; "@72f01126"->"@529b9818"; "@72f01126"->"@240c1428"; "@72f01126"->"@15421007"; "@72f01126"->"@1567dae0"; "@72f01126"->"@989c62e"; "@72f01126"->"@2c668c41"; "@72f01126"->"@6e214bca"; "@72f01126"->"@5e502bbd"; "@72f01126"->"@71fa8b8a"; "@72f01126"->"@6cee13dc"; "@72f01126"->"@2a641cb6"; "@72f01126"->"@342a711"; "@72f01126"->"@56d0f503"; "@72f01126"->"@3a358a61"; "@72f01126"->"@6f954e42"; "@72f01126"->"@1d156082"; "@72f01126"->"@409365ca"; "@72f01126"->"@49a9320"; "@72f01126"->"@20564448"; "@72f01126"->"@5436fde8"; "@72f01126"->"@6c72706d"; 
-	"@1bb9f86f"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@1bb9f86f"->"@728968a0"; 
+	"@1bb9f86f"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@1bb9f86f"->"@728968a0"; 
 	"@2fcccc1b"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 4 2 1 3 )"]; "@2fcccc1b"->"@53432978"; 
 	"@506fb3b2"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 1 1 3 4 )"]; "@506fb3b2"->"@70631c80"; 
 	"@e32adec"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 3 3 5 )"]; "@e32adec"->"@179505ad"; 
@@ -3941,7 +3941,7 @@ digraph propNet
 	"@7452381"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@7452381"->"@27700486"; 
 	"@19e6558"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 4 2 1 2 1 )"]; "@19e6558"->"@44005e6f"; 
 	"@761912d1"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@761912d1"->"@3aa79bab"; 
-	"@48b36c78"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 5 4 4 4 ) )"]; 
+	"@48b36c78"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 5 4 4 4 ) )"]; 
 	"@4584614b"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 3 1 3 )"]; "@4584614b"->"@1a38c3e8"; 
 	"@1ad2fe00"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 3 4 5 3 )"]; "@1ad2fe00"->"@1e4a7ee4"; 
 	"@160e32da"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@160e32da"->"@39a7abcf"; 
@@ -4038,7 +4038,7 @@ digraph propNet
 	"@4ae617d"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 5 5 1 3 )"]; "@4ae617d"->"@41b92565"; 
 	"@7a3d9fe5"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@7a3d9fe5"->"@6cdd48f1"; 
 	"@7cc99912"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 3 4 4 )"]; "@7cc99912"->"@34cc5034"; 
-	"@2b8f4e52"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@2b8f4e52"->"@59210a2c"; 
+	"@2b8f4e52"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@2b8f4e52"->"@59210a2c"; 
 	"@4d7ca8a3"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 4 1 5 1 )"]; "@4d7ca8a3"->"@1adc876a"; 
 	"@3a4b9fab"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@3a4b9fab"->"@6b67cc2e"; 
 	"@1b5afeb9"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@1b5afeb9"->"@c419238"; 
@@ -4116,11 +4116,11 @@ digraph propNet
 	"@4d12ab86"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@4d12ab86"->"@492236c8"; 
 	"@32f51461"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@32f51461"->"@44a2bc18"; 
 	"@526bb4fc"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 5 4 5 4 3 )"]; "@526bb4fc"->"@11856ab3"; 
-	"@7ec4d867"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 2 5 2 ) )"]; 
+	"@7ec4d867"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 2 5 2 ) )"]; 
 	"@1d32777"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 5 4 1 4 )"]; "@1d32777"->"@73aa3c29"; 
 	"@24908234"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@24908234"->"@6ead6505"; 
 	"@666800cd"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@666800cd"->"@637f5ea6"; 
-	"@3f6419c3"[shape=circle, style= filled, fillcolor=white, label="( true ( step 18 ) )"]; "@3f6419c3"->"@2b8f4e52"; 
+	"@3f6419c3"[shape=circle, style= filled, fillcolor=red, label="( true ( step 18 ) )"]; "@3f6419c3"->"@2b8f4e52"; 
 	"@736995ce"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@736995ce"->"@57ac9c5"; 
 	"@6d8acb3a"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@6d8acb3a"->"@6859d40a"; 
 	"@632b059e"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@632b059e"->"@77357599"; 
@@ -4261,7 +4261,7 @@ digraph propNet
 	"@68c2e9b"[shape=circle, style= filled, fillcolor=white, label="( does black ( move 1 1 2 1 ) )"]; "@68c2e9b"->"@2947414c"; "@68c2e9b"->"@78149f7b"; "@68c2e9b"->"@12dd1912"; "@68c2e9b"->"@6f24defb"; 
 	"@b182300"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@b182300"->"@336b0ac5"; 
 	"@76055e1a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 5 2 3 4 3 )"]; "@76055e1a"->"@6d0eb0c"; 
-	"@11c179de"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@11c179de"->"@58398ee3"; 
+	"@11c179de"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@11c179de"->"@58398ee3"; 
 	"@4ddfa5fc"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 4 1 2 2 )"]; "@4ddfa5fc"->"@66df5e5"; 
 	"@16943eb3"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 5 1 4 4 )"]; "@16943eb3"->"@70631c80"; 
 	"@4372ab59"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 4 2 5 4 1 )"]; "@4372ab59"->"@72c81a85"; 
@@ -4386,7 +4386,7 @@ digraph propNet
 	"@3409dd3d"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@3409dd3d"->"@45b763e0"; 
 	"@413f6807"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@413f6807"->"@4aeead61"; 
 	"@52e2bba1"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@52e2bba1"->"@21056308"; 
-	"@4135a871"[shape=circle, style= filled, fillcolor=white, label="( true ( step 17 ) )"]; "@4135a871"->"@7a2d2988"; 
+	"@4135a871"[shape=circle, style= filled, fillcolor=red, label="( true ( step 17 ) )"]; "@4135a871"->"@7a2d2988"; 
 	"@32115b55"[shape=circle, style= filled, fillcolor=white, label="( next_tmp6 5 1 4 1 )"]; "@32115b55"->"@257c1d1e"; "@32115b55"->"@2c0f18ed"; "@32115b55"->"@d772494"; "@32115b55"->"@6154c030"; "@32115b55"->"@dc9144c"; "@32115b55"->"@59d37476"; "@32115b55"->"@343e8496"; "@32115b55"->"@d57201e"; "@32115b55"->"@10c1d78b"; "@32115b55"->"@2417c51c"; "@32115b55"->"@c5a9177"; "@32115b55"->"@5f811d0f"; "@32115b55"->"@60dc53cc"; "@32115b55"->"@4bb48ca6"; "@32115b55"->"@22d2d280"; "@32115b55"->"@67a0aad5"; "@32115b55"->"@1ed6e761"; "@32115b55"->"@5b78d4f"; "@32115b55"->"@460535bc"; "@32115b55"->"@4d81fd1b"; "@32115b55"->"@337ec7e2"; "@32115b55"->"@7f4776fb"; "@32115b55"->"@470b9d76"; "@32115b55"->"@50b3918d"; 
 	"@776c9e2b"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@776c9e2b"->"@7300bc64"; 
 	"@34739d3e"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 1 2 1 2 5 )"]; "@34739d3e"->"@57dcce33"; 
@@ -4498,7 +4498,7 @@ digraph propNet
 	"@3b429ff"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 4 2 3 4 4 )"]; "@3b429ff"->"@5e5be183"; 
 	"@61dac4f"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 1 2 2 3 5 )"]; "@61dac4f"->"@6d8acb3a"; 
 	"@25d280f"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 1 3 3 3 2 )"]; "@25d280f"->"@21d695be"; 
-	"@20a28af1"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 2 4 3 ) )"]; 
+	"@20a28af1"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 2 4 3 ) )"]; 
 	"@577ef22"[shape=circle, style= filled, fillcolor=white, label="( does black ( jump 3 1 3 2 3 3 ) )"]; "@577ef22"->"@2fffc83f"; "@577ef22"->"@7396e222"; "@577ef22"->"@4604376"; "@577ef22"->"@6a444b03"; "@577ef22"->"@7f0ceb47"; 
 	"@7836dda"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@7836dda"->"@698e8696"; 
 	"@23dc0987"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 2 5 4 5 )"]; "@23dc0987"->"@6c01086b"; 
@@ -4825,7 +4825,7 @@ digraph propNet
 	"@bcee65e"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@bcee65e"->"@766e2a86"; 
 	"@27e70a74"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@27e70a74"->"@2947414c"; 
 	"@3ab95721"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@3ab95721"->"@13f3be08"; 
-	"@6a5347c9"[shape=circle, style= filled, fillcolor=white, label="( true ( step 15 ) )"]; "@6a5347c9"->"@40c40e87"; 
+	"@6a5347c9"[shape=circle, style= filled, fillcolor=red, label="( true ( step 15 ) )"]; "@6a5347c9"->"@40c40e87"; 
 	"@703a1da0"[shape=circle, style= filled, fillcolor=white, label="( goal red 60 )"]; 
 	"@442869b4"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 4 4 5 5 1 )"]; "@442869b4"->"@78a115d"; 
 	"@3d6350ff"[shape=circle, style= filled, fillcolor=white, label="( legal black ( jump 1 2 2 2 3 2 ) )"]; 
@@ -4874,7 +4874,7 @@ digraph propNet
 	"@22bb8f56"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@22bb8f56"->"@240ed66f"; 
 	"@15957864"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@15957864"->"@338eb075"; 
 	"@1ead735e"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@1ead735e"->"@6432904d"; 
-	"@33149ee1"[shape=circle, style= filled, fillcolor=white, label="( true ( cell 4 3 blank ) )"]; "@33149ee1"->"@3c244b44"; "@33149ee1"->"@6ff1bd10"; "@33149ee1"->"@6718203c"; "@33149ee1"->"@38ad942"; "@33149ee1"->"@452dc524"; "@33149ee1"->"@619ee412"; "@33149ee1"->"@6833801c"; "@33149ee1"->"@7320a550"; "@33149ee1"->"@535354e3"; "@33149ee1"->"@5a3e3fee"; "@33149ee1"->"@1f3d79ce"; "@33149ee1"->"@209b11f"; "@33149ee1"->"@bd70d40"; "@33149ee1"->"@6e1301a8"; "@33149ee1"->"@5ff4ee8f"; "@33149ee1"->"@2493476c"; 
+	"@33149ee1"[shape=circle, style= filled, fillcolor=red, label="( true ( cell 4 3 blank ) )"]; "@33149ee1"->"@3c244b44"; "@33149ee1"->"@6ff1bd10"; "@33149ee1"->"@6718203c"; "@33149ee1"->"@38ad942"; "@33149ee1"->"@452dc524"; "@33149ee1"->"@619ee412"; "@33149ee1"->"@6833801c"; "@33149ee1"->"@7320a550"; "@33149ee1"->"@535354e3"; "@33149ee1"->"@5a3e3fee"; "@33149ee1"->"@1f3d79ce"; "@33149ee1"->"@209b11f"; "@33149ee1"->"@bd70d40"; "@33149ee1"->"@6e1301a8"; "@33149ee1"->"@5ff4ee8f"; "@33149ee1"->"@2493476c"; 
 	"@30c29d34"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 3 4 3 3 4 )"]; "@30c29d34"->"@61038e57"; 
 	"@6221cfd7"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@6221cfd7"->"@19f89f24"; 
 	"@13f3be08"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 4 1 5 2 )"]; "@13f3be08"->"@6089b127"; 
@@ -5161,7 +5161,7 @@ digraph propNet
 	"@19e0696c"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@19e0696c"->"@754f46ce"; 
 	"@3a434acd"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 5 2 3 5 )"]; "@3a434acd"->"@191ee07a"; 
 	"@6cd5dc5a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 5 5 4 4 )"]; 
-	"@5f1def92"[shape=circle, style= filled, fillcolor=white, label="( true ( cell 5 2 blank ) )"]; "@5f1def92"->"@4635c8e5"; "@5f1def92"->"@1c5cb29c"; "@5f1def92"->"@6a062727"; "@5f1def92"->"@2675b14"; "@5f1def92"->"@297e904"; "@5f1def92"->"@4eadb6c"; "@5f1def92"->"@69f66791"; "@5f1def92"->"@172ca4db"; "@5f1def92"->"@605aea8d"; "@5f1def92"->"@2763ac29"; "@5f1def92"->"@4f15be5e"; "@5f1def92"->"@59cd60a6"; 
+	"@5f1def92"[shape=circle, style= filled, fillcolor=red, label="( true ( cell 5 2 blank ) )"]; "@5f1def92"->"@4635c8e5"; "@5f1def92"->"@1c5cb29c"; "@5f1def92"->"@6a062727"; "@5f1def92"->"@2675b14"; "@5f1def92"->"@297e904"; "@5f1def92"->"@4eadb6c"; "@5f1def92"->"@69f66791"; "@5f1def92"->"@172ca4db"; "@5f1def92"->"@605aea8d"; "@5f1def92"->"@2763ac29"; "@5f1def92"->"@4f15be5e"; "@5f1def92"->"@59cd60a6"; 
 	"@6babdb39"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 3 3 3 4 4 )"]; 
 	"@3e5f4ecd"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 2 3 3 3 1 )"]; "@3e5f4ecd"->"@71fd8ff1"; 
 	"@96579f3"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 2 1 3 2 4 )"]; "@96579f3"->"@16933e72"; 
@@ -5272,7 +5272,7 @@ digraph propNet
 	"@34e3856b"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 2 1 3 1 ) )"]; 
 	"@13032288"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@13032288"->"@4ae490b9"; 
 	"@12d9a348"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 3 4 1 3 )"]; "@12d9a348"->"@6a6c39f6"; 
-	"@4d123c80"[shape=circle, style= filled, fillcolor=white, label="( true ( step 23 ) )"]; "@4d123c80"->"@e20367e"; 
+	"@4d123c80"[shape=circle, style= filled, fillcolor=red, label="( true ( step 23 ) )"]; "@4d123c80"->"@e20367e"; 
 	"@53734af"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 4 4 4 4 5 )"]; "@53734af"->"@42f231af"; 
 	"@1f736eeb"[shape=circle, style= filled, fillcolor=white, label="( next_tmp6 5 4 4 4 )"]; "@1f736eeb"->"@3429640b"; "@1f736eeb"->"@4c02e980"; "@1f736eeb"->"@4e443ce0"; "@1f736eeb"->"@378f44ca"; "@1f736eeb"->"@56e19d44"; "@1f736eeb"->"@149d01ba"; "@1f736eeb"->"@569e8076"; "@1f736eeb"->"@6984fc2c"; "@1f736eeb"->"@25140cfa"; "@1f736eeb"->"@5037c1e7"; "@1f736eeb"->"@4b52ed40"; "@1f736eeb"->"@295b5e8e"; "@1f736eeb"->"@4d7dd048"; "@1f736eeb"->"@17899dbf"; "@1f736eeb"->"@1f652732"; "@1f736eeb"->"@22f209a5"; "@1f736eeb"->"@55bdc5a5"; "@1f736eeb"->"@5c567c4e"; "@1f736eeb"->"@655f0266"; "@1f736eeb"->"@2505947f"; "@1f736eeb"->"@6b746089"; "@1f736eeb"->"@68eab917"; "@1f736eeb"->"@4522e2df"; "@1f736eeb"->"@5c16d669"; 
 	"@25ec5475"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 4 2 3 2 3 5 )"]; "@25ec5475"->"@6dea9a8b"; 
@@ -5407,7 +5407,7 @@ digraph propNet
 	"@20ca5275"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 1 3 4 3 )"]; "@20ca5275"->"@2944a2fb"; 
 	"@16bd247d"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 3 5 5 4 4 )"]; "@16bd247d"->"@3b1bba7f"; 
 	"@7dad4f6f"[shape=circle, style= filled, fillcolor=white, label="( legal black ( move 3 1 4 1 ) )"]; 
-	"@c3d3eff"[shape=circle, style= filled, fillcolor=white, label="( true ( step 14 ) )"]; "@c3d3eff"->"@a3a83ca"; 
+	"@c3d3eff"[shape=circle, style= filled, fillcolor=red, label="( true ( step 14 ) )"]; "@c3d3eff"->"@a3a83ca"; 
 	"@1d4b6f88"[shape=box, style= filled, fillcolor=grey, label="TRANSITION"]; "@1d4b6f88"->"@306f9095"; 
 	"@4b99f95e"[shape=circle, style= filled, fillcolor=white, label="( next_tmp6 1 2 1 3 )"]; "@4b99f95e"->"@d9c029c"; "@4b99f95e"->"@5a39127a"; "@4b99f95e"->"@2a0a4969"; "@4b99f95e"->"@664f07c9"; "@4b99f95e"->"@328614e1"; "@4b99f95e"->"@2da9c361"; "@4b99f95e"->"@3a86108e"; "@4b99f95e"->"@5aa92543"; "@4b99f95e"->"@639cc1d7"; "@4b99f95e"->"@1e900dbc"; "@4b99f95e"->"@38ec4422"; "@4b99f95e"->"@7ba68349"; "@4b99f95e"->"@5324888b"; "@4b99f95e"->"@408ad18"; "@4b99f95e"->"@1ea3cbd6"; "@4b99f95e"->"@23a133f6"; "@4b99f95e"->"@4adf0bc7"; "@4b99f95e"->"@203ed187"; "@4b99f95e"->"@15ba5380"; "@4b99f95e"->"@d2f30b3"; "@4b99f95e"->"@230532c"; "@4b99f95e"->"@458f0a92"; "@4b99f95e"->"@71a359dd"; "@4b99f95e"->"@10f9bcc7"; 
 	"@1206a0cc"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 4 1 3 )"]; "@1206a0cc"->"@6a6c39f6"; 
@@ -5612,7 +5612,7 @@ digraph propNet
 	"@1a18ae8a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 4 4 3 3 4 )"]; "@1a18ae8a"->"@56ebe705"; 
 	"@7b2f8fbb"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@7b2f8fbb"->"@11cbf6cf"; 
 	"@3b448fd3"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@3b448fd3"->"@5f6ba46f"; 
-	"@347700ee"[shape=circle, style= filled, fillcolor=red, label="( true ( cell 5 3 blank ) )"]; "@347700ee"->"@4a8e920e"; "@347700ee"->"@8a48ea"; "@347700ee"->"@10dee43e"; "@347700ee"->"@6965af47"; "@347700ee"->"@2edeb49d"; "@347700ee"->"@3774533c"; "@347700ee"->"@1677b53d"; "@347700ee"->"@a2c8806"; "@347700ee"->"@13032288"; "@347700ee"->"@4e80fb4c"; "@347700ee"->"@6290b6dd"; "@347700ee"->"@1b52881d"; "@347700ee"->"@44ecd11d"; "@347700ee"->"@5922180"; "@347700ee"->"@319740b"; "@347700ee"->"@78353a41"; "@347700ee"->"@29c34db5"; "@347700ee"->"@ff3008"; "@347700ee"->"@42b8592"; "@347700ee"->"@6a0ff7d3"; "@347700ee"->"@4b87977a"; "@347700ee"->"@4cc6fb1b"; 
+	"@347700ee"[shape=circle, style= filled, fillcolor=white, label="( true ( cell 5 3 blank ) )"]; "@347700ee"->"@4a8e920e"; "@347700ee"->"@8a48ea"; "@347700ee"->"@10dee43e"; "@347700ee"->"@6965af47"; "@347700ee"->"@2edeb49d"; "@347700ee"->"@3774533c"; "@347700ee"->"@1677b53d"; "@347700ee"->"@a2c8806"; "@347700ee"->"@13032288"; "@347700ee"->"@4e80fb4c"; "@347700ee"->"@6290b6dd"; "@347700ee"->"@1b52881d"; "@347700ee"->"@44ecd11d"; "@347700ee"->"@5922180"; "@347700ee"->"@319740b"; "@347700ee"->"@78353a41"; "@347700ee"->"@29c34db5"; "@347700ee"->"@ff3008"; "@347700ee"->"@42b8592"; "@347700ee"->"@6a0ff7d3"; "@347700ee"->"@4b87977a"; "@347700ee"->"@4cc6fb1b"; 
 	"@65889114"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 3 4 1 )"]; "@65889114"->"@4a519a5e"; 
 	"@337ec7e2"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@337ec7e2"->"@8262080"; 
 	"@2fd51b48"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 1 2 5 4 3 )"]; "@2fd51b48"->"@4641d966"; 
@@ -6007,7 +6007,7 @@ digraph propNet
 	"@688410df"[shape=circle, style= filled, fillcolor=white, label="( legal black ( move 5 4 4 4 ) )"]; 
 	"@53eeabb2"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 3 4 5 5 )"]; "@53eeabb2"->"@4fcf80fa"; 
 	"@4003f85f"[shape=circle, style= filled, fillcolor=white, label="( does red ( jump 3 5 2 5 1 5 ) )"]; "@4003f85f"->"@360e0a4a"; "@4003f85f"->"@6f14bfed"; "@4003f85f"->"@a1ad1a1"; "@4003f85f"->"@5b96350b"; "@4003f85f"->"@5a8d1d03"; 
-	"@e20367e"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@e20367e"->"@3d7c7c32"; 
+	"@e20367e"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@e20367e"->"@3d7c7c32"; 
 	"@257c1d1e"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@257c1d1e"->"@484312f4"; 
 	"@17286f4c"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 5 5 1 2 )"]; "@17286f4c"->"@561978f7"; 
 	"@18e7e081"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 5 4 2 5 )"]; "@18e7e081"->"@3016e48a"; 
@@ -6068,7 +6068,7 @@ digraph propNet
 	"@14cfac30"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@14cfac30"->"@1e89594b"; 
 	"@1e856787"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@1e856787"->"@32e2338b"; 
 	"@5a05e300"[shape=circle, style= filled, fillcolor=white, label="( next_tmp36 1 3 1 4 )"]; "@5a05e300"->"@34cc5034"; 
-	"@43d87ade"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 5 4 4 ) )"]; 
+	"@43d87ade"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 5 4 4 ) )"]; 
 	"@603e9936"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@603e9936"->"@53a622a7"; 
 	"@3f1e0613"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@3f1e0613"->"@6520cff6"; 
 	"@30de49d0"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@30de49d0"->"@70fb2958"; 
@@ -6086,7 +6086,7 @@ digraph propNet
 	"@6de494ce"[shape=circle, style= filled, fillcolor=red, label="( true ( cell 4 4 red ) )"]; "@6de494ce"->"@c595079"; "@6de494ce"->"@1d73ec33"; "@6de494ce"->"@8a48ea"; "@6de494ce"->"@484f6a6e"; "@6de494ce"->"@faf344c"; "@6de494ce"->"@5b92663a"; "@6de494ce"->"@7614a59d"; "@6de494ce"->"@2f9c5597"; "@6de494ce"->"@619ee412"; "@6de494ce"->"@6290b6dd"; "@6de494ce"->"@2993fdfd"; "@6de494ce"->"@412f52a0"; "@6de494ce"->"@7ce52275"; "@6de494ce"->"@12d228e3"; "@6de494ce"->"@4c271056"; "@6de494ce"->"@16b695e"; "@6de494ce"->"@209b11f"; "@6de494ce"->"@1dad9d32"; "@6de494ce"->"@14cfac30"; "@6de494ce"->"@13e78078"; "@6de494ce"->"@1d90884f"; 
 	"@1b45e26e"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 4 3 1 1 4 )"]; "@1b45e26e"->"@962b207"; 
 	"@1a9a63ab"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 1 5 3 4 2 )"]; "@1a9a63ab"->"@78bb253b"; 
-	"@6f4f567b"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@6f4f567b"->"@5c4c84bd"; 
+	"@6f4f567b"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@6f4f567b"->"@5c4c84bd"; 
 	"@10406974"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@10406974"->"@4d2fc6fd"; 
 	"@78558160"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 5 1 4 3 4 )"]; "@78558160"->"@3f23b161"; 
 	"@66f15fc4"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 5 2 5 5 4 3 )"]; "@66f15fc4"->"@167b8112"; 
@@ -6184,7 +6184,7 @@ digraph propNet
 	"@5589af8c"[shape=circle, style= filled, fillcolor=white, label="( true ( score black 60 ) )"]; "@5589af8c"->"@19b52e44"; "@5589af8c"->"@2f9d66b6"; "@5589af8c"->"@1aabde10"; "@5589af8c"->"@5cad8a33"; 
 	"@24591e5c"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@24591e5c"->"@2dda1c7e"; 
 	"@4bcff1c8"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@4bcff1c8"->"@7a93b02a"; 
-	"@525f6857"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@525f6857"->"@14b53abb"; 
+	"@525f6857"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@525f6857"->"@14b53abb"; 
 	"@4c77f67e"[shape=circle, style= filled, fillcolor=white, label="( does black ( jump 3 3 2 2 1 1 ) )"]; "@4c77f67e"->"@52286280"; "@4c77f67e"->"@7f0ceb47"; "@4c77f67e"->"@35f068cb"; "@4c77f67e"->"@4564dcb"; "@4c77f67e"->"@5f024b5d"; 
 	"@5567f5d"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 5 3 2 3 1 )"]; "@5567f5d"->"@2e9e3247"; 
 	"@2f9c5597"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@2f9c5597"->"@a561eb4"; 
@@ -6225,7 +6225,7 @@ digraph propNet
 	"@499bf3ca"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@499bf3ca"->"@175139c8"; 
 	"@2f7bd528"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@2f7bd528"->"@71c2fca"; 
 	"@30e98abd"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 1 2 5 4 4 )"]; "@30e98abd"->"@5e1af4e9"; 
-	"@66a5dcf2"[shape=circle, style= filled, fillcolor=white, label="( true ( step 16 ) )"]; "@66a5dcf2"->"@803453f"; 
+	"@66a5dcf2"[shape=circle, style= filled, fillcolor=red, label="( true ( step 16 ) )"]; "@66a5dcf2"->"@803453f"; 
 	"@da5b7fc"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 3 2 5 4 1 )"]; "@da5b7fc"->"@6509c5b9"; 
 	"@2d3ad761"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@2d3ad761"->"@581f9321"; 
 	"@41bd7be1"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 2 3 3 2 2 2 )"]; 
@@ -6436,7 +6436,7 @@ digraph propNet
 	"@20e85cb6"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@20e85cb6"->"@1617b9ea"; 
 	"@26c8daac"[shape=circle, style= filled, fillcolor=white, label="( next_tmp29 2 3 2 3 )"]; "@26c8daac"->"@2944a2fb"; 
 	"@7bbdc7d5"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 3 4 5 4 1 )"]; "@7bbdc7d5"->"@6509c5b9"; 
-	"@412bfd43"[shape=circle, style= filled, fillcolor=white, label="( legal red ( move 4 4 4 3 ) )"]; 
+	"@412bfd43"[shape=circle, style= filled, fillcolor=red, label="( legal red ( move 4 4 4 3 ) )"]; 
 	"@49f5f59a"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 5 4 5 5 1 )"]; "@49f5f59a"->"@7f5e103b"; 
 	"@3638ca48"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 5 2 3 2 5 )"]; "@3638ca48"->"@56808055"; 
 	"@7375cf0d"[shape=box, style= filled, fillcolor=grey, label="TRANSITION"]; "@7375cf0d"->"@5f1def92"; 
@@ -6725,7 +6725,7 @@ digraph propNet
 	"@3dd942f7"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 3 3 4 4 4 4 )"]; "@3dd942f7"->"@10e562f8"; 
 	"@5bd864f6"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@5bd864f6"->"@40c7c8cb"; 
 	"@6cee13dc"[shape=ellipse, style= filled, fillcolor=grey, label="OR"]; "@6cee13dc"->"@3e93773c"; 
-	"@7729481e"[shape=circle, style= filled, fillcolor=white, label="anon"]; "@7729481e"->"@73ee1a37"; 
+	"@7729481e"[shape=circle, style= filled, fillcolor=red, label="anon"]; "@7729481e"->"@73ee1a37"; 
 	"@47d6b8ec"[shape=circle, style= filled, fillcolor=white, label="( next_tmp31 1 1 2 5 5 4 )"]; "@47d6b8ec"->"@5e1af4e9"; 
 	"@2c17532d"[shape=circle, style= filled, fillcolor=white, label="( true ( cell 1 2 blank ) )"]; "@2c17532d"->"@29edd7ff"; "@2c17532d"->"@6dfce9ae"; "@2c17532d"->"@2c13982"; "@2c17532d"->"@5f79800f"; "@2c17532d"->"@37832f24"; "@2c17532d"->"@65b90141"; "@2c17532d"->"@2693fe3b"; "@2c17532d"->"@27a33eea"; "@2c17532d"->"@6d0a0426"; "@2c17532d"->"@39625a1f"; "@2c17532d"->"@2815406b"; "@2c17532d"->"@740043af"; 
 	"@d69b256"[shape=invhouse, style= filled, fillcolor=grey, label="AND"]; "@d69b256"->"@6be66853"; 

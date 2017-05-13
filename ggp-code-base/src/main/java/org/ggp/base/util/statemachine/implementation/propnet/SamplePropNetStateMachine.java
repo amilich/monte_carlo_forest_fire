@@ -113,31 +113,38 @@ public class SamplePropNetStateMachine extends StateMachine {
 		if (propNet.getInitProposition() != null) {
 			forwardpropmark(propNet.getInitProposition(), true);
 		}
+
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
 				forwardpropmark(c, c.getValue());
 			}
 		}
-		for (Proposition p : propNet.getAllBasePropositions()) {
-			Component in1 = p.getSingleInput();
-			Component in2 = in1.getSingleInput();
-			boolean val = in2.getValue();
-			if (p.getValue() != val) {
-				thingsToProp.add(p);
+
+		for (Component c : propNet.getComponents()) {
+			if (c instanceof Not) {
+				for (Component out : c.getOutputs()) {
+					boolean val = c.getValue();
+					forwardpropmark(out, val);
+				}
 			}
-			p.setValue(val); // TODO
 		}
+//		for (Proposition p : propNet.getAllBasePropositions()) {
+
+////			if (p.getValue() != val) {
+////				thingsToProp.add(p);
+////			}
+//			// p.setValue(val); // TODO
+//		}
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : bases) {
-			 if (base.getValue()) {
-				 sentences.add(base.getName());
-			 }
+			Component in1 = base.getSingleInput();
+			boolean val = in1.getValue();
+			if (val) {
+				sentences.add(base.getName());
+			}
 		}
 
-//		if (propNet.getInitProposition() != null) {
-//			propNet.getInitProposition().setValue(false);
-//		}
 		return new MachineState(sentences);
 	}
 
@@ -160,6 +167,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
 		updatePropnetState(state);
+
 		List<Role> roles = propNet.getRoles();
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = null;
@@ -168,9 +176,6 @@ public class SamplePropNetStateMachine extends StateMachine {
 		}
 		for (Proposition p : legals) {
 			if (p.getValue()) {
-				// System.out.println(p.getName().get(0));
-				// System.out.println(p.getName().get(1));
-				// System.out.println(p);
 				legalMoves.add(new Move(p.getName().get(1)));
 			}
 		}
@@ -181,16 +186,6 @@ public class SamplePropNetStateMachine extends StateMachine {
 		boolean currVal = c.getValue();
 		if (c instanceof Transition) {
 			return;
-//			Component o = c.getSingleOutput();
-//			if (o instanceof Proposition) {
-//				// System.out.println("Setting prop [" + o + "] from transition [" + c + "] to " + newValue);
-//				Proposition q = (Proposition) o;
-//				q.setValue(newValue);
-//				System.out.println("Things to Prop: " + q);
-//				System.out.println("\t value = : " + newValue);
-//				thingsToProp.add(q);
-//			}
-//			return;
 		}
 		Set<Component> outputs = c.getOutputs();
 		for (Component out : outputs) {
@@ -247,10 +242,20 @@ public class SamplePropNetStateMachine extends StateMachine {
 
 	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
+//		Set<Proposition> toDelete = new HashSet<Proposition>();
+//		for (Proposition p : thingsToProp) {
+//			if (gdlSetContains(stateGdl, p.getName())) {
+//				System.out.println("Early prop of " + p);
+//				forwardpropmark(p, p.getValue());
+//				toDelete.add(p);
+//			}
+//		}
+//		thingsToProp.removeAll(toDelete);
+
 		for (Proposition base : propNet.getAllBasePropositions()) {
 			boolean baseVal = base.getValue();
 			boolean contained = gdlSetContains(stateGdl, base.getName());
-//			forwardpropmark(base, gdlSetContains(stateGdl, base.getName()));
+			//			forwardpropmark(base, gdlSetContains(stateGdl, base.getName()));
 			if (!baseVal && contained) {
 				// was false and is now true
 				System.out.println("State: " + base);
@@ -260,16 +265,16 @@ public class SamplePropNetStateMachine extends StateMachine {
 				System.out.println("State: " + base);
 				forwardpropmark(base, false);
 			}
-			if (baseVal != contained) {
-				forwardpropmark(base, contained);
-			}
+//			if (baseVal != contained) {
+//				forwardpropmark(base, contained);
+//			}
 		}
 	}
 
 	public void updatePropnetMoves(List<Move> moves) {
 		List<GdlSentence> moveGdl = toDoes(moves);
 		for (Proposition base : propNet.getAllInputProps()) {
-//			forwardpropmark(base, gdlListContains(moveGdl, base.getName()));
+			//			forwardpropmark(base, gdlListContains(moveGdl, base.getName()));
 			boolean baseVal = base.getValue();
 			boolean contains = gdlListContains(moveGdl, base.getName());
 			if (!baseVal && contains) {
@@ -283,6 +288,22 @@ public class SamplePropNetStateMachine extends StateMachine {
 			}
 		}
 	}
+
+//	public void updateThingsToProp() {
+//		Set<Proposition> oldThings = new HashSet<Proposition>();
+//		for (Proposition p : thingsToProp) {
+//			oldThings.add(p);
+//		}
+//		thingsToProp.clear();
+//		for (Proposition p : oldThings) {
+//			forwardpropmark(p, p.getValue());
+//		}
+//		if (propNet.getInitProposition() != null) {
+//			if (propNet.getInitProposition().getValue() == true) {
+//				forwardpropmark(propNet.getInitProposition(), false);
+//			}
+//		}
+//	}
 
 	/**
 	 * Computes the next state given state and the list of moves.
@@ -299,34 +320,27 @@ public class SamplePropNetStateMachine extends StateMachine {
 		updatePropnetMoves(moves);
 		System.out.println("Things to Propagate:");
 		System.out.println(thingsToProp.toString());
-		Set<Proposition> oldThings = new HashSet<Proposition>();
-		for (Proposition p : thingsToProp) {
-			oldThings.add(p);
-		}
-		thingsToProp.clear();
-		for (Proposition p : oldThings) {
-			forwardpropmark(p, p.getValue());
-		}
-		if (propNet.getInitProposition().getValue() == true) {
-			 forwardpropmark(propNet.getInitProposition(), false);
-		}
+		// updateThingsToProp();
 
+		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		for (Proposition p : bases) {
 			Component in1 = p.getSingleInput();
 			Component in2 = in1.getSingleInput();
 			boolean val = in2.getValue();
-			if (p.getValue() != val) {
-				thingsToProp.add(p);
+			//if (p.getValue() != val) {
+			// thingsToProp.add(p);
+			// }
+			// p.setValue(val); // TODO
+			if (val) {
+				sentences.add(p.getName());
 			}
-			p.setValue(val); // TODO
 		}
 
-		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
-		for (Proposition base : bases) {
-			// if (propmarkp(base.getSingleInput().getSingleInput())) sentences.add(base.getName());
-			if (base.getValue()) sentences.add(base.getName());
-		}
+//		for (Proposition base : bases) {
+//			// if (propmarkp(base.getSingleInput().getSingleInput())) sentences.add(base.getName());
+//			if (base.getValue()) sentences.add(base.getName());
+//		}
 		return new MachineState(sentences);
 	}
 
