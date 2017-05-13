@@ -19,6 +19,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
 		return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
+//		return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	SamplePropNetStateMachine machineP = null;
@@ -28,8 +29,8 @@ public class MyLegalPlayer extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// TODO Auto-generated method stub
 		moveNum = 0;
-		machineP = (SamplePropNetStateMachine) getStateMachine();
-		machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
+		// machineP = (SamplePropNetStateMachine) getStateMachine();
+		// machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
 
 		StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		m.initialize(getMatch().getGame().getRules());
@@ -38,6 +39,18 @@ public class MyLegalPlayer extends StateMachineGamer {
 	}
 
 	int moveNum = 0;
+
+	 public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
+	        int nDepth = 0;
+	        Random r = new Random();
+	        System.out.println(state);
+	        while(!getStateMachine().isTerminal(state)) {
+	        	List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
+	            state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
+	            System.out.println("\t " + state);
+	        }
+	        return state;
+	    }
 
 	@Override
 	public Move stateMachineSelectMove(long timeout)
@@ -48,12 +61,15 @@ public class MyLegalPlayer extends StateMachineGamer {
 		Role role = getRole();
 		List<Move> moves = machine.getLegalMoves(state, role);
 		System.out.println(moves);
-		machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
-
+		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
+		MachineState m = customdc(state);
+		System.out.println("DC: " + m);
 		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		// getInitialStateMachine().
-		Random r = new Random();
-		return moves.get(r.nextInt(moves.size()));
+		// Random r = new Random();
+		// return moves.get(r.nextInt(moves.size()));
+		System.out.println("Size: " + moves.size());
+		return moves.get(0);
 	}
 
 	@Override
