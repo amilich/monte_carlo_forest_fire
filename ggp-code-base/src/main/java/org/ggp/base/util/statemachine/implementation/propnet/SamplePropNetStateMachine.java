@@ -254,6 +254,14 @@ public class SamplePropNetStateMachine extends StateMachine {
 				forwardpropmark(base, contains);
 			}
 		}
+//		Map<GdlSentence, Proposition> m = propNet.getBasePropositions();
+//		for (GdlSentence s : m.keySet()) {
+//			boolean baseVal = m.get(s).getValue(); // base.getValue();
+//			boolean contains = stateGdl.contains(s); // gdlSetContains(stateGdl, base.getName());
+//			if (baseVal != contains) {
+//				forwardpropmark(m.get(s), contains);
+//			}
+//		}
 	}
 
 	public void updatePropnetMoves(List<Move> moves) {
@@ -265,6 +273,14 @@ public class SamplePropNetStateMachine extends StateMachine {
 				forwardpropmark(base, contains);
 			}
 		}
+//		Map<GdlSentence, Proposition> m = propNet.getInputPropositions();
+//		for (GdlSentence s : m.keySet()) {
+//			boolean baseVal = m.get(s).getValue(); // base.getValue();
+//			boolean contains = moveGdl.contains(s); // gdlSetContains(stateGdl, base.getName());
+//			if (baseVal != contains) {
+//				forwardpropmark(m.get(s), contains);
+//			}
+//		}
 	}
 
 	/**
@@ -274,8 +290,6 @@ public class SamplePropNetStateMachine extends StateMachine {
 	public MachineState getNextState(MachineState state, List<Move> moves)
 			throws TransitionDefinitionException {
 
-		// System.out.println("State: " + state);
-		// System.out.println("Moves: " + moves);
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
 
