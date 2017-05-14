@@ -18,7 +18,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 // Graph based MCTS Node
 public class ThreadedGraphNode {
 	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 2;
+	public static final int NUM_THREADS = 3;
 	public static final int NUM_DEPTH_CHARGES = 3; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
 
@@ -246,7 +246,7 @@ public class ThreadedGraphNode {
 		}
 	}
 
-	static final boolean SIMPLE = true;
+	static final boolean SIMPLE = false;
 	public double simulate()
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		if (machine.isTerminal(state)) {
@@ -270,7 +270,12 @@ public class ThreadedGraphNode {
 			// long t1 = System.nanoTime();
 			Collection<Future<?>> futures = new LinkedList<Future<?>>();
 			for (int ii = 0; ii < NUM_THREADS; ii ++) {
-				DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+				DepthCharger d = null;
+				if (ii == 0) {
+					d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
+				} else {
+					d = new DepthCharger(machines.get(ii - 1), state, player, NUM_DEPTH_CHARGES, true);
+				}
 				// DepthCharger d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
 				rs[ii] = d;
 				futures.add(executor.submit(d));

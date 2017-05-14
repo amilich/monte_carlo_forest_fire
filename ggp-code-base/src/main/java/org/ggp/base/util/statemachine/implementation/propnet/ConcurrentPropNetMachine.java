@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
@@ -31,13 +32,15 @@ import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBui
 
 
 @SuppressWarnings("unused")
-public class SamplePropNetStateMachine extends StateMachine {
+public class ConcurrentPropNetMachine extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
 	private List<Proposition> ordering;
 	/** The player roles */
 	private List<Role> roles;
+
+	private Semaphore lock = new Semaphore(1);
 
 	public PropNet getPropnet() {
 		return propNet;
@@ -49,7 +52,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public void initialize(List<Gdl> description) {
+	public synchronized void initialize(List<Gdl> description) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
@@ -67,8 +70,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	public boolean isTerminal(MachineState state) {
-		// markbases(state);
+	public synchronized boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
 		return propNet.getTerminalProposition().getValue();
 	}
@@ -81,7 +83,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	 * GoalDefinitionException because the goal is ill-defined.
 	 */
 	@Override
-	public int getGoal(MachineState state, Role role)
+	public synchronized int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
 		// markbases(state);
 		updatePropnetState(state);
@@ -99,7 +101,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 		return 0;
 	}
 
-	private MachineState doInitWork() {
+	private synchronized MachineState doInitWork() {
 		for (Proposition p : propNet.getAllBasePropositions()) {
 			p.setValue(false);
 		}
@@ -161,7 +163,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	 * Computes all possible actions for role.
 	 */
 	@Override
-	public List<Move> findActions(Role role)
+	public synchronized List<Move> findActions(Role role)
 			throws MoveDefinitionException {
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
@@ -175,7 +177,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	 * Computes the legal moves for role in state.
 	 */
 	@Override
-	public List<Move> getLegalMoves(MachineState state, Role role)
+	public synchronized List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
 		updatePropnetState(state);
 		List<Move> legalMoves = new ArrayList<Move>();
@@ -188,14 +190,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 		return legalMoves;
 	}
 
-	public void dealWithTrans(Component c, boolean newValue) {
-		Component o = c.getSingleOutput();
-		Proposition q = (Proposition) o;
-		if (newValue) trueProps.add(q.getName());
-		else trueProps.remove(q.getName());
-	}
-
-	public void forwardpropmark(Component c, boolean newValue) {
+	public synchronized void forwardpropmark(Component c, boolean newValue) {
 		boolean currVal = c.getValue();
 		if (c instanceof Transition) {
 			// dealWithTrans(c, newValue);
@@ -231,7 +226,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 		}
 	}
 
-	public void updatePropnetState(MachineState state) {
+	public synchronized void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
 		Map<GdlSentence, Proposition> m = propNet.getBasePropositions();
 		for (GdlSentence s : m.keySet()) {
@@ -242,7 +237,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 		}
 	}
 
-	public void updatePropnetMoves(List<Move> moves) {
+	public synchronized void updatePropnetMoves(List<Move> moves) {
 		List<GdlSentence> moveGdl = toDoes(moves);
 		Map<GdlSentence, Proposition> m = propNet.getInputPropositions();
 		for (GdlSentence s : m.keySet()) {
@@ -257,7 +252,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	 * Computes the next state given state and the list of moves.
 	 */
 	@Override
-	public MachineState getNextState(MachineState state, List<Move> moves)
+	public synchronized MachineState getNextState(MachineState state, List<Move> moves)
 			throws TransitionDefinitionException {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
