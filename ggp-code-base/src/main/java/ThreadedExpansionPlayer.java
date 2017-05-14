@@ -1,5 +1,11 @@
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
@@ -10,15 +16,15 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.SamplePropNetStateMachine;
+import org.ggp.base.util.statemachine.implementation.propnet.ConcurrentPropNetMachine;
 
-public class MCTSGraphPlayer extends StateMachineGamer {
+public class ThreadedExpansionPlayer extends StateMachineGamer {
 	ThreadedGraphNode root = null;
 	List<Gdl> prevRules = null;
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new SamplePropNetStateMachine();
+		return new ConcurrentPropNetMachine();
 	}
 
 	// List of machines used for depth charges
@@ -32,6 +38,8 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 	}
 
+	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+
 	// Must be called in order to reset static information regarding the game.
 	private void resetGraphNode() throws MoveDefinitionException {
 		ThreadedGraphNode.setRole(getRole());
@@ -43,23 +51,19 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		initRoot();
 	}
 
-	private final int MAX_ITERATIONS = 5000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
-		int numLoops = 0;
-		ArrayList<ThreadedGraphNode> path = new ArrayList<ThreadedGraphNode>();
-		while (!MyHeuristics.checkTime(timeout)) {
-			path.clear();
-			numLoops ++;
+		Semaphore backprop = new Semaphore(1);
+		TreeExpander t1 = new TreeExpander(root, backprop, timeout);
+		TreeExpander t2 = new TreeExpander(root, backprop, timeout);
+		Collection<Future<?>> futures = new LinkedList<Future<?>>();
+		futures.add(executor.submit(t1));
+		futures.add(executor.submit(t2));
+
+		for (Future<?> future : futures) {
 			try {
-				ThreadedGraphNode selected = root.selectAndExpand(path);
-				double score = selected.simulate();
-				selected.backpropagate(path, score); // sqrt 2 for c
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-			if (numLoops > MAX_ITERATIONS) break; // TODO
+				future.get();
+			} catch (Exception e) { e.printStackTrace(); }
 		}
-		System.out.println(numLoops);
 	}
 
 
@@ -124,6 +128,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public String getName() {
-		return "GraphMCTSPlayer";
+		return "ThreadedExpansionPlayer";
 	}
 }
