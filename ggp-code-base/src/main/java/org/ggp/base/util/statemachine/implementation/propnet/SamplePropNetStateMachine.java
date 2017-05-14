@@ -144,9 +144,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : bases) {
-			Component in1 = base.getSingleInput();
-			boolean val = in1.getValue();
-			if (val) {
+			if (base.getSingleInput().getValue()) {
 				sentences.add(base.getName());
 			}
 		}
@@ -154,14 +152,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 		if (propNet.getInitProposition() != null) {
 			forwardpropmark(propNet.getInitProposition(), false);
 		}
-		MachineState s = new MachineState(sentences);
-//		try {
-//			// System.out.println("LM on init: " + this.getLegalMoves(s, this.getRoles().get(0)));
-//		} catch (MoveDefinitionException e) {
-//			e.printStackTrace();
-//		}
-
-		return s;
+		return new MachineState(sentences);
 	}
 
 	/**
@@ -170,13 +161,8 @@ public class SamplePropNetStateMachine extends StateMachine {
 	@Override
 	public List<Move> findActions(Role role)
 			throws MoveDefinitionException {
-		// TODO: Compute all moves.
-		List<Role> roles = propNet.getRoles();
 		List<Move> legalMoves = new ArrayList<Move>();
-		Set<Proposition> legals = null;
-		for (Role r : roles) {
-			if (r.equals(role)) legals = propNet.getLegalPropositions().get(r);
-		}
+		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
 			legalMoves.add(new Move(p.getName().get(1)));
 		}
@@ -190,12 +176,8 @@ public class SamplePropNetStateMachine extends StateMachine {
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
 		updatePropnetState(state);
-		List<Role> roles = propNet.getRoles();
 		List<Move> legalMoves = new ArrayList<Move>();
-		Set<Proposition> legals = null;
-		for (Role r : roles) {
-			if (r.equals(role)) legals = propNet.getLegalPropositions().get(r);
-		}
+		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
 			if (p.getValue()) {
 				legalMoves.add(new Move(p.getName().get(1)));
@@ -226,7 +208,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 				} else if (out instanceof Proposition) {
 					forwardpropmark(out, newValue);
 				} else if (out instanceof Transition) {
-					// forwardpropmark(out, newValue);
+					// Do nothing here (base case)
 				}
 			} else {
 				forwardpropmark(out, c.getValue());
@@ -237,33 +219,12 @@ public class SamplePropNetStateMachine extends StateMachine {
 		}
 	}
 
-	boolean gdlSetContains(Set<GdlSentence> list, GdlSentence sent) {
-		String sentStr = sent.toString();
-		for (GdlSentence s : list) {
-			if (s.toString().equals(sentStr)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	boolean gdlListContains(List<GdlSentence> list, GdlSentence sent) {
-		String sentStr = sent.toString();
-		for (GdlSentence s : list) {
-			if (s.toString().equals(sentStr)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
 		Map<GdlSentence, Proposition> m = propNet.getBasePropositions();
 		for (GdlSentence s : m.keySet()) {
-			boolean baseVal = m.get(s).getValue();
 			boolean contains = stateGdl.contains(s);
-			if (baseVal != contains) {
+			if (m.get(s).getValue() != contains) {
 				forwardpropmark(m.get(s), contains);
 			}
 		}
@@ -273,9 +234,8 @@ public class SamplePropNetStateMachine extends StateMachine {
 		List<GdlSentence> moveGdl = toDoes(moves);
 		Map<GdlSentence, Proposition> m = propNet.getInputPropositions();
 		for (GdlSentence s : m.keySet()) {
-			boolean baseVal = m.get(s).getValue();
 			boolean contains = moveGdl.contains(s);
-			if (baseVal != contains) {
+			if (m.get(s).getValue() != contains) {
 				forwardpropmark(m.get(s), contains);
 			}
 		}
@@ -287,7 +247,6 @@ public class SamplePropNetStateMachine extends StateMachine {
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves)
 			throws TransitionDefinitionException {
-
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
 
