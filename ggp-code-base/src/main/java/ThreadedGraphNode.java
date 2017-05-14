@@ -17,6 +17,11 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 // Graph based MCTS Node
 public class ThreadedGraphNode {
+	// Depth charging parameters/objects
+	public static final int NUM_THREADS = 2;
+	public static final int NUM_DEPTH_CHARGES = 3; // TODO
+	Charger rs[] = new Charger[NUM_THREADS];
+
 	public static HashMap<MachineState, ThreadedGraphNode> stateMap = new HashMap<MachineState, ThreadedGraphNode>();
 	public static int numCharges = 0;
 	public double utility = 0;
@@ -48,11 +53,6 @@ public class ThreadedGraphNode {
 	static StateMachine machine;
 	static List<StateMachine> machines;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-
-	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 3;
-	public static final int NUM_DEPTH_CHARGES = 2; // TODO
-	Charger rs[] = new Charger[NUM_THREADS];
 
 	// Set the static, single state machine used for move determination (not for depth charges)
 	public static void setStateMachine(StateMachine machine) {
@@ -125,6 +125,9 @@ public class ThreadedGraphNode {
 	static final double C1 = 0.6;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
+		if (Double.isNaN(stddev)) {
+			stddev = C;
+		}
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
 				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
@@ -243,36 +246,65 @@ public class ThreadedGraphNode {
 		}
 	}
 
+	static final boolean SIMPLE = true;
 	public double simulate()
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		if (machine.isTerminal(state)) {
 			explored = true;
 			return machine.getGoal(state, player);
 		}
-		Collection<Future<?>> futures = new LinkedList<Future<?>>();
-		for (int ii = 0; ii < NUM_THREADS; ii ++) {
-			DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
-			rs[ii] = d;
-			futures.add(executor.submit(d));
-		}
-		for (Future<?> future : futures) {
-			try {
-				future.get();
-			} catch (Exception e) { e.printStackTrace(); }
-		}
 		if (roleIndex < 0) roleIndex = getRoleIndex();
-		double avgScore = 0;
-		int index = roleIndex;
-		for (int ii = 0; ii < NUM_THREADS; ii ++) {
-			double val = rs[ii].getValues()[index];
-			avgScore += val;
-			s0 ++;
-			s1 += val;
-			s2 += val * val;
+		if (SIMPLE) {
+			double avgScore = 0;
+			// long t1 = System.nanoTime();
+			for (int ii = 0; ii < 3; ii ++) {
+				MachineState m = machine.performDepthCharge(state, null);
+				avgScore += machine.getGoal(m, player);
+			}
+			// long t2 = System.nanoTime();
+			// System.out.println("Dc took " + (t2 - t1) + " nanoseconds");
+			numCharges += 3;
+			avgScore /= 3;
+			return avgScore;
+		} else {
+			// long t1 = System.nanoTime();
+			Collection<Future<?>> futures = new LinkedList<Future<?>>();
+			for (int ii = 0; ii < NUM_THREADS; ii ++) {
+				DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+				// DepthCharger d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
+				rs[ii] = d;
+				futures.add(executor.submit(d));
+			}
+			for (Future<?> future : futures) {
+				try {
+					future.get();
+				} catch (Exception e) { e.printStackTrace(); }
+			}
+//			 DepthCharger d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
+//			 d.run();
+
+//			double avgScore = 0;
+//			for (int ii = 0; ii < 1; ii ++) {
+//				double val = d.getValues()[roleIndex];
+//				avgScore += val;
+//				s0 ++;
+//				s1 += val;
+//				s2 += val * val;
+//			}
+			double avgScore = 0;
+			for (int ii = 0; ii < NUM_THREADS; ii ++) {
+				double val = rs[ii].getValues()[roleIndex];
+				avgScore += val;
+				s0 ++;
+				s1 += val;
+				s2 += val * val;
+			}
+			avgScore /= NUM_THREADS;
+			numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
+			// long t2 = System.nanoTime();
+			// System.out.println("Sim " + (t2 - t1) + " nanoseconds");
+			return avgScore;
 		}
-		avgScore /= NUM_THREADS;
-		numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
-		return avgScore;
 	}
 
 	// Used to move the root onward after a move

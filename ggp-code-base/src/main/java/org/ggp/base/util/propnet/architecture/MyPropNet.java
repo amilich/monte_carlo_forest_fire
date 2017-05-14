@@ -23,51 +23,7 @@ import org.ggp.base.util.propnet.architecture.components.Proposition;
 import org.ggp.base.util.propnet.architecture.components.Transition;
 import org.ggp.base.util.statemachine.Role;
 
-
-/**
- * The PropNet class is designed to represent Propositional Networks.
- *
- * A propositional network (also known as a "propnet") is a way of representing
- * a game as a logic circuit. States of the game are represented by assignments
- * of TRUE or FALSE to "base" propositions, each of which represents a single
- * fact that can be true about the state of the game. For example, in a game of
- * Tic-Tac-Toe, the fact (cell 1 1 x) indicates that the cell (1,1) has an 'x'
- * in it. That fact would correspond to a base proposition, which would be set
- * to TRUE to indicate that the fact is true in the current state of the game.
- * Likewise, the base corresponding to the fact (cell 1 1 o) would be false,
- * because in that state of the game there isn't an 'o' in the cell (1,1).
- *
- * A state of the game is uniquely determined by the assignment of truth values
- * to the base propositions in the propositional network. Every assignment of
- * truth values to base propositions corresponds to exactly one unique state of
- * the game.
- *
- * Given the values of the base propositions, you can use the connections in
- * the network (AND gates, OR gates, NOT gates) to determine the truth values
- * of other propositions. For example, you can determine whether the terminal
- * proposition is true: if that proposition is true, the game is over when it
- * reaches this state. Otherwise, if it is false, the game isn't over. You can
- * also determine the value of the goal propositions, which represent facts
- * like (goal xplayer 100). If that proposition is true, then that fact is true
- * in this state of the game, which means that xplayer has 100 points.
- *
- * You can also use a propositional network to determine the next state of the
- * game, given the current state and the moves for each player. First, you set
- * the input propositions which correspond to each move to TRUE. Once that has
- * been done, you can determine the truth value of the transitions. Each base
- * proposition has a "transition" component going into it. This transition has
- * the truth value that its base will take on in the next state of the game.
- *
- * For further information about propositional networks, see:
- *
- * "Decomposition of Games for Efficient Reasoning" by Eric Schkufza.
- * "Factoring General Games using Propositional Automata" by Evan Cox et al.
- *
- * @author Sam Schreiber
- */
-
-public final class PropNet
-{
+public final class MyPropNet {
 	private final Set<Proposition> allLegalProps; // ADDED TODO
 	private final Set<Proposition> allBaseProps; // ADDED TODO
 	private final Set<Proposition> allInputProps; // ADDED TODO
@@ -102,8 +58,7 @@ public final class PropNet
 	/** A helper list of all of the roles. */
 	private final List<Role> roles;
 
-	public void addComponent(Component c)
-	{
+	public void addComponent(Component c) {
 		components.add(c);
 		if (c instanceof Proposition) propositions.add((Proposition)c);
 	}
@@ -115,8 +70,7 @@ public final class PropNet
 	 * @param components
 	 *            A list of Components.
 	 */
-	public PropNet(List<Role> roles, Set<Component> components)
-	{
+	public MyPropNet(List<Role> roles, Set<Component> components) {
 		allLegalProps = new HashSet<Proposition>();
 		allBaseProps = new HashSet<Proposition>();
 		allInputProps = new HashSet<Proposition>();
@@ -133,13 +87,11 @@ public final class PropNet
 		this.legalInputMap = makeLegalInputMap();
 	}
 
-	public List<Role> getRoles()
-	{
+	public List<Role> getRoles() {
 	    return roles;
 	}
 
-	public Map<Proposition, Proposition> getLegalInputMap()
-	{
+	public Map<Proposition, Proposition> getLegalInputMap() {
 		return legalInputMap;
 	}
 

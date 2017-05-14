@@ -14,6 +14,8 @@ public class Proposition extends Component
 	/** The value of the Proposition. */
 	private boolean value;
 
+	public boolean tempVal = false;
+
 	/**
 	 * Creates a new Proposition with name <tt>name</tt>.
 	 *
