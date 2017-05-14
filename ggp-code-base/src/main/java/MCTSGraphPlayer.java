@@ -18,7 +18,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-//		return new CachedStateMachine(new ProverStateMachine());
 		return new SamplePropNetStateMachine();
 	}
 

@@ -35,7 +35,6 @@ public class DepthCharger implements Runnable, Charger {
         while(!machine.isTerminal(state)) {
         	List<List<Move>> jmoves = machine.getLegalJointMoves(state);
             state = machine.getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
-            // System.out.println("\t " + state);
         }
         return state;
     }
@@ -64,7 +63,7 @@ public class DepthCharger implements Runnable, Charger {
 			}
 			for (int ii = 0; ii < numCharges; ii ++) {
 				try {
-					MachineState depthCharge = customdc(state); // machine.performDepthCharge(state, tempDepth);
+					MachineState depthCharge = machine.performDepthCharge(state, null);
 					for (int jj = 0; jj < roles.size(); jj ++) {
 						scores[jj] += machine.getGoal(depthCharge, roles.get(jj));
 					}
