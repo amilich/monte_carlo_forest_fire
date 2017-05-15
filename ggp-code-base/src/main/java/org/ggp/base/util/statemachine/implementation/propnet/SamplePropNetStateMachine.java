@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -54,6 +55,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
 			ordering = getOrdering();
+//			testTopologicalOrdering(ordering);
 			doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -291,7 +293,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	 */
 	public List<Proposition> getOrdering() {
 		// List to contain the topological ordering.
-		List<Proposition> order = new LinkedList<Proposition>();
+		List<Proposition> order = new ArrayList<Proposition>();
 
 		// All of the components in the PropNet
 		List<Component> components = new ArrayList<Component>(propNet.getComponents());
@@ -299,9 +301,48 @@ public class SamplePropNetStateMachine extends StateMachine {
 		// All of the propositions in the PropNet.
 		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
 
-		// TODO: Compute the topological ordering.
+		Queue<Proposition> allSources = new LinkedList<Proposition>();
+		allSources.addAll(propNet.getAllInputProps());
+		allSources.addAll(propNet.getAllBasePropositions());
 
+		HashSet<Proposition> visitedNodes = new HashSet<Proposition>();
+
+		while (!allSources.isEmpty()){
+			Proposition front = allSources.poll();
+			order.add(front);
+			visitedNodes.add(front);
+			for (Component c: front.getOutputs()){
+				if (c instanceof Proposition){
+					Set<Component> otherInputs = c.getInputs();
+					otherInputs.removeAll(visitedNodes);
+					if (otherInputs.isEmpty()){
+						allSources.add((Proposition) c);
+					}
+				}
+
+			}
+		}
+		assert order.size() == propNet.getPropositions().size();
 		return order;
+	}
+
+	// Test if topological ordering worked. Not supposed to be called at runtime
+	public void testTopologicalOrdering(List<Proposition> ordering){
+		for(int i=1; i < ordering.size(); i++){
+			System.out.println(i);
+			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
+			Set<Component> inputs_c = ordering.get(i).getInputs();
+			HashSet<Proposition> inputs = new HashSet<Proposition>();
+			for (Component c : inputs_c){
+				if (c instanceof Proposition){
+					inputs.add((Proposition) c);
+				}
+			}
+			inputs.removeAll(prev);
+			if (!inputs.isEmpty()){
+				throw new Error("Ordering is not topological");
+			}
+		}
 	}
 
 	/* Already implemented for you */
