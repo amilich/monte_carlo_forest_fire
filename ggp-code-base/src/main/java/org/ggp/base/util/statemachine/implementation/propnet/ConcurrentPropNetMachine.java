@@ -85,16 +85,12 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	@Override
 	public synchronized int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
-		// markbases(state);
 		updatePropnetState(state);
 
 		List<Role> roles = propNet.getRoles();
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
 		for (Proposition p : rewards) {
 			if (p.getValue()) {
-				// System.out.println(p.getName().get(0));
-				// System.out.println(p.getName().get(1));
-				// System.out.println(p);
 				return Integer.parseInt(p.getName().get(1).toString());
 			}
 		}
@@ -129,7 +125,9 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		}
 
 		for (Proposition p : propNet.getAllBasePropositions()) {
-			if (p.getValue()) trueProps.add(p.getName());
+			if (p.getValue()) {
+				trueProps.add(p.getName());
+			}
 		}
 
 		Set<Proposition> bases = propNet.getAllBasePropositions();
@@ -256,7 +254,6 @@ public class ConcurrentPropNetMachine extends StateMachine {
 			throws TransitionDefinitionException {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
-
 		// return new MachineState(trueProps);
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
