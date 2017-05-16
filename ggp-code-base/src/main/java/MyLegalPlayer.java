@@ -8,18 +8,18 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+import org.ggp.base.util.statemachine.implementation.propnet.ForwardDifferentialPropNet;
 import org.ggp.base.util.statemachine.implementation.propnet.SamplePropNetStateMachine;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
-		return new CachedStateMachine(new ProverStateMachine());
+		// return new CachedStateMachine(new ProverStateMachine());
+		return new ForwardDifferentialPropNet();
 	}
 
 	SamplePropNetStateMachine machineP = null;
@@ -32,22 +32,29 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// machineP = (SamplePropNetStateMachine) getStateMachine();
 		// machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
 
-		StateMachine m = new CachedStateMachine(new ProverStateMachine());
-		m.initialize(getMatch().getGame().getRules());
-		System.out.println("INIT STATE: " + m.getInitialState());
-		System.out.println("INIT STATE: " + getStateMachine().getInitialState());
+//		StateMachine m = new CachedStateMachine(new ProverStateMachine());
+//		m.initialize(getMatch().getGame().getRules());
+//		System.out.println("INIT STATE: " + m.getInitialState());
+//		System.out.println("INIT STATE: " + getStateMachine().getInitialState());
 	}
 
 	int moveNum = 0;
 
-	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
+	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		Random r = new Random();
 		System.out.println(state);
+		int num = 0;
 		while(!getStateMachine().isTerminal(state)) {
+			System.out.println("\t " + state);
 			List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
 			state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
-			System.out.println("\t " + state);
+			num ++;
+			if (num == 2) {
+				System.out.println("hi");
+			}
 		}
+		System.out.println("NUM = " + num);
+		System.out.println("GOAL = " + getStateMachine().getGoal(state, this.getRole()));
 		return state;
 	}
 
@@ -61,11 +68,12 @@ public class MyLegalPlayer extends StateMachineGamer {
 		List<Move> moves = machine.getLegalMoves(state, role);
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
-		for (int ii = 0; ii < 2; ii ++) {
+		for (int ii = 0; ii < 3; ii ++) {
 			MachineState m = customdc(state);
-			System.out.println("DC: " + m);
+			// System.out.println("DC: " + m);
 		}
-		System.out.println(machine.getNextStates(getCurrentState()));
+		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
+		// System.out.println(machine.getNextStates(getCurrentState()));
 		System.out.println(machine.getLegalJointMoves(getCurrentState()));
 		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		// getInitialStateMachine().

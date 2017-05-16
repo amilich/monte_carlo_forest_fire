@@ -1,36 +1,44 @@
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
+import org.ggp.base.util.statemachine.StateMachine;
+
 public class TreeExpander implements Runnable {
 	private Semaphore canBackprop = null;
-	private ThreadedGraphNode n = null;
+	private MachineLessNode n = null;
 	private long timeout = 0;
 	private static int MAX_ITERATIONS = 5000000;
+	StateMachine machine;
+//	List<StateMachine> machines;
+//	int minInd, maxInd;
 
-	public TreeExpander(ThreadedGraphNode n, Semaphore s, long timeout) {
+	public TreeExpander(MachineLessNode n, Semaphore s, long timeout, StateMachine machine) {
 		this.n = n;
 		this.timeout = timeout;
 		canBackprop = s;
+		this.machine = machine;
+//		this.minInd = minInd;
+//		this.maxInd = maxInd;
 	}
 
 	@Override
 	public void run() {
 		int numLoops = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
-			ArrayList<ThreadedGraphNode> path = new ArrayList<ThreadedGraphNode>();
+			ArrayList<MachineLessNode> path = new ArrayList<MachineLessNode>();
 			numLoops ++;
 			try {
-				// ThreadedGraphNode selected = n.selectAndExpand(path);
-				ThreadedGraphNode selected = n.select(path);
+				// MachineLessNode selected = n.selectAndExpand(path);
 				canBackprop.acquire();
-				ThreadedGraphNode expanded = selected.expand();
+				MachineLessNode selected = n.select(path, machine);
+				MachineLessNode expanded = selected.expand(machine);
 				canBackprop.release();
 				if (!expanded.equals(path.get(path.size() - 1))) path.add(expanded);
 
-				double score = selected.simulate();
-				canBackprop.acquire();
-				selected.backpropagate(path, score); // sqrt 2 for c
-				canBackprop.release();
+				double score = selected.simulate(machine);
+				// canBackprop.acquire();
+				selected.backpropagate(path, score, machine); // sqrt 2 for c
+				// canBackprop.release();
 			} catch(Exception e) {
 				e.printStackTrace();
 			}

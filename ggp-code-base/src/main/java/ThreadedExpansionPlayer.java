@@ -16,15 +16,15 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.ConcurrentPropNetMachine;
+import org.ggp.base.util.statemachine.implementation.propnet.ForwardDifferentialPropNet;
 
 public class ThreadedExpansionPlayer extends StateMachineGamer {
-	ThreadedGraphNode root = null;
+	MachineLessNode root = null;
 	List<Gdl> prevRules = null;
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new ConcurrentPropNetMachine();
+		return new ForwardDifferentialPropNet();
 	}
 
 	// List of machines used for depth charges
@@ -35,29 +35,33 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 		resetGraphNode();
 		moveNum = 0;
 		expandTree(timeout); // TODO
-		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
+		System.out.println("[GRAPH] METAGAME charges = " + MachineLessNode.numCharges);
 	}
 
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	// Must be called in order to reset static information regarding the game.
 	private void resetGraphNode() throws MoveDefinitionException {
-		ThreadedGraphNode.setRole(getRole());
-		ThreadedGraphNode.setStateMachine(getStateMachine());
-		ThreadedGraphNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
-		ThreadedGraphNode.stateMap.clear();
-		ThreadedGraphNode.numCharges = 0;
+		MachineLessNode.setRole(getRole());
+		MachineLessNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
+		MachineLessNode.stateMap.clear();
+		MachineLessNode.numCharges = 0;
 		createMachines(); // Clears and adds new machines
 		initRoot();
 	}
 
+	int num_mach = 2;
 	public void expandTree(long timeout) {
 		Semaphore backprop = new Semaphore(1);
-		TreeExpander t1 = new TreeExpander(root, backprop, timeout);
-		TreeExpander t2 = new TreeExpander(root, backprop, timeout);
+		TreeExpander t1 = new TreeExpander(root, backprop, timeout, getStateMachine());
+		TreeExpander t2 = new TreeExpander(root, backprop, timeout, machines.get(1));
+		// TreeExpander t3 = new TreeExpander(root, backprop, timeout, machines.get(2));
+		// TreeExpander t3 = new TreeExpander(root, backprop, timeout);
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		futures.add(executor.submit(t1));
 		futures.add(executor.submit(t2));
+		// futures.add(executor.submit(t3));
+		// futures.add(executor.submit(t3));
 
 		for (Future<?> future : futures) {
 			try {
@@ -69,7 +73,8 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 
 	private void createMachines() {
 		machines.clear();
-		for (int ii = 1; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
+		machines.add(getStateMachine());
+		for (int ii = 1; ii < num_mach; ii ++) {
 			StateMachine m = getInitialStateMachine();
 			m.initialize(getMatch().getGame().getRules());
 			machines.add(m);
@@ -78,8 +83,7 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 	}
 
 	private void initRoot() throws MoveDefinitionException {
-		ThreadedGraphNode.setStateMachines(machines);
-		root = new ThreadedGraphNode(getCurrentState());
+		root = new MachineLessNode(getCurrentState(), getStateMachine());
 	}
 
 	int moveNum = 0;
@@ -89,7 +93,7 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 		if (root == null) {
 			initRoot();
 		} else if (moveNum != 0){
-			ThreadedGraphNode matchingChild = root.findMatchingState(getCurrentState());
+			MachineLessNode matchingChild = root.findMatchingState(getCurrentState());
 			root = matchingChild; // may be null
 			if (root != null) {
 				System.out.println("*** [GRAPH] ADVANCED TREE ***");
@@ -102,9 +106,9 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 		}
 
 		expandTree(timeout);
-		System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
+		System.out.println("[GRAPH] Num charges = " + MachineLessNode.numCharges);
 		moveNum ++;
-		Move m = root.getBestMove();
+		Move m = root.getBestMove(getStateMachine());
 		return m;
 	}
 

@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
@@ -32,15 +32,15 @@ import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBui
 
 
 @SuppressWarnings("unused")
-public class ConcurrentPropNetMachine extends StateMachine {
+public class ForwardDifferentialPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
-	private List<Proposition> ordering;
+	private static List<Proposition> ordering;
 	/** The player roles */
 	private List<Role> roles;
 
-	private Semaphore lock = new Semaphore(1);
+	private List<GdlSentence> gdlOrder = new ArrayList<GdlSentence>();
 
 	public PropNet getPropnet() {
 		return propNet;
@@ -57,6 +57,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
 			ordering = getOrdering();
+
 			doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -72,7 +73,8 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	@Override
 	public synchronized boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
-		return propNet.getTerminalProposition().getValue();
+		// return propNet.getTerminalProposition().getValue();
+		return propNet.getTerminalProposition().curVal;
 	}
 
 	/**
@@ -85,16 +87,17 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	@Override
 	public synchronized int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
-		// markbases(state);
 		updatePropnetState(state);
 
 		List<Role> roles = propNet.getRoles();
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
+		//		for (Proposition p : rewards) {
+		//			if (p.getValue()) {
+		//				return Integer.parseInt(p.getName().get(1).toString());
+		//			}
+		//		}
 		for (Proposition p : rewards) {
-			if (p.getValue()) {
-				// System.out.println(p.getName().get(0));
-				// System.out.println(p.getName().get(1));
-				// System.out.println(p);
+			if (p.curVal) {
 				return Integer.parseInt(p.getName().get(1).toString());
 			}
 		}
@@ -102,46 +105,34 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	}
 
 	private synchronized MachineState doInitWork() {
-		for (Proposition p : propNet.getAllBasePropositions()) {
-			p.setValue(false);
-		}
-		for (Proposition p : propNet.getAllInputProps()) {
-			p.setValue(false);
-		}
-
-		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true);
+		for (Component p : propNet.getComponents()) {
+			p.curVal = false;
 		}
 
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				forwardpropmark(c, c.getValue());
+				forwardpropmark(c, c.getValue(), false);
 			}
 		}
 
-		for (Component c : propNet.getComponents()) {
-			if (c instanceof Not) {
-				for (Component out : c.getOutputs()) {
-					boolean val = c.getValue();
-					forwardpropmark(out, val);
-				}
-			}
+		for (int ii = 0; ii < ordering.size(); ii ++) {
+			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
 		}
 
-		for (Proposition p : propNet.getAllBasePropositions()) {
-			if (p.getValue()) trueProps.add(p.getName());
+		if (propNet.getInitProposition() != null) {
+			forwardpropmark(propNet.getInitProposition(), true, true);
 		}
 
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : bases) {
-			if (base.getSingleInput().getValue()) {
+			if (base.getSingleInput().getSingleInput().curVal) {
 				sentences.add(base.getName());
 			}
 		}
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false);
+			forwardpropmark(propNet.getInitProposition(), false, false);
 		}
 
 		return new MachineState(sentences);
@@ -163,7 +154,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * Computes all possible actions for role.
 	 */
 	@Override
-	public synchronized List<Move> findActions(Role role)
+	public List<Move> findActions(Role role)
 			throws MoveDefinitionException {
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
@@ -177,73 +168,78 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * Computes the legal moves for role in state.
 	 */
 	@Override
-	public synchronized List<Move> getLegalMoves(MachineState state, Role role)
+	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
 		updatePropnetState(state);
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
-			if (p.getValue()) {
+			if (p.curVal) {
 				legalMoves.add(new Move(p.getName().get(1)));
 			}
 		}
 		return legalMoves;
 	}
 
-	public synchronized void forwardpropmark(Component c, boolean newValue) {
-		boolean currVal = c.getValue();
+	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
+		if (newValue == c.curVal && differential) {
+			return; // stop forward propagating
+		}
+		c.curVal = newValue;
 		if (c instanceof Transition) {
-			// dealWithTrans(c, newValue);
 			return;
 		}
 		Set<Component> outputs = c.getOutputs();
 		for (Component out : outputs) {
-			if (c instanceof Proposition) {
-				Proposition p = (Proposition) c;
-				if (out instanceof And || out instanceof Or || out instanceof Not) {
-					boolean oldVal = out.getValue();
-					p.setValue(newValue);
-					boolean newVal = out.getValue();
-					if (newVal != oldVal) {
-						for (Component comp : out.getOutputs()) {
-							forwardpropmark(comp, newVal);
-						}
+			if (out instanceof Proposition) {
+				forwardpropmark(out, newValue, differential);
+			} else if (out instanceof And) {
+				boolean result = true;
+				for (Component q : out.getInputs()) {
+					if (!q.curVal) {
+						result = false;
+						break;
 					}
-					p.setValue(currVal);
-				} else if (out instanceof Proposition) {
-					forwardpropmark(out, newValue);
-				} else if (out instanceof Transition) {
-					// Do nothing here (base case)
-					// dealWithTrans(out, newValue);
 				}
-			} else {
-				forwardpropmark(out, c.getValue());
+				forwardpropmark(out, result, differential);
+			} else if (out instanceof Or) {
+				boolean result = false;
+				for (Component q : out.getInputs()) {
+					if (q.curVal) {
+						result = true;
+						break;
+					}
+				}
+				forwardpropmark(out, result, differential);
+			} else if (out instanceof Not) {
+				boolean result = !newValue;
+				forwardpropmark(out, result, differential);
+			} else if (out instanceof Transition) {
+				forwardpropmark(out, newValue, differential);
 			}
-		}
-		if (c instanceof Proposition) {
-			Proposition q = (Proposition) c;
-			q.setValue(newValue);
 		}
 	}
 
-	public synchronized void updatePropnetState(MachineState state) {
+	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
 		Map<GdlSentence, Proposition> m = propNet.getBasePropositions();
 		for (GdlSentence s : m.keySet()) {
 			boolean contains = stateGdl.contains(s);
-			if (m.get(s).getValue() != contains) {
-				forwardpropmark(m.get(s), contains);
+			// if (m.get(s).getValue() != contains) {
+			if (m.get(s).curVal != contains) {
+				forwardpropmark(m.get(s), contains, true);
 			}
 		}
 	}
 
-	public synchronized void updatePropnetMoves(List<Move> moves) {
+	public void updatePropnetMoves(List<Move> moves) {
 		List<GdlSentence> moveGdl = toDoes(moves);
 		Map<GdlSentence, Proposition> m = propNet.getInputPropositions();
 		for (GdlSentence s : m.keySet()) {
 			boolean contains = moveGdl.contains(s);
-			if (m.get(s).getValue() != contains) {
-				forwardpropmark(m.get(s), contains);
+			// if (m.get(s).getValue() != contains) {
+			if (m.get(s).curVal != contains) {
+				forwardpropmark(m.get(s), contains, true);
 			}
 		}
 	}
@@ -252,17 +248,17 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * Computes the next state given state and the list of moves.
 	 */
 	@Override
-	public synchronized MachineState getNextState(MachineState state, List<Move> moves)
+	public MachineState getNextState(MachineState state, List<Move> moves)
 			throws TransitionDefinitionException {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
-
 		// return new MachineState(trueProps);
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		for (Proposition p : bases) {
-			if (p.getSingleInput().getValue()) {
+			//if (p.getSingleInput().getValue()) {
+			if (p.getSingleInput().getSingleInput().curVal) {
 				sentences.add(p.getName());
 			}
 		}
@@ -286,17 +282,62 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 */
 	public List<Proposition> getOrdering() {
 		// List to contain the topological ordering.
-		List<Proposition> order = new LinkedList<Proposition>();
+		List<Proposition> order = new ArrayList<Proposition>();
 
 		// All of the components in the PropNet
-		List<Component> components = new ArrayList<Component>(propNet.getComponents());
+		// List<Component> components = new ArrayList<Component>(propNet.getComponents());
 
 		// All of the propositions in the PropNet.
 		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
 
-		// TODO: Compute the topological ordering.
+		Queue<Proposition> allSources = new LinkedList<Proposition>();
+		allSources.addAll(propNet.getAllInputProps());
+		allSources.addAll(propNet.getAllBasePropositions());
 
+//		for (Component c : propNet.getComponents()) {
+//			if (c instanceof Constant) {
+//				c.curVal = c.getValue();
+//				allSources.add(c);
+//			}
+//		}
+
+		HashSet<Component> visitedNodes = new HashSet<Component>();
+
+		while (!allSources.isEmpty()){
+			Proposition front = allSources.poll();
+			order.add(front);
+			visitedNodes.add(front);
+			for (Component c : front.getOutputs()){
+				if (c instanceof Proposition){
+					Set<Component> otherInputs = c.getInputs();
+					otherInputs.removeAll(visitedNodes);
+					if (otherInputs.isEmpty()){
+						allSources.add((Proposition) c);
+					}
+				}
+			}
+		}
+		// assert order.size() == propNet.getPropositions().size();
 		return order;
+	}
+
+	// Test if topological ordering worked. Not supposed to be called at runtime
+	public void testTopologicalOrdering(List<Proposition> ordering){
+		for(int i=1; i < ordering.size(); i++){
+			System.out.println(i);
+			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
+			Set<Component> inputs_c = ordering.get(i).getInputs();
+			HashSet<Proposition> inputs = new HashSet<Proposition>();
+			for (Component c : inputs_c){
+				if (c instanceof Proposition){
+					inputs.add((Proposition) c);
+				}
+			}
+			inputs.removeAll(prev);
+			if (!inputs.isEmpty()){
+				throw new Error("Ordering is not topological");
+			}
+		}
 	}
 
 	/* Already implemented for you */

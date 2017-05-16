@@ -13,7 +13,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
-	final static double MAX_DELIB_THRESHOLD = 1800; // Timeout parameter
+	final static double MAX_DELIB_THRESHOLD = 2000; // Timeout parameter
 
 	public static void determineHeuristics(MachineState state, StateMachine machine, long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException {
