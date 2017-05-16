@@ -42,8 +42,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 	private List<GdlSentence> gdlOrder = new ArrayList<GdlSentence>();
 
-    private Set<Component> trueBases = new HashSet<Component>();
-
 	public PropNet getPropnet() {
 		return propNet;
 	}
@@ -58,9 +56,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
-			if (ordering == null) {
-				ordering = getOrdering();
-			}
+			ordering = getOrdering();
 
 			doInitWork();
 		} catch (InterruptedException e) {
@@ -109,7 +105,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	}
 
 	private synchronized MachineState doInitWork() {
-		System.out.println("have ordering");
 		for (Component p : propNet.getComponents()) {
 			p.curVal = false;
 		}
@@ -140,10 +135,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			forwardpropmark(propNet.getInitProposition(), false, false);
 		}
 
-		// System.out.println(propNet.getTerminalProposition().curVal);
-
-		MachineState m = new MachineState(sentences);
-		return m;
+		return new MachineState(sentences);
 	}
 
 	Set<GdlSentence> trueProps = new HashSet<GdlSentence>();
@@ -195,11 +187,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		}
 		c.curVal = newValue;
 		if (c instanceof Transition) {
-			if (newValue) {
-				trueBases.add(c.getSingleOutput());
-			} else {
-				trueBases.remove(c.getSingleOutput());
-			}
 			return;
 		}
 		Set<Component> outputs = c.getOutputs();
@@ -265,9 +252,9 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			throws TransitionDefinitionException {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
-		return new MachineState(trueProps);
+		// return new MachineState(trueProps);
 
-		/*Set<GdlSentence> sentences = new HashSet<GdlSentence>();
+		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		for (Proposition p : bases) {
 			//if (p.getSingleInput().getValue()) {
@@ -276,7 +263,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			}
 		}
 		// System.out.println("New state: " + sentences);
-		return new MachineState(sentences);*/
+		return new MachineState(sentences);
 	}
 
 	/**

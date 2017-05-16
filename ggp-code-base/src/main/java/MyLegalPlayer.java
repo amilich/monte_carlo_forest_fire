@@ -40,7 +40,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 
 	int moveNum = 0;
 
-	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
+	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		Random r = new Random();
 		System.out.println(state);
 		int num = 0;
@@ -54,6 +54,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 			}
 		}
 		System.out.println("NUM = " + num);
+		System.out.println("GOAL = " + getStateMachine().getGoal(state, this.getRole()));
 		return state;
 	}
 
@@ -67,7 +68,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		List<Move> moves = machine.getLegalMoves(state, role);
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
-		for (int ii = 0; ii < 1; ii ++) {
+		for (int ii = 0; ii < 3; ii ++) {
 			MachineState m = customdc(state);
 			// System.out.println("DC: " + m);
 		}
