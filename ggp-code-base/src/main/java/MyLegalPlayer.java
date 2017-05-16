@@ -45,10 +45,13 @@ public class MyLegalPlayer extends StateMachineGamer {
 		System.out.println(state);
 		int num = 0;
 		while(!getStateMachine().isTerminal(state)) {
+			System.out.println("\t " + state);
 			List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
 			state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
-			System.out.println("\t " + state);
 			num ++;
+			if (num == 2) {
+				System.out.println("hi");
+			}
 		}
 		System.out.println("NUM = " + num);
 		return state;
@@ -64,7 +67,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		List<Move> moves = machine.getLegalMoves(state, role);
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
-		for (int ii = 0; ii < 2; ii ++) {
+		for (int ii = 0; ii < 1; ii ++) {
 			MachineState m = customdc(state);
 			// System.out.println("DC: " + m);
 		}
