@@ -33,7 +33,7 @@ import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBui
 
 
 @SuppressWarnings("unused")
-public class ConcurrentPropNetMachine extends StateMachine {
+public class ForwardDifferentialPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
@@ -55,7 +55,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public void initialize(List<Gdl> description) {
+	public synchronized void initialize(List<Gdl> description) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
@@ -74,7 +74,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	public boolean isTerminal(MachineState state) {
+	public synchronized boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
 		// return propNet.getTerminalProposition().getValue();
 		return propNet.getTerminalProposition().curVal;
@@ -88,7 +88,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * GoalDefinitionException because the goal is ill-defined.
 	 */
 	@Override
-	public int getGoal(MachineState state, Role role)
+	public synchronized int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
 		updatePropnetState(state);
 
@@ -107,7 +107,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		return 0;
 	}
 
-	private MachineState doInitWork() {
+	private synchronized MachineState doInitWork() {
 		System.out.println("have ordering");
 		for (Component p : propNet.getComponents()) {
 			p.curVal = false;
@@ -127,31 +127,6 @@ public class ConcurrentPropNetMachine extends StateMachine {
 			forwardpropmark(propNet.getInitProposition(), true, true);
 		}
 
-		//		for (Component p : propNet.getAllBasePropositions()) {
-		//			forwardpropmark(p, p.curVal, false);
-		//		}
-
-		//		for (Component c : propNet.getComponents()) {
-		//			if (c instanceof Not) {
-		//				boolean val = c.getValue();
-		//				forwardpropmark(c, val, false);
-		//			}
-		//		}
-		propNet.renderToFile("render1.dot");
-		// propNet.renderToFile("render2.dot");
-
-		//		for (Proposition c : propNet.getAllBasePropositions()) {
-		//			c.curVal = c.getSingleInput().getSingleInput().curVal;
-		//		}
-
-		// propNet.renderToFile("render3.dot");
-
-		//		for (Proposition p : propNet.getAllBasePropositions()) {
-		//			if (p.getValue()) {
-		//				trueProps.add(p.getName());
-		//			}
-		//		}
-
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : bases) {
@@ -159,17 +134,12 @@ public class ConcurrentPropNetMachine extends StateMachine {
 				sentences.add(base.getName());
 			}
 		}
-		// propNet.renderToFile("render3.dot");
 
 		if (propNet.getInitProposition() != null) {
 			forwardpropmark(propNet.getInitProposition(), false, false);
 		}
 
-		//		for (Component p : propNet.getComponents()) {
-		//			p.curVal = p.getValue();
-		//		}
-
-		System.out.println(propNet.getTerminalProposition().curVal);
+		// System.out.println(propNet.getTerminalProposition().curVal);
 
 		MachineState m = new MachineState(sentences);
 		return m;
@@ -211,7 +181,6 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
-			// if (p.getValue()) {
 			if (p.curVal) {
 				legalMoves.add(new Move(p.getName().get(1)));
 			}
@@ -220,11 +189,6 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	}
 
 	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (c.equals(propNet.getTerminalProposition()) && newValue) {
-			System.out.println("ALERT");
-		} else if (c.equals(propNet.getTerminalProposition())) {
-			System.out.println("TERMINAL FALSE");
-		}
 		if (newValue == c.curVal && differential) {
 			return; // stop forward propagating
 		}
@@ -232,9 +196,6 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		if (c instanceof Transition) {
 			return;
 		}
-		//		if (c instanceof Proposition) {
-		//			((Proposition) c).curVal = newValue;
-		//		}
 		Set<Component> outputs = c.getOutputs();
 		for (Component out : outputs) {
 			if (out instanceof Proposition) {
@@ -247,9 +208,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 						break;
 					}
 				}
-				if (out.curVal != result) {
-					forwardpropmark(out, result, differential);
-				}
+				forwardpropmark(out, result, differential);
 			} else if (out instanceof Or) {
 				boolean result = false;
 				for (Component q : out.getInputs()) {
@@ -258,44 +217,13 @@ public class ConcurrentPropNetMachine extends StateMachine {
 						break;
 					}
 				}
-				if (out.curVal != result) {
-					forwardpropmark(out, result, differential);
-				}
+				forwardpropmark(out, result, differential);
 			} else if (out instanceof Not) {
 				boolean result = !newValue;
-				if (out.curVal != result) {
-					forwardpropmark(out, result, differential);
-				}
+				forwardpropmark(out, result, differential);
 			} else if (out instanceof Transition) {
 				forwardpropmark(out, newValue, differential);
 			}
-			/*if (c instanceof Proposition) {
-				Proposition p = (Proposition) c;
-				if (out instanceof And || out instanceof Or || out instanceof Not) {
-					boolean oldVal = out.curVal; // out.getValue();
-					p.setValue(newValue);
-					boolean newVal = out.getValue();
-					if (newVal != oldVal) {
-						forwardpropmark(out, newVal);
-//						for (Component comp : out.getOutputs()) {
-//							forwardpropmark(comp, newVal);
-//						}
-					}
-					p.setValue(currVal);
-				} else if (out instanceof Proposition) {
-					forwardpropmark(out, newValue);
-				} else if (out instanceof Transition) {
-					// Do nothing here (base case)
-					// dealWithTrans(out, newValue);
-				}
-			} else if (!(c instanceof Constant)){
-				// the value of my gate has changed
-				// have NOT yet set propositions
-				// Proposition parent = (Proposition) c.getSingleInput();
-				// forwardpropmark(out, out.getValue());
-				forwardpropmark(out, c.getValue());
-				// if ()
-			}*/
 		}
 		//		if (c instanceof Proposition) {
 		//			Proposition q = (Proposition) c;

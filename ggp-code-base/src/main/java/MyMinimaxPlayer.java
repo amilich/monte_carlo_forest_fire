@@ -12,7 +12,7 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.ConcurrentPropNetMachine;
+import org.ggp.base.util.statemachine.implementation.propnet.ForwardDifferentialPropNet;
 
 // Andrew
 
@@ -20,7 +20,7 @@ public class MyMinimaxPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
 		// return new CachedStateMachine(new ProverStateMachine());
-		return new ConcurrentPropNetMachine();
+		return new ForwardDifferentialPropNet();
 	}
 
 	@Override

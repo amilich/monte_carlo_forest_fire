@@ -10,7 +10,7 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.ConcurrentPropNetMachine;
+import org.ggp.base.util.statemachine.implementation.propnet.ForwardDifferentialPropNet;
 
 public class MCTSGraphPlayer extends StateMachineGamer {
 	ThreadedGraphNode root = null;
@@ -18,7 +18,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new ConcurrentPropNetMachine();
+		return new ForwardDifferentialPropNet();
 	}
 
 	// List of machines used for depth charges

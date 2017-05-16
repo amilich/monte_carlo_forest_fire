@@ -23,7 +23,6 @@ public class TreeExpander implements Runnable {
 				// ThreadedGraphNode selected = n.selectAndExpand(path);
 				canBackprop.acquire();
 				ThreadedGraphNode selected = n.select(path);
-				
 				ThreadedGraphNode expanded = selected.expand();
 				canBackprop.release();
 				if (!expanded.equals(path.get(path.size() - 1))) path.add(expanded);
