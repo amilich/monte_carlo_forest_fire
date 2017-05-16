@@ -16,7 +16,6 @@ import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.propnet.architecture.Component;
 import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.propnet.architecture.components.And;
-import org.ggp.base.util.propnet.architecture.components.Constant;
 import org.ggp.base.util.propnet.architecture.components.Not;
 import org.ggp.base.util.propnet.architecture.components.Or;
 import org.ggp.base.util.propnet.architecture.components.Proposition;
@@ -55,7 +54,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public synchronized void initialize(List<Gdl> description) {
+	public void initialize(List<Gdl> description) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
@@ -74,7 +73,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	public synchronized boolean isTerminal(MachineState state) {
+	public boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
 		// return propNet.getTerminalProposition().getValue();
 		return propNet.getTerminalProposition().curVal;
@@ -88,7 +87,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * GoalDefinitionException because the goal is ill-defined.
 	 */
 	@Override
-	public synchronized int getGoal(MachineState state, Role role)
+	public int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
 		updatePropnetState(state);
 
@@ -107,35 +106,26 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		return 0;
 	}
 
-	private synchronized MachineState doInitWork() {
-		//		for (Proposition p : propNet.getAllBasePropositions()) {
-		//			p.setValue(false);
-		//		}
-		//		for (Proposition p : propNet.getAllInputProps()) {
-		//			p.setValue(false);
-		//		}
-		// propNet.renderToFile("hello.dot");
-		//		for (Component p : propNet.getComponents()) {
-		//			if (p instanceof Proposition) {
-		//				// ((Proposition) p).setValue(false);
-		//				p.curVal = false;
-		//			}
-		//		}
+	private MachineState doInitWork() {
 		for (Component p : propNet.getComponents()) {
 			p.curVal = false;
 		}
 
-		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true);
-		}
-		// propNet.renderToFile("render1.dot");
-
 		for (Component c : propNet.getComponents()) {
-			if (c instanceof Constant) {
-				// c.curVal = c.getValue();
-				forwardpropmark(c, c.getValue());
+			if (c instanceof Not) {
+				boolean val = c.getValue();
+				forwardpropmark(c, val, false);
+				// c.curVal = val;
+				//				for (Component out : c.getOutputs()) {
+				//					forwardpropmark(out, val);
+				//				}
 			}
 		}
+
+		if (propNet.getInitProposition() != null) {
+			forwardpropmark(propNet.getInitProposition(), true, false);
+		}
+		// propNet.renderToFile("render1.dot");
 		// propNet.renderToFile("render2.dot");
 
 		//		for (Proposition c : propNet.getAllBasePropositions()) {
@@ -143,17 +133,6 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		//		}
 
 		// propNet.renderToFile("render3.dot");
-
-		for (Component c : propNet.getComponents()) {
-			if (c instanceof Not) {
-				boolean val = c.getValue();
-				forwardpropmark(c, val);
-				// c.curVal = val;
-				//				for (Component out : c.getOutputs()) {
-				//					forwardpropmark(out, val);
-				//				}
-			}
-		}
 
 		//		for (Proposition p : propNet.getAllBasePropositions()) {
 		//			if (p.getValue()) {
@@ -172,14 +151,14 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		propNet.renderToFile("render3.dot");
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false);
+			forwardpropmark(propNet.getInitProposition(), false, false);
 		}
 
 		//		for (Component p : propNet.getComponents()) {
 		//			p.curVal = p.getValue();
 		//		}
 
-		//		System.out.println(propNet.getTerminalProposition().getValue());
+		System.out.println(propNet.getTerminalProposition().curVal);
 		// propNet.getTerminalProposition().setValue(false);
 
 		return new MachineState(sentences);
@@ -201,7 +180,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * Computes all possible actions for role.
 	 */
 	@Override
-	public synchronized List<Move> findActions(Role role)
+	public List<Move> findActions(Role role)
 			throws MoveDefinitionException {
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
@@ -215,7 +194,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * Computes the legal moves for role in state.
 	 */
 	@Override
-	public synchronized List<Move> getLegalMoves(MachineState state, Role role)
+	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
 		updatePropnetState(state);
 		List<Move> legalMoves = new ArrayList<Move>();
@@ -229,15 +208,15 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		return legalMoves;
 	}
 
-	public synchronized void forwardpropmark(Component c, boolean newValue) {
-		if (newValue == c.curVal) {
+	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
+		if (c.equals(propNet.getTerminalProposition()) && newValue) {
+			System.out.println("ALERT");
+		}
+		if (newValue == c.curVal && differential) {
 			return; // stop forward propagating
 		}
-		//		if (c.equals(propNet.getTerminalProposition()) ) {
-		//			System.out.println("ALERT");
-		//		}
 		c.curVal = newValue;
-		if (c instanceof Transition) {
+		if (c instanceof Transition && differential) {
 			return;
 		}
 		//		if (c instanceof Proposition) {
@@ -246,7 +225,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		Set<Component> outputs = c.getOutputs();
 		for (Component out : outputs) {
 			if (out instanceof Proposition) {
-				forwardpropmark(out, newValue);
+				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
 				boolean result = true;
 				for (Component q : out.getInputs()) {
@@ -256,7 +235,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 					}
 				}
 				if (out.curVal != result) {
-					forwardpropmark(out, result);
+					forwardpropmark(out, result, differential);
 				}
 			} else if (out instanceof Or) {
 				boolean result = false;
@@ -267,15 +246,15 @@ public class ConcurrentPropNetMachine extends StateMachine {
 					}
 				}
 				if (out.curVal != result) {
-					forwardpropmark(out, result);
+					forwardpropmark(out, result, differential);
 				}
 			} else if (out instanceof Not) {
 				boolean result = !newValue;
 				if (out.curVal != result) {
-					forwardpropmark(out, result);
+					forwardpropmark(out, result, differential);
 				}
 			} else if (out instanceof Transition) {
-				forwardpropmark(out, newValue);
+				forwardpropmark(out, newValue, differential);
 			}
 			/*if (c instanceof Proposition) {
 				Proposition p = (Proposition) c;
@@ -313,26 +292,26 @@ public class ConcurrentPropNetMachine extends StateMachine {
 		//		}
 	}
 
-	public synchronized void updatePropnetState(MachineState state) {
+	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
 		Map<GdlSentence, Proposition> m = propNet.getBasePropositions();
 		for (GdlSentence s : m.keySet()) {
 			boolean contains = stateGdl.contains(s);
 			// if (m.get(s).getValue() != contains) {
 			if (m.get(s).curVal != contains) {
-				forwardpropmark(m.get(s), contains);
+				forwardpropmark(m.get(s), contains, true);
 			}
 		}
 	}
 
-	public synchronized void updatePropnetMoves(List<Move> moves) {
+	public void updatePropnetMoves(List<Move> moves) {
 		List<GdlSentence> moveGdl = toDoes(moves);
 		Map<GdlSentence, Proposition> m = propNet.getInputPropositions();
 		for (GdlSentence s : m.keySet()) {
 			boolean contains = moveGdl.contains(s);
 			// if (m.get(s).getValue() != contains) {
 			if (m.get(s).curVal != contains) {
-				forwardpropmark(m.get(s), contains);
+				forwardpropmark(m.get(s), contains, true);
 			}
 		}
 	}
@@ -341,7 +320,7 @@ public class ConcurrentPropNetMachine extends StateMachine {
 	 * Computes the next state given state and the list of moves.
 	 */
 	@Override
-	public synchronized MachineState getNextState(MachineState state, List<Move> moves)
+	public MachineState getNextState(MachineState state, List<Move> moves)
 			throws TransitionDefinitionException {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);

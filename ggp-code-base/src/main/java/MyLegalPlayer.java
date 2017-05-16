@@ -69,7 +69,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 			// System.out.println("DC: " + m);
 		}
 		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
-		System.out.println(machine.getNextStates(getCurrentState()));
+		// System.out.println(machine.getNextStates(getCurrentState()));
 		System.out.println(machine.getLegalJointMoves(getCurrentState()));
 		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		// getInitialStateMachine().
