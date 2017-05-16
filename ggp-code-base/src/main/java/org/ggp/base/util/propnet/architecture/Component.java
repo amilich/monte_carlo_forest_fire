@@ -19,6 +19,8 @@ public abstract class Component implements Serializable
     /** The outputs of the component. */
     private final Set<Component> outputs;
 
+    public boolean curVal = false;
+
     /**
      * Creates a new Component with no inputs or outputs.
      */

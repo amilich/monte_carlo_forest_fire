@@ -63,7 +63,7 @@ public class DepthCharger implements Runnable, Charger {
 			}
 			for (int ii = 0; ii < numCharges; ii ++) {
 				try {
-					MachineState depthCharge = machine.performDepthCharge(state, null);
+					MachineState depthCharge = customdc(state); // machine.performDepthCharge(state, null);
 					for (int jj = 0; jj < roles.size(); jj ++) {
 						scores[jj] += machine.getGoal(depthCharge, roles.get(jj));
 					}

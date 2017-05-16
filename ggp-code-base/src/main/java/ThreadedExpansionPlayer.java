@@ -55,9 +55,11 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 		Semaphore backprop = new Semaphore(1);
 		TreeExpander t1 = new TreeExpander(root, backprop, timeout);
 		TreeExpander t2 = new TreeExpander(root, backprop, timeout);
+		// TreeExpander t3 = new TreeExpander(root, backprop, timeout);
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		futures.add(executor.submit(t1));
 		futures.add(executor.submit(t2));
+		// futures.add(executor.submit(t3));
 
 		for (Future<?> future : futures) {
 			try {

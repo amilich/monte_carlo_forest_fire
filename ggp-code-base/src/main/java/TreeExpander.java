@@ -21,16 +21,17 @@ public class TreeExpander implements Runnable {
 			numLoops ++;
 			try {
 				// ThreadedGraphNode selected = n.selectAndExpand(path);
-				ThreadedGraphNode selected = n.select(path);
 				canBackprop.acquire();
+				ThreadedGraphNode selected = n.select(path);
+				
 				ThreadedGraphNode expanded = selected.expand();
 				canBackprop.release();
 				if (!expanded.equals(path.get(path.size() - 1))) path.add(expanded);
 
 				double score = selected.simulate();
-				canBackprop.acquire();
+				// canBackprop.acquire();
 				selected.backpropagate(path, score); // sqrt 2 for c
-				canBackprop.release();
+				// canBackprop.release();
 			} catch(Exception e) {
 				e.printStackTrace();
 			}

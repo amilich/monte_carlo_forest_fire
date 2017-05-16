@@ -247,6 +247,7 @@ public class ThreadedGraphNode {
 	}
 
 	static final boolean SIMPLE = false;
+	static final int NUM_SIMP = 4;
 	public double simulate()
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		if (machine.isTerminal(state)) {
@@ -257,14 +258,14 @@ public class ThreadedGraphNode {
 		if (SIMPLE) {
 			double avgScore = 0;
 			// long t1 = System.nanoTime();
-			for (int ii = 0; ii < 3; ii ++) {
+			for (int ii = 0; ii < NUM_SIMP; ii ++) {
 				MachineState m = machine.performDepthCharge(state, null);
 				avgScore += machine.getGoal(m, player);
 			}
 			// long t2 = System.nanoTime();
 			// System.out.println("Dc took " + (t2 - t1) + " nanoseconds");
-			numCharges += 3;
-			avgScore /= 3;
+			numCharges += NUM_SIMP;
+			avgScore /= NUM_SIMP;
 			return avgScore;
 		} else {
 			// long t1 = System.nanoTime();
