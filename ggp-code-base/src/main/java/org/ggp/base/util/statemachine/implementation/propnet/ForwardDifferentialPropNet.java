@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
@@ -37,13 +36,13 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
-	private List<Proposition> ordering;
+	private static List<Proposition> ordering;
 	/** The player roles */
 	private List<Role> roles;
 
-	private List<GdlSentence> gdlOrder = new ArrayList<GdlSentence>();;
+	private List<GdlSentence> gdlOrder = new ArrayList<GdlSentence>();
 
-	private Semaphore lock = new Semaphore(1);
+    private Set<Component> trueBases = new HashSet<Component>();
 
 	public PropNet getPropnet() {
 		return propNet;
@@ -59,7 +58,9 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
-			ordering = getOrdering();
+			if (ordering == null) {
+				ordering = getOrdering();
+			}
 
 			doInitWork();
 		} catch (InterruptedException e) {
@@ -194,6 +195,11 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		}
 		c.curVal = newValue;
 		if (c instanceof Transition) {
+			if (newValue) {
+				trueBases.add(c.getSingleOutput());
+			} else {
+				trueBases.remove(c.getSingleOutput());
+			}
 			return;
 		}
 		Set<Component> outputs = c.getOutputs();
@@ -225,12 +231,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 				forwardpropmark(out, newValue, differential);
 			}
 		}
-		//		if (c instanceof Proposition) {
-		//			Proposition q = (Proposition) c;
-		//			q.setValue(newValue);
-		//		} else {
-		//			c.curVal = newValue;
-		//		}
 	}
 
 	public void updatePropnetState(MachineState state) {
@@ -265,9 +265,9 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			throws TransitionDefinitionException {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
-		// return new MachineState(trueProps);
+		return new MachineState(trueProps);
 
-		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
+		/*Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 		for (Proposition p : bases) {
 			//if (p.getSingleInput().getValue()) {
@@ -276,7 +276,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			}
 		}
 		// System.out.println("New state: " + sentences);
-		return new MachineState(sentences);
+		return new MachineState(sentences);*/
 	}
 
 	/**
