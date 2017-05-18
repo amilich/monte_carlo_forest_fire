@@ -90,7 +90,7 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		if (root == null) {
+		/* if (root == null) {
 			initRoot();
 		} else if (moveNum != 0){
 			MachineLessNode matchingChild = root.findMatchingState(getCurrentState());
@@ -103,8 +103,8 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 			}
 		} else {
 			System.out.println("[GRAPH] First move: advanced tree.");
-		}
-
+		}*/
+		root = new MachineLessNode(getCurrentState(), getStateMachine());
 		expandTree(timeout);
 		System.out.println("[GRAPH] Num charges = " + MachineLessNode.numCharges);
 		moveNum ++;
