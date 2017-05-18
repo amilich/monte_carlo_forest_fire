@@ -69,6 +69,20 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
 
+			for (Component c : propNet.getComponents()) {
+				if (c instanceof And) {
+					c.type = Component.Type.AND;
+				} else if (c instanceof Or) {
+					c.type = Component.Type.OR;
+				} else if (c instanceof Proposition) {
+					c.type = Component.Type.PROP;
+				} else if (c instanceof Transition) {
+					c.type = Component.Type.TRANS;
+				} else if (c instanceof Not) {
+					c.type = Component.Type.NOT;
+				}
+			}
+
 			doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -105,11 +119,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 		List<Role> roles = propNet.getRoles();
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
-		//		for (Proposition p : rewards) {
-		//			if (p.getValue()) {
-		//				return Integer.parseInt(p.getName().get(1).toString());
-		//			}
-		//		}
 		for (Proposition p : rewards) {
 			if (p.curVal) {
 				return Integer.parseInt(p.getName().get(1).toString());
@@ -223,19 +232,16 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		c.curVal = newValue;
 		if (c instanceof Transition) {
 			Proposition o = (Proposition) c.getSingleOutput();
-			if (newValue) {
-				trueProps.add(o.getName());
-			} else {
-				trueProps.remove(o.getName());
-			}
+			if (newValue) trueProps.add(o.getName());
+			else trueProps.remove(o.getName());
 			return;
 		}
 		List<Component> outputs = c.getOutputs();
 		for (int jj = 0; jj < outputs.size(); jj ++) {
 			Component out = outputs.get(jj);
-			if (out instanceof Proposition) {
+			if (out.type == Component.Type.PROP) {
 				forwardpropmark(out, newValue, differential);
-			} else if (out instanceof And) {
+			} else if (out.type == Component.Type.AND) {
 				if (!newValue) {
 					forwardpropmark(out, false, differential);
 				} else {
@@ -248,7 +254,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 					}
 					forwardpropmark(out, result, differential);
 				}
-			} else if (out instanceof Or) {
+			} else if (out.type == Component.Type.OR) {
 				if (newValue) {
 					forwardpropmark(out, true, differential);
 				} else {
@@ -261,10 +267,10 @@ public class ForwardDifferentialPropNet extends StateMachine {
 					}
 					forwardpropmark(out, result, differential);
 				}
-			} else if (out instanceof Not) {
+			} else if (out.type == Component.Type.NOT) {
 				boolean result = !newValue;
 				forwardpropmark(out, result, differential);
-			} else if (out instanceof Transition) {
+			} else if (out.type == Component.Type.TRANS) {
 				forwardpropmark(out, newValue, differential);
 			}
 		}
