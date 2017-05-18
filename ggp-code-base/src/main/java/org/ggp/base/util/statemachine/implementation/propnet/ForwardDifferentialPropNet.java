@@ -1,6 +1,7 @@
 package org.ggp.base.util.statemachine.implementation.propnet;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
-	private static List<Proposition> ordering;
+	private List<Proposition> ordering;
 	/** The player roles */
 	private List<Role> roles;
 
@@ -58,6 +59,16 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			roles = propNet.getRoles();
 			ordering = getOrdering();
 
+			//			for (Component c : propNet.getComponents()) {
+			//				if (c instanceof And || c instanceof Or) {
+			//					c.crystalize();
+			//					// c.outputs = null;
+			//					// c.inputs = null;
+			//				}
+			//			}
+			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
+			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
+
 			doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -65,6 +76,9 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 		System.out.println("[PropNet] Initialization done");
 	}
+
+	public Proposition[] allBaseArr = null;
+	public Proposition[] allInputArr = null;
 
 	/**
 	 * Computes if the state is terminal. Should return the value
@@ -130,6 +144,13 @@ public class ForwardDifferentialPropNet extends StateMachine {
 				sentences.add(base.getName());
 			}
 		}
+		trueProps.clear();
+		trueProps.addAll(sentences);
+		//		for (Proposition p : propNet.getAllBasePropositions()) {
+		//			if (p.getSingleInput().getSingleInput().curVal) {
+		//				trueProps.add(p.getName());
+		//			}
+		//		}
 
 		if (propNet.getInitProposition() != null) {
 			forwardpropmark(propNet.getInitProposition(), false, false);
@@ -138,6 +159,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		return new MachineState(sentences);
 	}
 
+	BitSet baseBits = new BitSet();
 	Set<GdlSentence> trueProps = new HashSet<GdlSentence>();
 
 	/**
@@ -181,36 +203,64 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		return legalMoves;
 	}
 
+	/**
+	 * Computes the next state given state and the list of moves.
+	 */
+	@Override
+	public MachineState getNextState(MachineState state, List<Move> moves)
+			throws TransitionDefinitionException {
+		updatePropnetState(state);
+		updatePropnetMoves(moves);
+		Set<GdlSentence> newState = new HashSet<GdlSentence>();
+		newState.addAll(trueProps);
+		return new MachineState(newState);
+	}
+
 	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
 		if (newValue == c.curVal && differential) {
 			return; // stop forward propagating
 		}
 		c.curVal = newValue;
 		if (c instanceof Transition) {
+			Proposition o = (Proposition) c.getSingleOutput();
+			if (newValue) {
+				trueProps.add(o.getName());
+			} else {
+				trueProps.remove(o.getName());
+			}
 			return;
 		}
-		Set<Component> outputs = c.getOutputs();
-		for (Component out : outputs) {
+		// List<Component> outputs = c.getOutputs();
+		for (int jj = 0; jj < c.getOutputs().size(); jj ++) {
+			Component out = c.getOutputs().get(jj);
 			if (out instanceof Proposition) {
 				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
-				boolean result = true;
-				for (Component q : out.getInputs()) {
-					if (!q.curVal) {
-						result = false;
-						break;
+				if (!newValue) {
+					forwardpropmark(out, false, differential);
+				} else {
+					boolean result = true;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (!out.inputs.get(ii).curVal) {
+							result = false;
+							break;
+						}
 					}
+					forwardpropmark(out, result, differential);
 				}
-				forwardpropmark(out, result, differential);
 			} else if (out instanceof Or) {
-				boolean result = false;
-				for (Component q : out.getInputs()) {
-					if (q.curVal) {
-						result = true;
-						break;
+				if (newValue) {
+					forwardpropmark(out, true, differential);
+				} else {
+					boolean result = false;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (out.inputs.get(ii).curVal) {
+							result = true;
+							break;
+						}
 					}
+					forwardpropmark(out, result, differential);
 				}
-				forwardpropmark(out, result, differential);
 			} else if (out instanceof Not) {
 				boolean result = !newValue;
 				forwardpropmark(out, result, differential);
@@ -222,48 +272,22 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
-		Map<GdlSentence, Proposition> m = propNet.getBasePropositions();
-		for (GdlSentence s : m.keySet()) {
-			boolean contains = stateGdl.contains(s);
-			// if (m.get(s).getValue() != contains) {
-			if (m.get(s).curVal != contains) {
-				forwardpropmark(m.get(s), contains, true);
+		for (int ii = 0; ii < allBaseArr.length; ii ++) {
+			boolean contains = stateGdl.contains(allBaseArr[ii].getName());
+			if (allBaseArr[ii].curVal != contains) {
+				forwardpropmark(allBaseArr[ii], contains, true);
 			}
 		}
 	}
 
 	public void updatePropnetMoves(List<Move> moves) {
-		List<GdlSentence> moveGdl = toDoes(moves);
-		Map<GdlSentence, Proposition> m = propNet.getInputPropositions();
-		for (GdlSentence s : m.keySet()) {
-			boolean contains = moveGdl.contains(s);
-			// if (m.get(s).getValue() != contains) {
-			if (m.get(s).curVal != contains) {
-				forwardpropmark(m.get(s), contains, true);
+		Set<GdlSentence> moveGdl = toDoes(moves); // new HashSet<GdlSentence>(toDoes(moves));
+		for (int ii = 0; ii < allInputArr.length; ii ++) {
+			boolean contains = moveGdl.contains(allInputArr[ii].getName());
+			if (allInputArr[ii].curVal != contains) {
+				forwardpropmark(allInputArr[ii], contains, true);
 			}
 		}
-	}
-
-	/**
-	 * Computes the next state given state and the list of moves.
-	 */
-	@Override
-	public MachineState getNextState(MachineState state, List<Move> moves)
-			throws TransitionDefinitionException {
-		updatePropnetState(state);
-		updatePropnetMoves(moves);
-		// return new MachineState(trueProps);
-
-		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
-		Set<Proposition> bases = propNet.getAllBasePropositions();
-		for (Proposition p : bases) {
-			//if (p.getSingleInput().getValue()) {
-			if (p.getSingleInput().getSingleInput().curVal) {
-				sentences.add(p.getName());
-			}
-		}
-		// System.out.println("New state: " + sentences);
-		return new MachineState(sentences);
 	}
 
 	/**
@@ -294,35 +318,29 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		allSources.addAll(propNet.getAllInputProps());
 		allSources.addAll(propNet.getAllBasePropositions());
 
-//		for (Component c : propNet.getComponents()) {
-//			if (c instanceof Constant) {
-//				c.curVal = c.getValue();
-//				allSources.add(c);
-//			}
-//		}
-
 		HashSet<Component> visitedNodes = new HashSet<Component>();
 
-		while (!allSources.isEmpty()){
-			Proposition front = allSources.poll();
-			order.add(front);
-			visitedNodes.add(front);
-			for (Component c : front.getOutputs()){
-				if (c instanceof Proposition){
-					Set<Component> otherInputs = c.getInputs();
-					otherInputs.removeAll(visitedNodes);
-					if (otherInputs.isEmpty()){
-						allSources.add((Proposition) c);
-					}
-				}
-			}
-		}
+//		while (!allSources.isEmpty()){
+//			Proposition front = allSources.poll();
+//			order.add(front);
+//			visitedNodes.add(front);
+//			for (Component c : front.getOutputs()){
+//				if (c instanceof Proposition){
+//					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
+//					otherInputs.removeAll(visitedNodes);
+//					if (otherInputs.isEmpty()){
+//						allSources.add((Proposition) c);
+//					}
+//				}
+//			}
+//		}
 		// assert order.size() == propNet.getPropositions().size();
+		order.addAll(allSources);
 		return order;
 	}
 
 	// Test if topological ordering worked. Not supposed to be called at runtime
-	public void testTopologicalOrdering(List<Proposition> ordering){
+	/*public void testTopologicalOrdering(List<Proposition> ordering){
 		for(int i=1; i < ordering.size(); i++){
 			System.out.println(i);
 			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
@@ -338,7 +356,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 				throw new Error("Ordering is not topological");
 			}
 		}
-	}
+	}*/
 
 	/* Already implemented for you */
 	@Override
@@ -359,8 +377,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	 * @param moves
 	 * @return
 	 */
-	private List<GdlSentence> toDoes(List<Move> moves) {
-		List<GdlSentence> doeses = new ArrayList<GdlSentence>(moves.size());
+	private Set<GdlSentence> toDoes(List<Move> moves) {
+		Set<GdlSentence> doeses = new HashSet<GdlSentence>(moves.size());
 		Map<Role, Integer> roleIndices = getRoleIndices();
 
 		for (int i = 0; i < roles.size(); i++) {

@@ -61,7 +61,7 @@ public class WorkingPropNet extends StateMachine {
     }
 
     public boolean propmarkconjunction(And a) {
-    	Set<Component> inputs = a.getInputs();
+    	List<Component> inputs = a.getInputs();
     	for (Component c : inputs) {
     		if (!propmarkp(c)) return false;
     	}
@@ -69,7 +69,7 @@ public class WorkingPropNet extends StateMachine {
     }
 
     public boolean propmarkdisjunction(Or a) {
-    	Set<Component> inputs = a.getInputs();
+    	List<Component> inputs = a.getInputs();
     	for (Component c : inputs) {
     		if (propmarkp(c)) return true;
     	}

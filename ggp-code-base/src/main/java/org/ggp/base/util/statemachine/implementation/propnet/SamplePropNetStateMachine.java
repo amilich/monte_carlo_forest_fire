@@ -203,7 +203,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 			// dealWithTrans(c, newValue);
 			return;
 		}
-		Set<Component> outputs = c.getOutputs();
+		List<Component> outputs = c.getOutputs();
 		for (Component out : outputs) {
 			if (c instanceof Proposition) {
 				Proposition p = (Proposition) c;
@@ -313,7 +313,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 			visitedNodes.add(front);
 			for (Component c: front.getOutputs()){
 				if (c instanceof Proposition){
-					Set<Component> otherInputs = c.getInputs();
+					List<Component> otherInputs = c.getInputs();
 					otherInputs.removeAll(visitedNodes);
 					if (otherInputs.isEmpty()){
 						allSources.add((Proposition) c);
@@ -327,7 +327,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 	}
 
 	// Test if topological ordering worked. Not supposed to be called at runtime
-	public void testTopologicalOrdering(List<Proposition> ordering){
+	/*public void testTopologicalOrdering(List<Proposition> ordering){
 		for(int i=1; i < ordering.size(); i++){
 			System.out.println(i);
 			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
@@ -343,7 +343,7 @@ public class SamplePropNetStateMachine extends StateMachine {
 				throw new Error("Ordering is not topological");
 			}
 		}
-	}
+	}*/
 
 	/* Already implemented for you */
 	@Override

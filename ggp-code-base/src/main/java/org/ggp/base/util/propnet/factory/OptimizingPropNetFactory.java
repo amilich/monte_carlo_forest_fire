@@ -1651,8 +1651,8 @@ public class OptimizingPropNetFactory {
 		}
 		for(Proposition p : toSplice) {
 			//Get the inputs and outputs...
-			Set<Component> inputs = p.getInputs();
-			Set<Component> outputs = p.getOutputs();
+			Set<Component> inputs = new HashSet<Component>(p.getInputs());
+			Set<Component> outputs = new HashSet<Component>(p.getOutputs());
 			//Remove the proposition...
 			pn.removeComponent(p);
 			//And splice the inputs and outputs back together
