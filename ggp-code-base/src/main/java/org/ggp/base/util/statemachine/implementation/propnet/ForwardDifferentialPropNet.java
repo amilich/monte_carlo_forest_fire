@@ -53,7 +53,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public synchronized void initialize(List<Gdl> description) {
+	public void initialize(List<Gdl> description) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
@@ -85,7 +85,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	public synchronized boolean isTerminal(MachineState state) {
+	public boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
 		// return propNet.getTerminalProposition().getValue();
 		return propNet.getTerminalProposition().curVal;
@@ -99,7 +99,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	 * GoalDefinitionException because the goal is ill-defined.
 	 */
 	@Override
-	public synchronized int getGoal(MachineState state, Role role)
+	public int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
 		updatePropnetState(state);
 
@@ -118,7 +118,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		return 0;
 	}
 
-	private synchronized MachineState doInitWork() {
+	private MachineState doInitWork() {
 		for (Component p : propNet.getComponents()) {
 			p.curVal = false;
 		}
@@ -230,9 +230,9 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			}
 			return;
 		}
-		// List<Component> outputs = c.getOutputs();
-		for (int jj = 0; jj < c.getOutputs().size(); jj ++) {
-			Component out = c.getOutputs().get(jj);
+		List<Component> outputs = c.getOutputs();
+		for (int jj = 0; jj < outputs.size(); jj ++) {
+			Component out = outputs.get(jj);
 			if (out instanceof Proposition) {
 				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
