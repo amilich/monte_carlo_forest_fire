@@ -129,10 +129,16 @@ public class BasicFactorPropNet extends StateMachine {
 	// ASSUMING ONE PLAYER
 	public Proposition findBestGoal(Set<Proposition> goals) {
 		int maxGoal = -1;
+		Proposition f = null;
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(propNet.getRoles().get(0));
 		for (Proposition p : rewards) {
-			int val = Integer.parseInt(p.getName().get(1).toString());;
+			int val = Integer.parseInt(p.getName().get(1).toString());
+			if (val > maxGoal) {
+				maxGoal = val;
+				f = p;
+			}
 		}
+		return f;
 	}
 
 	public Set<Proposition> factorSubgames() {
@@ -142,7 +148,7 @@ public class BasicFactorPropNet extends StateMachine {
 		for (Proposition p : propNet.getAllGoalPropositions()) {
 			andOrDfs(term, gameRoots);
 		}
-		// propNet.renderToFile("best.dot");
+
 		System.out.println("Game Roots: " + gameRoots);
 		Map<Proposition, Set<Proposition>> allGames = new HashMap<Proposition, Set<Proposition>>();
 		for (Proposition p : gameRoots) {
@@ -150,22 +156,17 @@ public class BasicFactorPropNet extends StateMachine {
 			mergeddfs(p, game, allGames);
 		}
 		Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
-//		Proposition bestRoot = null;
-//		double minSteps = Double.POSITIVE_INFINITY;
-//		for (Proposition p : allGames.keySet()) {
-//			double numSteps = getNumSteps(allGames.get(p));
-//			System.out.println("Root game [" + p + "] has " + numSteps + " steps.");
-//			if (numSteps < minSteps && numSteps > 0) {
-//				bestRoot = p;
-//				minSteps = numSteps;
-//			}
-//		}
-//		System.out.println("Selected root: " + bestRoot);
-//		if (bestRoot == null) {
-//			return null;
-//		} else {
-//			return allGames.get(bestRoot);
-//		}
+		Set<Proposition> goalRoots = new HashSet<Proposition>();
+		andOrDfs(bestGoal, goalRoots);
+		System.out.println("Best goal: " + bestGoal);
+		Proposition root = goalRoots.iterator().next();
+		for (Proposition key : allGames.keySet()) {
+			if (allGames.get(key).contains(root) || root == key) {
+				System.out.println("Factored game to key " + key);
+				return allGames.get(key);
+			}
+		}
+		return allGames.values().iterator().next();
 	}
 
 	public Set<Proposition> terminalDFS(Proposition t, Set<Proposition> goals) {
@@ -199,8 +200,6 @@ public class BasicFactorPropNet extends StateMachine {
 			roles = propNet.getRoles();
 			ordering = getOrdering();
 
-//			System.out.println(importantBases.size());
-//			System.out.println(propNet.getAllBasePropositions().size());
 			Set<Proposition> factoredBases = factorSubgames();
 			allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
 
