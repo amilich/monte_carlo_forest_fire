@@ -71,6 +71,7 @@ public final class PropNet
 	private final Set<Proposition> allLegalProps; // ADDED TODO
 	private final Set<Proposition> allBaseProps; // ADDED TODO
 	private final Set<Proposition> allInputProps; // ADDED TODO
+	private final Set<Proposition> allGoalProps; // ADDED TODO
 
 	/** References to every component in the PropNet. */
 	private final Set<Component> components;
@@ -102,8 +103,7 @@ public final class PropNet
 	/** A helper list of all of the roles. */
 	private final List<Role> roles;
 
-	public void addComponent(Component c)
-	{
+	public void addComponent(Component c) {
 		components.add(c);
 		if (c instanceof Proposition) propositions.add((Proposition)c);
 	}
@@ -115,11 +115,11 @@ public final class PropNet
 	 * @param components
 	 *            A list of Components.
 	 */
-	public PropNet(List<Role> roles, Set<Component> components)
-	{
+	public PropNet(List<Role> roles, Set<Component> components) {
 		allLegalProps = new HashSet<Proposition>();
 		allBaseProps = new HashSet<Proposition>();
 		allInputProps = new HashSet<Proposition>();
+		allGoalProps = new HashSet<Proposition>();
 
 	    this.roles = roles;
 		this.components = components;
@@ -133,13 +133,11 @@ public final class PropNet
 		this.legalInputMap = makeLegalInputMap();
 	}
 
-	public List<Role> getRoles()
-	{
+	public List<Role> getRoles() {
 	    return roles;
 	}
 
-	public Map<Proposition, Proposition> getLegalInputMap()
-	{
+	public Map<Proposition, Proposition> getLegalInputMap() {
 		return legalInputMap;
 	}
 
@@ -172,8 +170,7 @@ public final class PropNet
 	 * @return References to every BaseProposition in the PropNet, indexed by
 	 *         name.
 	 */
-	public Map<GdlSentence, Proposition> getBasePropositions()
-	{
+	public Map<GdlSentence, Proposition> getBasePropositions() {
 		return basePropositions;
 	}
 
@@ -182,8 +179,7 @@ public final class PropNet
 	 *
 	 * @return References to every Component in the PropNet.
 	 */
-	public Set<Component> getComponents()
-	{
+	public Set<Component> getComponents() {
 		return components;
 	}
 
@@ -193,8 +189,7 @@ public final class PropNet
 	 * @return References to every GoalProposition in the PropNet, indexed by
 	 *         player name.
 	 */
-	public Map<Role, Set<Proposition>> getGoalPropositions()
-	{
+	public Map<Role, Set<Proposition>> getGoalPropositions() {
 		return goalPropositions;
 	}
 
@@ -203,8 +198,7 @@ public final class PropNet
 	 *
 	 * @return
 	 */
-	public Proposition getInitProposition()
-	{
+	public Proposition getInitProposition() {
 		return initProposition;
 	}
 
@@ -214,8 +208,7 @@ public final class PropNet
 	 * @return References to every InputProposition in the PropNet, indexed by
 	 *         name.
 	 */
-	public Map<GdlSentence, Proposition> getInputPropositions()
-	{
+	public Map<GdlSentence, Proposition> getInputPropositions() {
 		return inputPropositions;
 	}
 
@@ -327,24 +320,24 @@ public final class PropNet
 	 *
 	 * @return An index over the GoalPropositions in the PropNet.
 	 */
-	private Map<Role, Set<Proposition>> recordGoalPropositions()
-	{
+	private Map<Role, Set<Proposition>> recordGoalPropositions() {
 		Map<Role, Set<Proposition>> goalPropositions = new HashMap<Role, Set<Proposition>>();
-		for (Proposition proposition : propositions)
-		{
+		for (Proposition proposition : propositions) {
 		    // Skip all propositions that aren't GdlRelations.
 		    if (!(proposition.getName() instanceof GdlRelation))
 		        continue;
 
 			GdlRelation relation = (GdlRelation) proposition.getName();
-			if (!relation.getName().getValue().equals("goal"))
-			    continue;
+			if (!relation.getName().getValue().equals("goal")) {
+				continue;
+			}
 
 			Role theRole = new Role((GdlConstant) relation.get(0));
 			if (!goalPropositions.containsKey(theRole)) {
 				goalPropositions.put(theRole, new HashSet<Proposition>());
 			}
 			goalPropositions.get(theRole).add(proposition);
+			allGoalProps.add(proposition);
 		}
 
 		return goalPropositions;
@@ -394,6 +387,10 @@ public final class PropNet
 		}
 
 		return inputPropositions;
+	}
+
+	public Set<Proposition> getAllGoalPropositions() {
+		return allGoalProps;
 	}
 
 	public Set<Proposition> getAllLegalPropositions() {
