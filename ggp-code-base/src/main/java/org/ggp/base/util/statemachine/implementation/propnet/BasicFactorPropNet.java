@@ -92,10 +92,10 @@ public class BasicFactorPropNet extends StateMachine {
 			nodesToVisit.addAll(currNode.inputs);
 			if (propNet.getAllBasePropositions().contains(currNode)) {
 				basesFound.add((Proposition) currNode);
-			}
-			for (Proposition key : allGames.keySet()) {
-				if (allGames.get(key).contains((Proposition) currNode)) {
-					potentialKeys.add(key);
+				for (Proposition key : allGames.keySet()) {
+					if (allGames.get(key).contains((Proposition) currNode)) {
+						potentialKeys.add(key);
+					}
 				}
 			}
 		}
@@ -116,14 +116,23 @@ public class BasicFactorPropNet extends StateMachine {
 	}
 
 	public double getNumSteps(Set<Proposition> propositions) {
-		double maxStep = 0;
+		double maxStep = -1;
 		for (Proposition p : propositions) {
 			if (p.toString().contains("step")) {
-				int stepNum = Integer.parseInt(p.getName().get(1).toString());
+				int stepNum = Integer.parseInt(p.getName().getBody().get(1).toString());
 				if (stepNum > maxStep) maxStep = stepNum;
 			}
 		}
 		return maxStep;
+	}
+
+	// ASSUMING ONE PLAYER
+	public Proposition findBestGoal(Set<Proposition> goals) {
+		int maxGoal = -1;
+		Set<Proposition> rewards = propNet.getGoalPropositions().get(propNet.getRoles().get(0));
+		for (Proposition p : rewards) {
+			int val = Integer.parseInt(p.getName().get(1).toString());;
+		}
 	}
 
 	public Set<Proposition> factorSubgames() {
@@ -140,22 +149,23 @@ public class BasicFactorPropNet extends StateMachine {
 			Set<Proposition> game = new HashSet<Proposition>();
 			mergeddfs(p, game, allGames);
 		}
-		Proposition bestRoot = null;
-		double minSteps = Double.POSITIVE_INFINITY;
-		for (Proposition p : allGames.keySet()) {
-			double numSteps = getNumSteps(allGames.get(p));
-			System.out.println("Root game [" + p + "] has " + numSteps + " steps.");
-			if (numSteps < minSteps) {
-				bestRoot = p;
-				minSteps = numSteps;
-			}
-		}
-		System.out.println("Selected root: " + bestRoot);
-		if (bestRoot == null) {
-			return null;
-		} else {
-			return allGames.get(bestRoot);
-		}
+		Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
+//		Proposition bestRoot = null;
+//		double minSteps = Double.POSITIVE_INFINITY;
+//		for (Proposition p : allGames.keySet()) {
+//			double numSteps = getNumSteps(allGames.get(p));
+//			System.out.println("Root game [" + p + "] has " + numSteps + " steps.");
+//			if (numSteps < minSteps && numSteps > 0) {
+//				bestRoot = p;
+//				minSteps = numSteps;
+//			}
+//		}
+//		System.out.println("Selected root: " + bestRoot);
+//		if (bestRoot == null) {
+//			return null;
+//		} else {
+//			return allGames.get(bestRoot);
+//		}
 	}
 
 	public Set<Proposition> terminalDFS(Proposition t, Set<Proposition> goals) {
@@ -235,11 +245,6 @@ public class BasicFactorPropNet extends StateMachine {
 
 		List<Role> roles = propNet.getRoles();
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
-		//		for (Proposition p : rewards) {
-		//			if (p.getValue()) {
-		//				return Integer.parseInt(p.getName().get(1).toString());
-		//			}
-		//		}
 		for (Proposition p : rewards) {
 			if (p.curVal) {
 				return Integer.parseInt(p.getName().get(1).toString());
