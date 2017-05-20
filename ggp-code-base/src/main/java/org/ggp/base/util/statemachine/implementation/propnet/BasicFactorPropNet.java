@@ -2,6 +2,7 @@ package org.ggp.base.util.statemachine.implementation.propnet;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +34,7 @@ import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBui
 
 
 @SuppressWarnings("unused")
-public class ForwardDifferentialPropNet extends StateMachine {
+public class BasicFactorPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
@@ -45,6 +46,146 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 	public PropNet getPropnet() {
 		return propNet;
+	}
+
+	public void dfs(Proposition p, Set<Proposition> basesFound) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+			if (propNet.getAllBasePropositions().contains(currNode)) {
+				basesFound.add((Proposition) currNode);
+			}
+		}
+	}
+
+	public void andOrDfs(Proposition p, Set<Proposition> basesFound) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+
+			if (currNode instanceof Proposition && currNode != p) {
+				basesFound.add((Proposition) currNode);
+			} else {
+				nodesToVisit.addAll(currNode.inputs);
+			}
+		}
+	}
+
+	public void mergeddfs(Proposition p, Set<Proposition> basesFound, Map<Proposition, Set<Proposition>> allGames) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		List<Proposition> potentialKeys = new ArrayList<Proposition>();
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+			if (propNet.getAllBasePropositions().contains(currNode)) {
+				basesFound.add((Proposition) currNode);
+				for (Proposition key : allGames.keySet()) {
+					if (allGames.get(key).contains((Proposition) currNode)) {
+						potentialKeys.add(key);
+					}
+				}
+			}
+		}
+		if (potentialKeys.size() == 0) {
+			allGames.put(p, basesFound);
+		} else {
+			for (Proposition key : potentialKeys) {
+				basesFound.addAll(allGames.get(key));
+				if (propNet.getAllBasePropositions().contains(key)) {
+					basesFound.add(key);
+				}
+			}
+			for (Proposition key : potentialKeys) {
+				allGames.remove(key);
+			}
+			allGames.put(p, basesFound);
+		}
+	}
+
+	public double getNumSteps(Set<Proposition> propositions) {
+		double maxStep = -1;
+		for (Proposition p : propositions) {
+			if (p.toString().contains("step")) {
+				int stepNum = Integer.parseInt(p.getName().getBody().get(1).toString());
+				if (stepNum > maxStep) maxStep = stepNum;
+			}
+		}
+		return maxStep;
+	}
+
+	// ASSUMING ONE PLAYER
+	public Proposition findBestGoal(Set<Proposition> goals) {
+		int maxGoal = -1;
+		Proposition f = null;
+		Set<Proposition> rewards = propNet.getGoalPropositions().get(propNet.getRoles().get(0));
+		for (Proposition p : rewards) {
+			int val = Integer.parseInt(p.getName().get(1).toString());
+			if (val > maxGoal) {
+				maxGoal = val;
+				f = p;
+			}
+		}
+		return f;
+	}
+
+	public Set<Proposition> factorSubgames() {
+		Proposition term = propNet.getTerminalProposition();
+		Set<Proposition> gameRoots = new HashSet<Proposition>();
+		andOrDfs(term, gameRoots);
+		for (Proposition p : propNet.getAllGoalPropositions()) {
+			andOrDfs(term, gameRoots);
+		}
+
+		System.out.println("Game Roots: " + gameRoots);
+		Map<Proposition, Set<Proposition>> allGames = new HashMap<Proposition, Set<Proposition>>();
+		for (Proposition p : gameRoots) {
+			Set<Proposition> game = new HashSet<Proposition>();
+			mergeddfs(p, game, allGames);
+		}
+		Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
+		Set<Proposition> goalRoots = new HashSet<Proposition>();
+		andOrDfs(bestGoal, goalRoots);
+		System.out.println("Best goal: " + bestGoal);
+		Proposition root = goalRoots.iterator().next();
+		for (Proposition key : allGames.keySet()) {
+			if (allGames.get(key).contains(root) || root == key) {
+				System.out.println("Factored game to key " + key);
+				return allGames.get(key);
+			}
+		}
+		return allGames.values().iterator().next();
+	}
+
+	public Set<Proposition> terminalDFS(Proposition t, Set<Proposition> goals) {
+		Set<Proposition> basesFound = new HashSet<Proposition>();
+		dfs(t, basesFound);
+		for (Proposition p : goals) {
+			dfs(p, basesFound);
+		}
+
+		System.out.println(basesFound);
+		Set<Proposition> importantBases = new HashSet<Proposition>();
+		for (Proposition p : propNet.getAllBasePropositions()) {
+			if (basesFound.contains(p)) {
+				importantBases.add(p);
+			}
+		}
+		System.out.println(importantBases);
+		// HashSet<Proposition> uselessBases = propNet.getAllBasePropositions().remove;
+		return importantBases;
 	}
 
 	/**
@@ -59,7 +200,12 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			roles = propNet.getRoles();
 			ordering = getOrdering();
 
-			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
+			Set<Proposition> factoredBases = factorSubgames();
+			allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
+
+			// Set<Proposition> importantBases = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
+			// allBaseArr = importantBases.toArray(new Proposition[importantBases.size()]);
+			// allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
 
 			doInitWork();
@@ -80,6 +226,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	@Override
 	public boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
+		// return propNet.getTerminalProposition().getValue();
 		return propNet.getTerminalProposition().curVal;
 	}
 
@@ -97,7 +244,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 		List<Role> roles = propNet.getRoles();
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
-
 		for (Proposition p : rewards) {
 			if (p.curVal) {
 				return Integer.parseInt(p.getName().get(1).toString());
@@ -113,16 +259,16 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				forwardpropmark(c, c.getValue());
+				forwardpropmark(c, c.getValue(), false);
 			}
 		}
 
 		for (int ii = 0; ii < ordering.size(); ii ++) {
-			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal);
+			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
 		}
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true);
+			forwardpropmark(propNet.getInitProposition(), true, true);
 		}
 
 		Set<Proposition> bases = propNet.getAllBasePropositions();
@@ -136,21 +282,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		trueProps.addAll(sentences);
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false);
+			forwardpropmark(propNet.getInitProposition(), false, false);
 		}
-
-		for (Component c : propNet.getComponents()) {
-			if (c instanceof And || c instanceof Or) {
-				c.numTrue = 0;
-				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (c.inputs.get(ii).curVal) {
-						c.numTrue ++;
-					}
-				}
-			}
-		}
-
-		// propNet.renderToFile("gametest.dot");
 
 		return new MachineState(sentences);
 	}
@@ -212,8 +345,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void diffprop(Component c, boolean newValue) {
-		if (newValue == c.curVal) {
+	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
+		if (newValue == c.curVal && differential) {
 			return; // stop forward propagating
 		}
 		c.curVal = newValue;
@@ -226,60 +359,37 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		List<Component> outputs = c.getOutputs();
 		for (int jj = 0; jj < outputs.size(); jj ++) {
 			Component out = outputs.get(jj);
-			if (newValue) out.numTrue ++;
-			else out.numTrue --;
-
 			if (out instanceof Proposition || out instanceof Transition) {
-				diffprop(out, newValue);
+				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
-				boolean result = out.numTrue == out.inputs.size();
-				diffprop(out, result);
+				if (!newValue) {
+					forwardpropmark(out, false, differential);
+				} else {
+					boolean result = true;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (!out.inputs.get(ii).curVal) {
+							result = false;
+							break;
+						}
+					}
+					forwardpropmark(out, result, differential);
+				}
 			} else if (out instanceof Or) {
-				boolean result = out.numTrue > 0;
-				diffprop(out, result);
+				if (newValue) {
+					forwardpropmark(out, true, differential);
+				} else {
+					boolean result = false;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (out.inputs.get(ii).curVal) {
+							result = true;
+							break;
+						}
+					}
+					forwardpropmark(out, result, differential);
+				}
 			} else if (out instanceof Not) {
 				boolean result = !newValue;
-				diffprop(out, result);
-			}
-		}
-	}
-
-	public void forwardpropmark(Component c, boolean newValue) {
-		boolean changed = c.curVal != newValue;
-		c.curVal = newValue;
-		if (c instanceof Transition) {
-			Proposition o = (Proposition) c.getSingleOutput();
-			if (newValue) trueProps.add(o.getName());
-			else trueProps.remove(o.getName());
-			return;
-		}
-		List<Component> outputs = c.getOutputs();
-		for (int jj = 0; jj < outputs.size(); jj ++) {
-			Component out = outputs.get(jj);
-
-			if (out instanceof Proposition || out instanceof Transition) {
-				forwardpropmark(out, newValue);
-			} else if (out instanceof And) {
-				boolean result = true;
-				for (int ii = 0; ii < out.inputs.size(); ii ++) {
-					if (!out.inputs.get(ii).curVal) {
-						result = false;
-						break;
-					}
-				}
-				forwardpropmark(out, result);
-			} else if (out instanceof Or) {
-				boolean result = false;
-				for (int ii = 0; ii < out.inputs.size(); ii ++) {
-					if (out.inputs.get(ii).curVal) {
-						result = true;
-						break;
-					}
-				}
-				forwardpropmark(out, result);
-			} else if (out instanceof Not) {
-				boolean result = !newValue;
-				forwardpropmark(out, result);
+				forwardpropmark(out, result, differential);
 			}
 		}
 	}
@@ -289,7 +399,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		for (int ii = 0; ii < allBaseArr.length; ii ++) {
 			boolean contains = stateGdl.contains(allBaseArr[ii].getName());
 			if (allBaseArr[ii].curVal != contains) {
-				diffprop(allBaseArr[ii], contains);
+				forwardpropmark(allBaseArr[ii], contains, true);
 			}
 		}
 	}
@@ -299,7 +409,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		for (int ii = 0; ii < allInputArr.length; ii ++) {
 			boolean contains = moveGdl.contains(allInputArr[ii].getName());
 			if (allInputArr[ii].curVal != contains) {
-				diffprop(allInputArr[ii], contains);
+				forwardpropmark(allInputArr[ii], contains, true);
 			}
 		}
 	}
@@ -334,20 +444,20 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 		HashSet<Component> visitedNodes = new HashSet<Component>();
 
-		//		while (!allSources.isEmpty()){
-		//			Proposition front = allSources.poll();
-		//			order.add(front);
-		//			visitedNodes.add(front);
-		//			for (Component c : front.getOutputs()){
-		//				if (c instanceof Proposition){
-		//					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
-		//					otherInputs.removeAll(visitedNodes);
-		//					if (otherInputs.isEmpty()){
-		//						allSources.add((Proposition) c);
-		//					}
-		//				}
-		//			}
-		//		}
+//		while (!allSources.isEmpty()){
+//			Proposition front = allSources.poll();
+//			order.add(front);
+//			visitedNodes.add(front);
+//			for (Component c : front.getOutputs()){
+//				if (c instanceof Proposition){
+//					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
+//					otherInputs.removeAll(visitedNodes);
+//					if (otherInputs.isEmpty()){
+//						allSources.add((Proposition) c);
+//					}
+//				}
+//			}
+//		}
 		// assert order.size() == propNet.getPropositions().size();
 		order.addAll(allSources);
 		return order;

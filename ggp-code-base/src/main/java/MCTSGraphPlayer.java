@@ -51,7 +51,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	private final int MAX_ITERATIONS = 5000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
 		long startT = System.currentTimeMillis();
-		double timeDiff = (timeout - startT) / 1000.0;
+		double timeDiff = (timeout - startT) / 1000.0 - MyHeuristics.MAX_DELIB_THRESHOLD / 1000.0;
 		ThreadedGraphNode.numCharges = 0;
 
 		int numLoops = 0;

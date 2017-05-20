@@ -21,6 +21,14 @@ public abstract class Component implements Serializable
 
     public boolean curVal = false;
     public int numTrue = 0;
+    public enum Type {
+    	PROP,
+    	AND,
+    	OR,
+    	NOT,
+    	TRANS
+    };
+    public Type type;
 
     // public Component output_arr[] = null;
     // public Component input_arr[] = null;

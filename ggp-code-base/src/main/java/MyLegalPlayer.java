@@ -19,6 +19,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 		// return new CachedStateMachine(new ProverStateMachine());
+		// return new BasicFactorPropNet();
 		return new ForwardDifferentialPropNet();
 	}
 
