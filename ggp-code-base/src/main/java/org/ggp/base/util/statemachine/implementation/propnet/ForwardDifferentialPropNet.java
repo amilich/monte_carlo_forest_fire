@@ -287,12 +287,13 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
-		for (int ii = 0; ii < allBaseArr.length; ii ++) {
-			boolean contains = stateGdl.contains(allBaseArr[ii].getName());
-			if (allBaseArr[ii].curVal != contains) {
-				diffprop(allBaseArr[ii], contains);
-			}
-		}
+
+//		for (int ii = 0; ii < allBaseArr.length; ii ++) {
+//			boolean contains = stateGdl.contains(allBaseArr[ii].getName());
+//			if (allBaseArr[ii].curVal != contains) {
+//				diffprop(allBaseArr[ii], contains);
+//			}
+//		}
 	}
 
 	public void updatePropnetMoves(List<Move> moves) {
