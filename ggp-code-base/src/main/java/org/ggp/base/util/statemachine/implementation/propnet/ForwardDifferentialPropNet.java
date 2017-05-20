@@ -80,7 +80,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	@Override
 	public boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
-		// return propNet.getTerminalProposition().getValue();
 		return propNet.getTerminalProposition().curVal;
 	}
 
@@ -287,13 +286,12 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
-
-//		for (int ii = 0; ii < allBaseArr.length; ii ++) {
-//			boolean contains = stateGdl.contains(allBaseArr[ii].getName());
-//			if (allBaseArr[ii].curVal != contains) {
-//				diffprop(allBaseArr[ii], contains);
-//			}
-//		}
+		for (int ii = 0; ii < allBaseArr.length; ii ++) {
+			boolean contains = stateGdl.contains(allBaseArr[ii].getName());
+			if (allBaseArr[ii].curVal != contains) {
+				diffprop(allBaseArr[ii], contains);
+			}
+		}
 	}
 
 	public void updatePropnetMoves(List<Move> moves) {
