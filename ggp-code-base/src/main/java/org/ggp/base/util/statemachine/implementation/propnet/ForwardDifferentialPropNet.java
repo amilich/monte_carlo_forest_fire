@@ -59,13 +59,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			roles = propNet.getRoles();
 			ordering = getOrdering();
 
-			//			for (Component c : propNet.getComponents()) {
-			//				if (c instanceof And || c instanceof Or) {
-			//					c.crystalize();
-			//					// c.outputs = null;
-			//					// c.inputs = null;
-			//				}
-			//			}
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
 
@@ -121,16 +114,16 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				forwardpropmark(c, c.getValue(), false);
+				forwardpropmark(c, c.getValue());
 			}
 		}
 
 		for (int ii = 0; ii < ordering.size(); ii ++) {
-			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
+			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal);
 		}
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true, true);
+			forwardpropmark(propNet.getInitProposition(), true);
 		}
 
 		Set<Proposition> bases = propNet.getAllBasePropositions();
@@ -144,8 +137,21 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		trueProps.addAll(sentences);
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false, false);
+			forwardpropmark(propNet.getInitProposition(), false);
 		}
+
+		for (Component c : propNet.getComponents()) {
+			if (c instanceof And || c instanceof Or) {
+				c.numTrue = 0;
+				for (int ii = 0; ii < c.inputs.size(); ii ++) {
+					if (c.inputs.get(ii).curVal) {
+						c.numTrue ++;
+					}
+				}
+			}
+		}
+
+		// propNet.renderToFile("gametest.dot");
 
 		return new MachineState(sentences);
 	}
@@ -207,11 +213,10 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (newValue == c.curVal && differential) {
+	public void diffprop(Component c, boolean newValue) {
+		if (newValue == c.curVal) {
 			return; // stop forward propagating
 		}
-//		boolean changed = c.curVal != newValue;
 		c.curVal = newValue;
 		if (c instanceof Transition) {
 			Proposition o = (Proposition) c.getSingleOutput();
@@ -222,53 +227,60 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		List<Component> outputs = c.getOutputs();
 		for (int jj = 0; jj < outputs.size(); jj ++) {
 			Component out = outputs.get(jj);
-//			if (changed) {
-//				if (newValue) {
-//					out.numTrue ++;
-//				} else {
-//					out.numTrue --;
-//				}
-//			}
+			if (newValue) out.numTrue ++;
+			else out.numTrue --;
 
 			if (out instanceof Proposition || out instanceof Transition) {
-				forwardpropmark(out, newValue, differential);
+				diffprop(out, newValue);
 			} else if (out instanceof And) {
-//				if (differential) {
-//					boolean result = out.numTrue == out.inputs.size();
-//					forwardpropmark(out, result, differential);
-//				}
-				if (!newValue) {
-					forwardpropmark(out, false, differential);
-				} else {
-					boolean result = true;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (!out.inputs.get(ii).curVal) {
-							result = false;
-							break;
-						}
-					}
-					forwardpropmark(out, result, differential);
-				}
+				boolean result = out.numTrue == out.inputs.size();
+				diffprop(out, result);
 			} else if (out instanceof Or) {
-//				if (differential) {
-//					boolean result = out.numTrue > 0;
-//					forwardpropmark(out, result, differential);
-//				}
-				if (newValue) {
-					forwardpropmark(out, true, differential);
-				} else {
-					boolean result = false;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (out.inputs.get(ii).curVal) {
-							result = true;
-							break;
-						}
-					}
-					forwardpropmark(out, result, differential);
-				}
+				boolean result = out.numTrue > 0;
+				diffprop(out, result);
 			} else if (out instanceof Not) {
 				boolean result = !newValue;
-				forwardpropmark(out, result, differential);
+				diffprop(out, result);
+			}
+		}
+	}
+
+	public void forwardpropmark(Component c, boolean newValue) {
+		boolean changed = c.curVal != newValue;
+		c.curVal = newValue;
+		if (c instanceof Transition) {
+			Proposition o = (Proposition) c.getSingleOutput();
+			if (newValue) trueProps.add(o.getName());
+			else trueProps.remove(o.getName());
+			return;
+		}
+		List<Component> outputs = c.getOutputs();
+		for (int jj = 0; jj < outputs.size(); jj ++) {
+			Component out = outputs.get(jj);
+
+			if (out instanceof Proposition || out instanceof Transition) {
+				forwardpropmark(out, newValue);
+			} else if (out instanceof And) {
+				boolean result = true;
+				for (int ii = 0; ii < out.inputs.size(); ii ++) {
+					if (!out.inputs.get(ii).curVal) {
+						result = false;
+						break;
+					}
+				}
+				forwardpropmark(out, result);
+			} else if (out instanceof Or) {
+				boolean result = false;
+				for (int ii = 0; ii < out.inputs.size(); ii ++) {
+					if (out.inputs.get(ii).curVal) {
+						result = true;
+						break;
+					}
+				}
+				forwardpropmark(out, result);
+			} else if (out instanceof Not) {
+				boolean result = !newValue;
+				forwardpropmark(out, result);
 			}
 		}
 	}
@@ -278,7 +290,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		for (int ii = 0; ii < allBaseArr.length; ii ++) {
 			boolean contains = stateGdl.contains(allBaseArr[ii].getName());
 			if (allBaseArr[ii].curVal != contains) {
-				forwardpropmark(allBaseArr[ii], contains, true);
+				diffprop(allBaseArr[ii], contains);
 			}
 		}
 	}
@@ -288,7 +300,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		for (int ii = 0; ii < allInputArr.length; ii ++) {
 			boolean contains = moveGdl.contains(allInputArr[ii].getName());
 			if (allInputArr[ii].curVal != contains) {
-				forwardpropmark(allInputArr[ii], contains, true);
+				diffprop(allInputArr[ii], contains);
 			}
 		}
 	}
