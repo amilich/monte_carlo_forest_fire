@@ -10,8 +10,7 @@ import java.util.List;
  * all methods.
  */
 
-public abstract class Component implements Serializable
-{
+public abstract class Component implements Serializable {
 
 	private static final long serialVersionUID = 352524175700224447L;
 	/** The inputs to the component. */
@@ -20,6 +19,7 @@ public abstract class Component implements Serializable
 	public List<Component> outputs;
 
 	public boolean curVal = false;
+	public boolean isBase = false;
 	public int numTrue = 0;
 //	public enum Type {
 //		PROP,
