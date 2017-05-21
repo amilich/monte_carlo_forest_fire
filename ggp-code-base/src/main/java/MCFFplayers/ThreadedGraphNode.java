@@ -277,11 +277,10 @@ public class ThreadedGraphNode {
 		} else {
 			Set<Future<Double>> futures = new HashSet<Future<Double>>();
 			for (int ii = 0; ii < NUM_THREADS; ii ++) {
-				DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, roleIndex);
-				Future<Double> future = executor.submit(d);
+				Future<Double> future =
+						executor.submit(new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, roleIndex));
 				futures.add(future);
 			}
-
 			double avgScore = 0;
 			for (Future<Double> future : futures) {
 				double val = future.get().doubleValue();
@@ -290,10 +289,8 @@ public class ThreadedGraphNode {
 				s1 += val;
 				s2 += val * val;
 			}
-
 			avgScore /= NUM_THREADS;
 			numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
-
 			return avgScore;
 		}
 	}

@@ -20,6 +20,7 @@ public abstract class Component implements Serializable {
 
 	public boolean curVal = false;
 	public boolean isBase = false;
+	public boolean isLegal = false;
 	public int numTrue = 0;
 //	public enum Type {
 //		PROP,
@@ -54,8 +55,6 @@ public abstract class Component implements Serializable {
 	 * Creates a new Component with no inputs or outputs.
 	 */
 	public Component() {
-		// this.inputs = new HashSet<Component>();
-		// this.outputs = new HashSet<Component>();
 		this.inputs = new ArrayList<Component>();
 		this.outputs = new ArrayList<Component>();
 	}

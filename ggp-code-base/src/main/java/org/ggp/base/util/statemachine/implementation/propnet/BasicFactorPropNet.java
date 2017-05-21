@@ -184,7 +184,6 @@ public class BasicFactorPropNet extends StateMachine {
 			}
 		}
 		System.out.println(importantBases);
-		// HashSet<Proposition> uselessBases = propNet.getAllBasePropositions().remove;
 		return importantBases;
 	}
 
