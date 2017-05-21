@@ -74,6 +74,7 @@ public class BitSetPropNet extends StateMachine {
 			for (int ii = 0; ii < allLegalArr.length; ii ++) {
 				allLegalArr[ii].bitIndex = ii;
 			}
+
 			baseBits = new BitSet(allBaseArr.length);
 			inputBits = new BitSet(allInputArr.length);
 			legalBits = new BitSet(allLegalArr.length);
@@ -240,11 +241,10 @@ public class BitSetPropNet extends StateMachine {
 		if (propNet.getAllBasePropositions().contains(c)) {
 			if (newValue) baseBits.set(c.bitIndex);
 			else baseBits.clear(c.bitIndex);
-		}
-		/* else if (propNet.getAllLegalPropositions().contains(c)) {
+		} else if (propNet.getAllLegalPropositions().contains(c)) {
 			if (newValue) legalBits.set(c.bitIndex);
 			else legalBits.clear(c.bitIndex);
-		} */
+		}
 		if (c instanceof Transition) {
 			Proposition o = (Proposition) c.getSingleOutput();
 			if (newValue) trueProps.add(o.getName());
