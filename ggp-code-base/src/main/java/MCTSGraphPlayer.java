@@ -40,7 +40,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	}
 
 	// Must be called in order to reset static information regarding the game.
-	private void resetGraphNode() throws MoveDefinitionException {
+	private void resetGraphNode() throws MoveDefinitionException, GoalDefinitionException {
 		ThreadedGraphNode.setRole(getRole());
 		ThreadedGraphNode.setStateMachine(getStateMachine());
 		ThreadedGraphNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
@@ -86,7 +86,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		System.out.println("[GRAPH] Created machines.");
 	}
 
-	private void initRoot() throws MoveDefinitionException {
+	private void initRoot() throws MoveDefinitionException, GoalDefinitionException {
 		ThreadedGraphNode.setStateMachines(machines);
 		root = new ThreadedGraphNode(getCurrentState());
 	}
@@ -97,7 +97,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		try {
-			if (root == null) {
+			/* if (root == null) {
 				initRoot();
 			} else if (moveNum != 0){
 				ThreadedGraphNode matchingChild = root.findMatchingState(getCurrentState());
@@ -110,6 +110,9 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 				}
 			} else {
 				System.out.println("[GRAPH] First move: advanced tree.");
+			}*/
+			if (moveNum != 0) {
+				root = new ThreadedGraphNode(getCurrentState());
 			}
 
 			expandTree(timeout);

@@ -14,7 +14,7 @@ public class Proposition extends Component
 	/** The value of the Proposition. */
 	private boolean value;
 
-	public boolean tempVal = false;
+	public int goal = -1;
 
 	/**
 	 * Creates a new Proposition with name <tt>name</tt>.
@@ -22,8 +22,7 @@ public class Proposition extends Component
 	 * @param name
 	 * The name of the Proposition.
 	 */
-	public Proposition(GdlSentence name)
-	{
+	public Proposition(GdlSentence name) {
 		this.name = name;
 		this.value = false;
 	}
@@ -33,8 +32,7 @@ public class Proposition extends Component
 	 *
 	 * @return The name of the Proposition.
 	 */
-	public GdlSentence getName()
-	{
+	public GdlSentence getName() {
 		return name;
 	}
 
@@ -46,8 +44,7 @@ public class Proposition extends Component
      *
      * @return The name of the Proposition.
      */
-    public void setName(GdlSentence newName)
-    {
+    public void setName(GdlSentence newName) {
         name = newName;
     }
 
@@ -57,8 +54,7 @@ public class Proposition extends Component
 	 * @see org.ggp.base.util.propnet.architecture.Component#getValue()
 	 */
 	@Override
-	public boolean getValue()
-	{
+	public boolean getValue() {
 		return value;
 	}
 
@@ -76,8 +72,7 @@ public class Proposition extends Component
 	 * @see org.ggp.base.util.propnet.architecture.Component#toString()
 	 */
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		// return toDot("circle", value ? "red" : "white", name.toString());
 		return toDot("circle", curVal ? "red" : "white", name.toString());
 	}
