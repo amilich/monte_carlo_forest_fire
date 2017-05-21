@@ -37,7 +37,7 @@ public class BitSetPropNet extends StateMachine {
 	/** The topological ordering of the propositions */
 	private List<Proposition> ordering;
 	/** The player roles */
-	private List<Role> roles;
+	private Role roles[];
 
 	public PropNet getPropnet() {
 		return propNet;
@@ -47,6 +47,7 @@ public class BitSetPropNet extends StateMachine {
 	BitSet baseBits; // = new BitSet();
 	BitSet inputBits;
 	BitSet legalBits;
+	BitSet nextBaseBits;
 	public Proposition[] allBaseArr = null;
 	public Proposition[] allInputArr = null;
 	public Proposition[] allLegalArr = null;
@@ -61,7 +62,7 @@ public class BitSetPropNet extends StateMachine {
 	public void initialize(List<Gdl> description) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
-			roles = propNet.getRoles();
+			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 			ordering = getOrdering();
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
@@ -70,11 +71,14 @@ public class BitSetPropNet extends StateMachine {
 					new Proposition[propNet.getAllLegalPropositions().size()]);
 			for (int ii = 0; ii < allBaseArr.length; ii ++) {
 				allBaseArr[ii].bitIndex = ii;
+				allBaseArr[ii].isBase = true;
 			}
 			for (int ii = 0; ii < allLegalArr.length; ii ++) {
 				allLegalArr[ii].bitIndex = ii;
 			}
+
 			baseBits = new BitSet(allBaseArr.length);
+			nextBaseBits = new BitSet(allBaseArr.length);
 			inputBits = new BitSet(allInputArr.length);
 			legalBits = new BitSet(allLegalArr.length);
 
@@ -145,10 +149,11 @@ public class BitSetPropNet extends StateMachine {
 		for (Proposition base : bases) {
 			if (base.getSingleInput().getSingleInput().curVal) {
 				sentences.add(base.getName());
+				nextBaseBits.set(base.bitIndex);
 			}
 		}
-		trueProps.clear();
-		trueProps.addAll(sentences);
+		// trueProps.clear();
+		// trueProps.addAll(sentences);
 		// currTrueProps.clear();
 
 		for (Proposition p : propNet.getAllBasePropositions()) {
@@ -166,10 +171,19 @@ public class BitSetPropNet extends StateMachine {
 			forwardpropmark(propNet.getInitProposition(), false, false);
 		}
 
+		for (Component c : propNet.getComponents()) {
+			if (c instanceof And || c instanceof Or) {
+				c.numTrue = 0;
+				for (int ii = 0; ii < c.input_arr.length; ii ++) {
+					if (c.input_arr[ii].curVal) c.numTrue ++;
+				}
+			}
+		}
+
 		return new MachineState(sentences);
 	}
 
-	Set<GdlSentence> trueProps = new HashSet<GdlSentence>();
+	// Set<GdlSentence> trueProps = new HashSet<GdlSentence>();
 	Set<Proposition> trueLegals = new HashSet<Proposition>();
 
 	/**
@@ -228,7 +242,10 @@ public class BitSetPropNet extends StateMachine {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
 		Set<GdlSentence> newState = new HashSet<GdlSentence>();
-		newState.addAll(trueProps);
+		for (int ii = nextBaseBits.nextSetBit(0); ii != -1; ii = nextBaseBits.nextSetBit(ii + 1)) {
+			Proposition p = allBaseArr[ii];
+			newState.add(p.getName());
+		}
 		return new MachineState(newState);
 	}
 
@@ -237,7 +254,7 @@ public class BitSetPropNet extends StateMachine {
 			return; // stop forward propagating
 		}
 		c.curVal = newValue;
-		if (propNet.getAllBasePropositions().contains(c)) {
+		if (c.isBase) {
 			if (newValue) baseBits.set(c.bitIndex);
 			else baseBits.clear(c.bitIndex);
 		}
@@ -247,44 +264,38 @@ public class BitSetPropNet extends StateMachine {
 		} */
 		if (c instanceof Transition) {
 			Proposition o = (Proposition) c.getSingleOutput();
-			if (newValue) trueProps.add(o.getName());
-			else trueProps.remove(o.getName());
+			if (newValue) nextBaseBits.set(o.bitIndex);
+			else nextBaseBits.clear(o.bitIndex);
 			return;
 		}
-		Component outputs[] = c.output_arr;
-		for (int jj = 0; jj < outputs.length; jj ++) {
-			Component out = outputs[jj];
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+			Component out = c.output_arr[jj];
+			if (differential) {
+				if (newValue) out.numTrue ++;
+				else out.numTrue --;
+			}
 			if (out instanceof Proposition || out instanceof Transition) {
 				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
 				if (!newValue) {
 					forwardpropmark(out, false, differential);
+				} else if (differential) {
+					forwardpropmark(out, out.numTrue == out.input_arr.length, differential);
 				} else {
-					boolean result = true;
-					for (int ii = 0; ii < out.input_arr.length; ii ++) {
-						if (!out.input_arr[ii].curVal) {
-							result = false;
-							break;
-						}
-					}
+					boolean result = ((And) out).getValue();
 					forwardpropmark(out, result, differential);
 				}
 			} else if (out instanceof Or) {
 				if (newValue) {
 					forwardpropmark(out, true, differential);
+				} else if (differential) {
+					forwardpropmark(out, out.numTrue > 0, differential);
 				} else {
-					boolean result = false;
-					for (int ii = 0; ii < out.input_arr.length; ii ++) {
-						if (out.input_arr[ii].curVal) {
-							result = true;
-							break;
-						}
-					}
+					boolean result = ((Or) out).getValue();
 					forwardpropmark(out, result, differential);
 				}
 			} else if (out instanceof Not) {
-				boolean result = !newValue;
-				forwardpropmark(out, result, differential);
+				forwardpropmark(out, !newValue, differential);
 			}
 		}
 	}
@@ -298,7 +309,7 @@ public class BitSetPropNet extends StateMachine {
 		}
 		stateBits.xor(baseBits);
 		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
-			Proposition p = allBaseArr[ii]; // baseBitMap.get(Integer(ii));
+			Proposition p = allBaseArr[ii];
 			if (stateGdl.contains(p.getName())) {
 				forwardpropmark(p, true, true);
 			} else {
@@ -308,7 +319,7 @@ public class BitSetPropNet extends StateMachine {
 	}
 
 	public void updatePropnetMoves(List<Move> moves) {
-		Set<GdlSentence> moveGdl = toDoes(moves); // new HashSet<GdlSentence>(toDoes(moves));
+		Set<GdlSentence> moveGdl = toDoes(moves);
 		for (int ii = 0; ii < allInputArr.length; ii ++) {
 			boolean contains = moveGdl.contains(allInputArr[ii].getName());
 			if (allInputArr[ii].curVal != contains) {
@@ -388,7 +399,7 @@ public class BitSetPropNet extends StateMachine {
 	/* Already implemented for you */
 	@Override
 	public List<Role> getRoles() {
-		return roles;
+		return propNet.getRoles();
 	}
 
 	/* Helper methods */
@@ -404,26 +415,22 @@ public class BitSetPropNet extends StateMachine {
 	 * @param moves
 	 * @return
 	 */
-	Map<Role, Integer> roleIndices;
 	Map<Role, Map<Move, GdlRelation>> moveToRelations = new HashMap<Role, Map<Move, GdlRelation>>();
 	private Set<GdlSentence> toDoes(List<Move> moves) {
 		Set<GdlSentence> doeses = new HashSet<GdlSentence>(moves.size());
-		if (roleIndices == null) roleIndices = getRoleIndices();
-
-		for (int i = 0; i < roles.size(); i++) {
-			int index = roleIndices.get(roles.get(i));
-			Role r = roles.get(i);
-			Move m = moves.get(index);
+		for (int ii = 0; ii < roles.length; ii ++) {
+			Role r = roles[ii];
+			Move m = moves.get(ii);
 			if (moveToRelations.get(r) == null) {
 				moveToRelations.put(r, new HashMap<Move, GdlRelation>());
 			}
-			GdlRelation relat = moveToRelations.get(r).get(moves.get(index));
+			GdlRelation relat = moveToRelations.get(r).get(m);
 			if (relat != null) {
 				doeses.add(relat);
 			} else {
 				GdlRelation n = ProverQueryBuilder.toDoes(r, m);
 				doeses.add(n);
-				moveToRelations.get(r).put(moves.get(index), n);
+				moveToRelations.get(r).put(m, n);
 			}
 		}
 		return doeses;

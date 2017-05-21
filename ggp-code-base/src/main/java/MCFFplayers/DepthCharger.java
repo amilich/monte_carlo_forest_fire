@@ -18,6 +18,7 @@ public class DepthCharger implements Callable<Double>, Charger {
 	private int numCharges = 0;
 	private Role role;
 	int roleIndex;
+    private Random r = new Random();
 
 	// Initialize depth charger with given state machine and state
 	public DepthCharger(StateMachine machine, MachineState state, Role role, int numCharges, int roleIndex) {
@@ -27,8 +28,7 @@ public class DepthCharger implements Callable<Double>, Charger {
 		this.numCharges = numCharges;
 	}
 
-	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
-        Random r = new Random();
+    public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
         while (!machine.isTerminal(state)) {
         	List<List<Move>> jmoves = machine.getLegalJointMoves(state);
             state = machine.getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
