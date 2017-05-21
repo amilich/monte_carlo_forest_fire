@@ -11,8 +11,10 @@ import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.ForwardDifferentialPropNet;
+import org.ggp.base.util.statemachine.implementation.propnet.BitSetPropNet;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
+
+import MCFFplayers.ThreadedGraphNode;
 
 public class MCTSGraphPlayer extends StateMachineGamer {
 	ThreadedGraphNode root = null;
@@ -23,7 +25,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		if (failed) {
 			return new CachedStateMachine(new ProverStateMachine());
 		}
-		return new ForwardDifferentialPropNet();
+		return new BitSetPropNet();
 	}
 
 	// List of machines used for depth charges
@@ -75,6 +77,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	private void createMachines() {
 		machines.clear();
+		machines.add(getStateMachine());
 		for (int ii = 1; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
 			StateMachine m = getInitialStateMachine();
 			m.initialize(getMatch().getGame().getRules());

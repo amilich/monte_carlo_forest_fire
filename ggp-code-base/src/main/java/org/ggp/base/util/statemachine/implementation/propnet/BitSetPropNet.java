@@ -31,7 +31,7 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBuilder;
 
-public class ForwardDifferentialPropNet extends StateMachine {
+public class BitSetPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
@@ -44,6 +44,13 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	}
 
 	MachineState init;
+	BitSet baseBits; // = new BitSet();
+	BitSet inputBits;
+	BitSet legalBits;
+	public Proposition[] allBaseArr = null;
+	public Proposition[] allInputArr = null;
+	public Proposition[] allLegalArr = null;
+	// Map<Integer, Proposition> baseBitMap = new HashMap<Integer, Proposition>();
 
 	/**
 	 * Initializes the PropNetStateMachine. You should compute the topological
@@ -59,6 +66,17 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
+			allLegalArr = propNet.getAllLegalPropositions().toArray(
+					new Proposition[propNet.getAllLegalPropositions().size()]);
+			for (int ii = 0; ii < allBaseArr.length; ii ++) {
+				allBaseArr[ii].bitIndex = ii;
+			}
+			for (int ii = 0; ii < allLegalArr.length; ii ++) {
+				allLegalArr[ii].bitIndex = ii;
+			}
+			baseBits = new BitSet(allBaseArr.length);
+			inputBits = new BitSet(allInputArr.length);
+			legalBits = new BitSet(allLegalArr.length);
 
 			for (Component c : propNet.getComponents()) {
 				c.crystalize();
@@ -71,9 +89,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 
 		System.out.println("[PropNet] Initialization done");
 	}
-
-	public Proposition[] allBaseArr = null;
-	public Proposition[] allInputArr = null;
 
 	/**
 	 * Computes if the state is terminal. Should return the value
@@ -96,7 +111,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	public int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
 		updatePropnetState(state);
-
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
 
 		for (Proposition p : rewards) {
@@ -135,11 +149,16 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		}
 		trueProps.clear();
 		trueProps.addAll(sentences);
-		currTrueProps.clear();
+		// currTrueProps.clear();
 
 		for (Proposition p : propNet.getAllBasePropositions()) {
 			if (p.curVal) {
-				currTrueProps.add(p.getName());
+				baseBits.set(p.bitIndex);
+			}
+		}
+		for (Proposition p : propNet.getAllLegalPropositions()) {
+			if (p.curVal) {
+				legalBits.set(p.bitIndex);
 			}
 		}
 
@@ -147,25 +166,11 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			forwardpropmark(propNet.getInitProposition(), false, false);
 		}
 
-//		for (Component c : propNet.getComponents()) {
-//			if (c instanceof And || c instanceof Or) {
-//				c.numTrue = 0;
-//				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-//					if (c.inputs.get(ii).curVal) {
-//						c.numTrue ++;
-//					}
-//				}
-//			}
-//		}
-
-		// propNet.renderToFile("gametest.dot");
-
 		return new MachineState(sentences);
 	}
 
-	BitSet baseBits = new BitSet();
 	Set<GdlSentence> trueProps = new HashSet<GdlSentence>();
-	Set<GdlSentence> currTrueProps = new HashSet<GdlSentence>();
+	Set<Proposition> trueLegals = new HashSet<Proposition>();
 
 	/**
 	 * Returns the initial state. The initial state can be computed
@@ -174,7 +179,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	 */
 	@Override
 	public MachineState getInitialState() {
-		// return doInitWork();
 		return init;
 	}
 
@@ -234,10 +238,13 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		}
 		c.curVal = newValue;
 		if (propNet.getAllBasePropositions().contains(c)) {
-			Proposition b = (Proposition) c;
-			if (newValue) currTrueProps.add(b.getName());
-			else currTrueProps.remove(b.getName());
+			if (newValue) baseBits.set(c.bitIndex);
+			else baseBits.clear(c.bitIndex);
 		}
+		/* else if (propNet.getAllLegalPropositions().contains(c)) {
+			if (newValue) legalBits.set(c.bitIndex);
+			else legalBits.clear(c.bitIndex);
+		} */
 		if (c instanceof Transition) {
 			Proposition o = (Proposition) c.getSingleOutput();
 			if (newValue) trueProps.add(o.getName());
@@ -282,106 +289,21 @@ public class ForwardDifferentialPropNet extends StateMachine {
 		}
 	}
 
-
-//	public void diffprop(Component c, boolean newValue) {
-//		if (newValue == c.curVal) {
-//			return; // stop forward propagating
-//		}
-//		c.curVal = newValue;
-//		if (c instanceof Transition) {
-//			Proposition o = (Proposition) c.getSingleOutput();
-//			if (newValue) trueProps.add(o.getName());
-//			else trueProps.remove(o.getName());
-//			return;
-//		}
-//		List<Component> outputs = c.getOutputs();
-//		for (int jj = 0; jj < outputs.size(); jj ++) {
-//			Component out = outputs.get(jj);
-//			if (newValue) out.numTrue ++;
-//			else out.numTrue --;
-//
-//			if (out instanceof Proposition || out instanceof Transition) {
-//				diffprop(out, newValue);
-//			} else if (out instanceof And) {
-//				boolean result = out.numTrue == out.inputs.size();
-//				diffprop(out, result);
-//			} else if (out instanceof Or) {
-//				boolean result = out.numTrue > 0;
-//				diffprop(out, result);
-//			} else if (out instanceof Not) {
-//				boolean result = !newValue;
-//				diffprop(out, result);
-//			}
-//		}
-//	}
-
-//	public void forwardpropmark(Component c, boolean newValue) {
-//		boolean changed = c.curVal != newValue;
-//		c.curVal = newValue;
-//		if (c instanceof Transition) {
-//			Proposition o = (Proposition) c.getSingleOutput();
-//			if (newValue) trueProps.add(o.getName());
-//			else trueProps.remove(o.getName());
-//			return;
-//		}
-//		List<Component> outputs = c.getOutputs();
-//		for (int jj = 0; jj < outputs.size(); jj ++) {
-//			Component out = outputs.get(jj);
-//
-//			if (out instanceof Proposition || out instanceof Transition) {
-//				forwardpropmark(out, newValue);
-//			} else if (out instanceof And) {
-//				boolean result = true;
-//				for (int ii = 0; ii < out.inputs.size(); ii ++) {
-//					if (!out.inputs.get(ii).curVal) {
-//						result = false;
-//						break;
-//					}
-//				}
-//				forwardpropmark(out, result);
-//			} else if (out instanceof Or) {
-//				boolean result = false;
-//				for (int ii = 0; ii < out.inputs.size(); ii ++) {
-//					if (out.inputs.get(ii).curVal) {
-//						result = true;
-//						break;
-//					}
-//				}
-//				forwardpropmark(out, result);
-//			} else if (out instanceof Not) {
-//				boolean result = !newValue;
-//				forwardpropmark(out, result);
-//			}
-//		}
-//	}
-
 	public void updatePropnetState(MachineState state) {
 		Set<GdlSentence> stateGdl = state.getContents();
-		if (currTrueProps.equals(stateGdl)) {
-			return;
-		}
-
-		Set<Proposition> toPropT = new HashSet<Proposition>();
-		Set<Proposition> toPropF = new HashSet<Proposition>();
-
+		BitSet stateBits = new BitSet(allBaseArr.length);
 		for (GdlSentence s : stateGdl) {
-			if (!currTrueProps.contains(s)) {
-				Proposition p = propNet.getBasePropositions().get(s);
-				toPropT.add(p);
+			Proposition p = propNet.getBasePropositions().get(s);
+			stateBits.set(p.bitIndex);
+		}
+		stateBits.xor(baseBits);
+		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
+			Proposition p = allBaseArr[ii]; // baseBitMap.get(Integer(ii));
+			if (stateGdl.contains(p.getName())) {
+				forwardpropmark(p, true, true);
+			} else {
+				forwardpropmark(p, false, true);
 			}
-		}
-		for (GdlSentence s : currTrueProps) {
-			if (!stateGdl.contains(s)) {
-				Proposition p = propNet.getBasePropositions().get(s);
-				toPropF.add(p);
-			}
-		}
-
-		for (Proposition p : toPropT) {
-			forwardpropmark(p, true, true);
-		}
-		for (Proposition p : toPropF) {
-			forwardpropmark(p, false, true);
 		}
 	}
 

@@ -68,8 +68,7 @@ public class Proposition extends Component
 	 * @param value
 	 *            The new value of the Proposition.
 	 */
-	public void setValue(boolean value)
-	{
+	public void setValue(boolean value) {
 		this.value = value;
 	}
 

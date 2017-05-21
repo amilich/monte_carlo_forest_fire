@@ -13,6 +13,8 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
+import MCFFplayers.DepthCharger;
+
 public class Node {
 	public static int numCharges = 0;
 
@@ -203,8 +205,9 @@ public class Node {
 			return avgScores;
 		}
 
-		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
-		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
+		// TODO switched to callables...
+		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, getRoleIndex());
+		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, getRoleIndex());
 //		SmartCharger d2 = new SmartCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		futures.add(executor.submit(d1));

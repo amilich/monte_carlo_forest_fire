@@ -14,6 +14,9 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
+import MCFFplayers.Charger;
+import MCFFplayers.DepthCharger;
+
 public class ThreadedNode {
 	public static int numCharges = 0;
 	public double utility = 0;
@@ -278,7 +281,7 @@ public class ThreadedNode {
 		List<Charger> rs = new ArrayList<Charger>();
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		for (int ii = 0; ii < NUM_THREADS; ii ++) {
-			DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
+			DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, getRoleIndex());
 			rs.add(d);
 			futures.add(executor.submit(d));
 		}
