@@ -12,6 +12,8 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
+import MCFFplayers.Charger;
+
 // Graph based MCTS Node
 public class MachineLessNode {
 	// Depth charging parameters/objects
@@ -233,7 +235,6 @@ public class MachineLessNode {
 		}
 	}
 
-	static final boolean SIMPLE = true;
 	static final int NUM_SIMP = 4;
 	public double simulate(StateMachine machine)
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
@@ -242,46 +243,17 @@ public class MachineLessNode {
 			return machine.getGoal(state, player);
 		}
 		if (roleIndex < 0) roleIndex = getRoleIndex(machine);
-		if (SIMPLE) {
-			double avgScore = 0;
-			// long t1 = System.nanoTime();
-			for (int ii = 0; ii < NUM_SIMP; ii ++) {
-				MachineState m = machine.performDepthCharge(state, null);
-				avgScore += machine.getGoal(m, player);
-			}
-			// long t2 = System.nanoTime();
-			// System.out.println("Dc took " + (t2 - t1) + " nanoseconds");
-			numCharges += NUM_SIMP;
-			avgScore /= NUM_SIMP;
-			return avgScore;
-		} else {
-			// long t1 = System.nanoTime();
-//			Collection<Future<?>> futures = new LinkedList<Future<?>>();
-//			for (int ii = minIndex; ii < maxIndex; ii ++) {
-//				DepthCharger d = null;
-//				d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, true);
-//				rs[ii] = d;
-//				futures.add(executor.submit(d));
-//			}
-//			for (Future<?> future : futures) {
-//				try {
-//					future.get();
-//				} catch (Exception e) { e.printStackTrace(); }
-//			}
-			double avgScore = 0;
-//			for (int ii = 0; ii < maxIndex - minIndex; ii ++) {
-//				double val = rs[ii].getValues()[roleIndex];
-//				avgScore += val;
-//				s0 ++;
-//				s1 += val;
-//				s2 += val * val;
-//			}
-//			avgScore /= NUM_THREADS;
-//			numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
-			// long t2 = System.nanoTime();
-			// System.out.println("Sim " + (t2 - t1) + " nanoseconds");
-			return avgScore;
+		double avgScore = 0;
+		// long t1 = System.nanoTime();
+		for (int ii = 0; ii < NUM_SIMP; ii ++) {
+			MachineState m = machine.performDepthCharge(state, null);
+			avgScore += machine.getGoal(m, player);
 		}
+		// long t2 = System.nanoTime();
+		// System.out.println("Dc took " + (t2 - t1) + " nanoseconds");
+		numCharges += NUM_SIMP;
+		avgScore /= NUM_SIMP;
+		return avgScore;
 	}
 
 	// Used to move the root onward after a move

@@ -66,8 +66,7 @@ import org.ggp.base.util.statemachine.Role;
  * @author Sam Schreiber
  */
 
-public final class PropNet
-{
+public final class PropNet {
 	private final Set<Proposition> allLegalProps; // ADDED TODO
 	private final Set<Proposition> allBaseProps; // ADDED TODO
 	private final Set<Proposition> allInputProps; // ADDED TODO
@@ -410,11 +409,9 @@ public final class PropNet
 	 *
 	 * @return An index over the LegalPropositions in the PropNet.
 	 */
-	private Map<Role, Set<Proposition>> recordLegalPropositions()
-	{
+	private Map<Role, Set<Proposition>> recordLegalPropositions() {
 		Map<Role, Set<Proposition>> legalPropositions = new HashMap<Role, Set<Proposition>>();
-		for (Proposition proposition : propositions)
-		{
+		for (Proposition proposition : propositions) {
 		    // Skip all propositions that aren't GdlRelations.
 			if (!(proposition.getName() instanceof GdlRelation))
 			    continue;
@@ -440,11 +437,9 @@ public final class PropNet
 	 *
 	 * @return An index over Propositions in the PropNet.
 	 */
-	private Set<Proposition> recordPropositions()
-	{
+	private Set<Proposition> recordPropositions() {
 		Set<Proposition> propositions = new HashSet<Proposition>();
-		for (Component component : components)
-		{
+		for (Component component : components) {
 			if (component instanceof Proposition) {
 				propositions.add((Proposition) component);
 			}
@@ -457,15 +452,11 @@ public final class PropNet
 	 *
 	 * @return A reference to the single, unqiue, TerminalProposition.
 	 */
-	private Proposition recordTerminalProposition()
-	{
-		for ( Proposition proposition : propositions )
-		{
-			if ( proposition.getName() instanceof GdlProposition )
-			{
+	private Proposition recordTerminalProposition(){
+		for ( Proposition proposition : propositions ) {
+			if ( proposition.getName() instanceof GdlProposition ) {
 				GdlConstant constant = ((GdlProposition) proposition.getName()).getName();
-				if ( constant.getValue().equals("terminal") )
-				{
+				if ( constant.getValue().equals("terminal") ) {
 					return proposition;
 				}
 			}
@@ -481,7 +472,7 @@ public final class PropNet
 	public int getNumAnds() {
 		int andCount = 0;
 		for(Component c : components) {
-			if(c instanceof And)
+			if (c instanceof And)
 				andCount++;
 		}
 		return andCount;
@@ -489,8 +480,8 @@ public final class PropNet
 
 	public int getNumOrs() {
 		int orCount = 0;
-		for(Component c : components) {
-			if(c instanceof Or)
+		for (Component c : components) {
+			if (c instanceof Or)
 				orCount++;
 		}
 		return orCount;
@@ -498,8 +489,8 @@ public final class PropNet
 
 	public int getNumNots() {
 		int notCount = 0;
-		for(Component c : components) {
-			if(c instanceof Not)
+		for (Component c : components) {
+			if (c instanceof Not)
 				notCount++;
 		}
 		return notCount;
@@ -507,7 +498,7 @@ public final class PropNet
 
 	public int getNumLinks() {
 		int linkCount = 0;
-		for(Component c : components) {
+		for (Component c : components) {
 			linkCount += c.getOutputs().size();
 		}
 		return linkCount;
@@ -523,8 +514,6 @@ public final class PropNet
 	 * The INIT and terminal components cannot be removed.
 	 */
 	public void removeComponent(Component c) {
-
-
 		//Go through all the collections it could appear in
 		if(c instanceof Proposition) {
 			Proposition p = (Proposition) c;

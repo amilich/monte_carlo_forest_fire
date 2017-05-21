@@ -114,9 +114,9 @@ public class MyHeuristics {
 	public static double monteCarloHeuristic(Role role, MachineState state, StateMachine machine1,
 			StateMachine machine2, long timeout) throws InterruptedException {
 		try {
-			DepthCharger d1 = new DepthCharger(machine1, state, role, MAX_CHARGES, false);
-			DepthCharger d2 = new DepthCharger(machine2, state, role, MAX_CHARGES, false);
-			Thread t1 = new Thread(d1);
+			// DepthCharger d1 = new DepthCharger(machine1, state, role, MAX_CHARGES, false, 0); // TODO roleIndex
+			// DepthCharger d2 = new DepthCharger(machine2, state, role, MAX_CHARGES, false, 0);
+			/* Thread t1 = new Thread(d1); // TODO: Switched to Callable, not runnable; need to update here
 			Thread t2 = new Thread(d2);
 			t1.start();
 			t2.start();
@@ -125,9 +125,9 @@ public class MyHeuristics {
 			double value1 = d1.getValue();
 			double value2 = d2.getValue();
 			numCharges += MAX_CHARGES * 2;
-			double avg = (value1 + value2) / 2;
+			double avg = (value1 + value2) / 2;*/
 			//	System.out.println("Result from charges: " + avg);
-			return avg;
+			return 0;
 		} catch (Exception e) {
 			System.out.println("Error occurred doing depth charges");
 		}

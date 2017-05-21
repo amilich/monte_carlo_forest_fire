@@ -1,8 +1,10 @@
+package MCFFplayers;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -47,12 +49,15 @@ public class ThreadedGraphNode {
 	private int numEnemyMoves;
 	private MachineState state;
 
+	private boolean isTerminal = false;
+
 	// Static graph variables
 	static Role player;
-	static int roleIndex = -1;
+	public static int roleIndex = -1;
 	static StateMachine machine;
 	static List<StateMachine> machines;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+	// .newCachedThreadPool();
 
 	// Set the static, single state machine used for move determination (not for depth charges)
 	public static void setStateMachine(StateMachine machine) {
@@ -69,15 +74,19 @@ public class ThreadedGraphNode {
 		ThreadedGraphNode.player = role;
 	}
 
+	List<Move> myMoves;
+	List<List<Move>> jMoves;
+
 	// Node constructor
 	public ThreadedGraphNode(MachineState state)
 			throws MoveDefinitionException {
 		this.state = state;
-		if (machine.isTerminal(state)) {
+		isTerminal = machine.isTerminal(state);
+		if (isTerminal) {
 			this.numMoves = 0;
 			this.numEnemyMoves = 0;
 		} else {
-			List<Move> myMoves = machine.getLegalMoves(state, player);
+			myMoves = machine.getLegalMoves(state, player);
 			this.numMoves = myMoves.size();
 			this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
 		}
@@ -107,7 +116,7 @@ public class ThreadedGraphNode {
 			}
 		}
 		System.out.println("[GRAPH] Utility of best move = " + maxUtility);
-		return machine.getLegalMoves(state, player).get(maxMove);
+		return myMoves.get(maxMove);
 	}
 
 	// Perform selection and expansion for a MCTS node.
@@ -140,7 +149,7 @@ public class ThreadedGraphNode {
 		ThreadedGraphNode currNode = this;
 		while (true) {
 			path.add(currNode);
-			if (machine.isTerminal(currNode.state)) return currNode;
+			if (currNode.isTerminal) return currNode;
 			for (int ii = 0; ii < currNode.numMoves; ii ++){
 				for (int jj = 0; jj < currNode.numEnemyMoves; jj ++) {
 					if (currNode.children[ii][jj] == null) return currNode;
@@ -159,8 +168,6 @@ public class ThreadedGraphNode {
 			}
 			for (int jj = 0; jj < currNode.numEnemyMoves; jj ++) {
 				double newscore = currNode.opponentSelectFn(resultP, jj, currNode.children[resultP][jj]);
-				 // if (children[resultP][jj].explored) newscore = -100; // TODO, solver
-				 // else newscore = selectfn(resultP, jj, true);
 				if (newscore > oMoveScore) {
 					oMoveScore = newscore;
 					resultO = jj;
@@ -176,7 +183,7 @@ public class ThreadedGraphNode {
 		for (int ii = 0; ii < numMoves; ii ++) {
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] == null) {
-					Move myMove = machine.getLegalMoves(state, player).get(ii);
+					Move myMove = myMoves.get(ii);
 					List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
 					try {
 						MachineState nextState = machine.getNextState(state, jointMove);
@@ -249,7 +256,7 @@ public class ThreadedGraphNode {
 	static final boolean SIMPLE = false;
 	static final int NUM_SIMP = 4;
 	public double simulate()
-			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
+			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException, InterruptedException, ExecutionException {
 		if (machine.isTerminal(state)) {
 			explored = true;
 			return machine.getGoal(state, player);
@@ -268,47 +275,25 @@ public class ThreadedGraphNode {
 			avgScore /= NUM_SIMP;
 			return avgScore;
 		} else {
-			// long t1 = System.nanoTime();
-			Collection<Future<?>> futures = new LinkedList<Future<?>>();
+			Set<Future<Double>> futures = new HashSet<Future<Double>>();
 			for (int ii = 0; ii < NUM_THREADS; ii ++) {
-				DepthCharger d = null;
-				if (ii == 0) {
-					d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
-				} else {
-					d = new DepthCharger(machines.get(ii - 1), state, player, NUM_DEPTH_CHARGES, true);
-				}
-				// DepthCharger d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
-				rs[ii] = d;
-				futures.add(executor.submit(d));
+				DepthCharger d = new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, roleIndex);
+				Future<Double> future = executor.submit(d);
+				futures.add(future);
 			}
-			for (Future<?> future : futures) {
-				try {
-					future.get();
-				} catch (Exception e) { e.printStackTrace(); }
-			}
-//			 DepthCharger d = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
-//			 d.run();
 
-//			double avgScore = 0;
-//			for (int ii = 0; ii < 1; ii ++) {
-//				double val = d.getValues()[roleIndex];
-//				avgScore += val;
-//				s0 ++;
-//				s1 += val;
-//				s2 += val * val;
-//			}
 			double avgScore = 0;
-			for (int ii = 0; ii < NUM_THREADS; ii ++) {
-				double val = rs[ii].getValues()[roleIndex];
+			for (Future<Double> future : futures) {
+				double val = future.get().doubleValue();
 				avgScore += val;
 				s0 ++;
 				s1 += val;
 				s2 += val * val;
 			}
+
 			avgScore /= NUM_THREADS;
 			numCharges += NUM_DEPTH_CHARGES * NUM_THREADS;
-			// long t2 = System.nanoTime();
-			// System.out.println("Sim " + (t2 - t1) + " nanoseconds");
+
 			return avgScore;
 		}
 	}
