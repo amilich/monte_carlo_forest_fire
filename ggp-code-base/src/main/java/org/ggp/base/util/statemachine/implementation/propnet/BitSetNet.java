@@ -264,68 +264,6 @@ public class BitSetNet extends StateMachine {
 		}
 		return new MachineState(newState);
 	}
-	/*
-	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (newValue == compBits.get(c.compIndex) && differential) {
-			return; // stop forward propagating
-		}
-		if (newValue) compBits.set(c.compIndex);
-		else compBits.clear(c.compIndex);
-
-<<<<<<< HEAD
-		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
-		}
-		if (transBits.get(c.compIndex)) { // if c is a transition
-			// transitions always have exactly one output
-			if (newValue) nextBaseBits.set(allCompArr[outputs[c.compIndex][0]].bitIndex);
-			else nextBaseBits.clear(allCompArr[outputs[c.compIndex][0]].bitIndex);
-			return;
-		}
-		for (int jj = 0; jj < outputs[c.compIndex].length; jj ++) {
-			Component out = allCompArr[outputs[c.compIndex][jj]]; // component that is the jjth output of c
-			if (differential) {
-				if (newValue) counters[out.compIndex] ++;
-				else counters[out.compIndex] --;
-			}
-			if (andBits.get(out.compIndex)) {
-				if (!newValue) {
-					forwardpropmark(out, false, differential);
-				} else if (differential) {
-					forwardpropmark(out, counters[out.compIndex] == inputs[out.compIndex].length, differential);
-				} else {
-					boolean result = true;
-					for (int ii = 0; ii < inputs[out.compIndex].length; ii ++) {
-						if (!compBits.get(inputs[out.compIndex][ii])) {
-							result = false;
-							break;
-						}
-					}
-					forwardpropmark(out, result, differential);
-				}
-			} else if (orBits.get(out.compIndex)) {
-				if (newValue) {
-					forwardpropmark(out, true, differential);
-				} else if (differential) {
-					forwardpropmark(out, counters[out.compIndex] > 0, differential);
-				} else {
-					boolean result = false;
-					for (int ii = 0; ii < inputs[out.compIndex].length; ii ++) {
-						if (!compBits.get(inputs[out.compIndex][ii])) {
-							result = true;
-							break;
-						}
-					}
-					forwardpropmark(out, result, differential);
-				}
-			} else if (notBits.get(out.compIndex)) {
-				forwardpropmark(out, !newValue, differential);
-			} else {
-				forwardpropmark(out, newValue, differential);
-			}
-		}
-	}*/
 
 	public void initforwardpropmark(Component c, boolean newValue) {
 		if (newValue) compBits.set(c.compIndex);
