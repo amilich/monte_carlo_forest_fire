@@ -14,7 +14,7 @@ public final class And extends Component {
 	 */
 	@Override
 	public boolean getValue() {
-		for ( Component component : input_arr ) {
+		for ( Component component : inputs ) {
 			if ( !component.curVal ) {
 				return false;
 			}

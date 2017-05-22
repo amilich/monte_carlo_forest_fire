@@ -60,10 +60,6 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
 
-			for (Component c : propNet.getComponents()) {
-				c.crystalize();
-			}
-
 			init = doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -244,9 +240,9 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			else trueProps.remove(o.getName());
 			return;
 		}
-		Component outputs[] = c.output_arr;
-		for (int jj = 0; jj < outputs.length; jj ++) {
-			Component out = outputs[jj];
+		// Component outputs[] = c.output_arr;
+		for (int jj = 0; jj < c.outputs.size(); jj ++) {
+			Component out = c.outputs.get(jj);
 			if (out instanceof Proposition || out instanceof Transition) {
 				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
@@ -254,8 +250,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 					forwardpropmark(out, false, differential);
 				} else {
 					boolean result = true;
-					for (int ii = 0; ii < out.input_arr.length; ii ++) {
-						if (!out.input_arr[ii].curVal) {
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (!out.inputs.get(ii).curVal) {
 							result = false;
 							break;
 						}
@@ -267,8 +263,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 					forwardpropmark(out, true, differential);
 				} else {
 					boolean result = false;
-					for (int ii = 0; ii < out.input_arr.length; ii ++) {
-						if (out.input_arr[ii].curVal) {
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (out.inputs.get(ii).curVal) {
 							result = true;
 							break;
 						}

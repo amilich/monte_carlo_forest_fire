@@ -15,7 +15,7 @@ public final class Or extends Component
 	 */
 	@Override
 	public boolean getValue() {
-		for ( Component component : input_arr ) {
+		for ( Component component : inputs ) {
 			if ( component.curVal ) {
 				return true;
 			}
