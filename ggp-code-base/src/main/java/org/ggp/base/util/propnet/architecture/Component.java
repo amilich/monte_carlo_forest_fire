@@ -31,9 +31,10 @@ public abstract class Component implements Serializable {
 //	};
 //	public Type type;
 	public int bitIndex = 0;
+	public int compIndex = 0;
 
-	public Component output_arr[] = null;
-	public Component input_arr[] = null;
+	// public Component output_arr[] = null;
+	// public Component input_arr[] = null;
 
 //	public boolean cEquals(Component that) {
 //		if (this == that) return true;
@@ -46,10 +47,10 @@ public abstract class Component implements Serializable {
 //		return true;
 //	}
 
-	public void crystalize() {
+	/*public void crystalize() {
 		output_arr = outputs.toArray(new Component[this.outputs.size()]);
 		input_arr = inputs.toArray(new Component[this.inputs.size()]);
-	}
+	}*/
 
 	/**
 	 * Creates a new Component with no inputs or outputs.
