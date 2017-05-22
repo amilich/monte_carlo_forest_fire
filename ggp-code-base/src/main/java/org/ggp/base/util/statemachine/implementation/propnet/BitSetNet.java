@@ -152,13 +152,13 @@ public class BitSetNet extends StateMachine {
 
 	private MachineState doInitWork() {
 		for (int ii = constBits.nextSetBit(0); ii != -1; ii = constBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allCompArr[ii], allCompArr[ii].getValue(), false);
+			initforwardpropmark(allCompArr[ii], allCompArr[ii].getValue());
 		}
 		for (Proposition base : allBaseArr) {
-			forwardpropmark(base, false, false);
+			initforwardpropmark(base, false);
 		}
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true, true);
+			forwardpropmark(propNet.getInitProposition(), true);
 		}
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : allBaseArr) {
@@ -172,7 +172,7 @@ public class BitSetNet extends StateMachine {
 		}
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false, false);
+			initforwardpropmark(propNet.getInitProposition(), false);
 		}
 
 		for (Component c : propNet.getComponents()) {
@@ -263,8 +263,57 @@ public class BitSetNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (newValue == compBits.get(c.compIndex) && differential) {
+	public void initforwardpropmark(Component c, boolean newValue) {
+		if (newValue) compBits.set(c.compIndex);
+		else compBits.clear(c.compIndex);
+
+		if (c.isBase) {
+			if (newValue) baseBits.set(c.bitIndex);
+			else baseBits.clear(c.bitIndex);
+		} else if (transBits.get(c.compIndex)) { // if c is a transition
+			// transitions always have exactly one output
+			if (newValue) nextBaseBits.set(c.outputs.get(0).bitIndex);
+			else nextBaseBits.clear(c.outputs.get(0).bitIndex);
+			return;
+		}
+		for (int jj = 0; jj < c.outputs.size(); jj ++) {
+			Component out = c.outputs.get(jj);
+			if (andBits.get(out.compIndex)) {
+				if (!newValue) {
+					initforwardpropmark(out, false);
+				} else {
+					boolean result = true;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (!compBits.get(out.inputs.get(ii).compIndex)) {
+							result = false;
+							break;
+						}
+					}
+					initforwardpropmark(out, result);
+				}
+			} else if (orBits.get(out.compIndex)) {
+				if (newValue) {
+					initforwardpropmark(out, true);
+				} else {
+					boolean result = false;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (compBits.get(out.inputs.get(ii).compIndex)) {
+							result = true;
+							break;
+						}
+					}
+					initforwardpropmark(out, result);
+				}
+			} else if (notBits.get(out.compIndex)) {
+				initforwardpropmark(out, !newValue);
+			} else {
+				initforwardpropmark(out, newValue);
+			}
+		}
+	}
+
+	public void forwardpropmark(Component c, boolean newValue) {
+		if (newValue == compBits.get(c.compIndex)) {
 			return; // stop forward propagating
 		}
 		if (newValue) compBits.set(c.compIndex);
@@ -281,44 +330,17 @@ public class BitSetNet extends StateMachine {
 		}
 		for (int jj = 0; jj < c.outputs.size(); jj ++) {
 			Component out = c.outputs.get(jj);
-			if (differential) {
-				if (newValue) counters[out.compIndex] ++;
-				else counters[out.compIndex] --;
-			}
+			if (newValue) counters[out.compIndex] ++;
+			else counters[out.compIndex] --;
+
 			if (andBits.get(out.compIndex)) {
-				if (!newValue) {
-					forwardpropmark(out, false, differential);
-				} else if (differential) {
-					forwardpropmark(out, counters[out.compIndex] == out.inputs.size(), differential);
-				} else {
-					boolean result = true;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (!compBits.get(out.inputs.get(ii).compIndex)) {
-							result = false;
-							break;
-						}
-					}
-					forwardpropmark(out, result, differential);
-				}
+				forwardpropmark(out, newValue && counters[out.compIndex] == out.inputs.size()); // first newValue is just an optimization
 			} else if (orBits.get(out.compIndex)) {
-				if (newValue) {
-					forwardpropmark(out, true, differential);
-				} else if (differential) {
-					forwardpropmark(out, counters[out.compIndex] > 0, differential);
-				} else {
-					boolean result = false;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (compBits.get(out.inputs.get(ii).compIndex)) {
-							result = true;
-							break;
-						}
-					}
-					forwardpropmark(out, result, differential);
-				}
+				forwardpropmark(out, newValue || counters[out.compIndex] > 0); // first newValue is just an optimization
 			} else if (notBits.get(out.compIndex)) {
-				forwardpropmark(out, !newValue, differential);
-			} else {
-				forwardpropmark(out, newValue, differential);
+				forwardpropmark(out, !newValue);
+			} else { // transition or proposition
+				forwardpropmark(out, newValue);
 			}
 		}
 	}
@@ -331,7 +353,7 @@ public class BitSetNet extends StateMachine {
 		}
 		stateBits.xor(baseBits);
 		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allBaseArr[ii], !baseBits.get(ii), true);
+			forwardpropmark(allBaseArr[ii], !baseBits.get(ii));
 		}
 	}
 
@@ -343,7 +365,7 @@ public class BitSetNet extends StateMachine {
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allInputArr[ii], nowTrue.get(ii), true);
+			forwardpropmark(allInputArr[ii], nowTrue.get(ii));
 		}
 		inputBits = nowTrue;
 	}
