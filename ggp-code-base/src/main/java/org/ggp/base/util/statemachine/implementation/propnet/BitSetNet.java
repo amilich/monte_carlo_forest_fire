@@ -151,10 +151,8 @@ public class BitSetNet extends StateMachine {
 	}
 
 	private MachineState doInitWork() {
-		for (Component c : propNet.getComponents()) {
-			if (c instanceof Constant) {
-				forwardpropmark(c, c.getValue(), false);
-			}
+		for (int ii = constBits.nextSetBit(0); ii != -1; ii = constBits.nextSetBit(ii + 1)) {
+			forwardpropmark(allCompArr[ii], allCompArr[ii].getValue(), false);
 		}
 		for (Proposition base : allBaseArr) {
 			forwardpropmark(base, false, false);
