@@ -103,6 +103,8 @@ public class BitSetNet extends StateMachine {
 					notBits.set(ii);
 				} else if (allCompArr[ii] instanceof Transition) {
 					transBits.set(ii);
+				} else if (allCompArr[ii] instanceof Constant) {
+					constBits.set(ii);
 				}
 			}
 
