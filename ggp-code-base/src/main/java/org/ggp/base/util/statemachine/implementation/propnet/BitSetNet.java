@@ -273,9 +273,8 @@ public class BitSetNet extends StateMachine {
 		if (c.isBase) {
 			if (newValue) baseBits.set(c.bitIndex);
 			else baseBits.clear(c.bitIndex);
-		}
-
-		if (transBits.get(c.compIndex)) {
+		} else if (transBits.get(c.compIndex)) { // if c is a transition
+			// transitions always have exactly one output
 			if (newValue) nextBaseBits.set(c.outputs.get(0).bitIndex);
 			else nextBaseBits.clear(c.outputs.get(0).bitIndex);
 			return;
@@ -362,8 +361,7 @@ public class BitSetNet extends StateMachine {
 	 *
 	 * This translates a list of Moves (backed by a sentence that is simply ?action)
 	 * into GdlSentences that can be used to get Propositions from inputPropositions.
-	 * and accordingly set their values etc.  This is a naive implementation when coupled with
-	 * setting input values, feel free to change this for a more efficient implementation.
+	 * and accordingly set their values etc.
 	 *
 	 * @param moves
 	 * @return
