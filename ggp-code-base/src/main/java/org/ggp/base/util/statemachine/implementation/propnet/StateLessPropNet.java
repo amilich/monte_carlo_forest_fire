@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -44,18 +42,23 @@ public class StateLessPropNet extends StateMachine {
 	}
 
 	MachineState init;
+	BitSet baseBits;
+	BitSet inputBits;
 	BitSet nextBaseBits;
 	BitSet compBits;
-	BitSet inputBits;
-	BitSet baseBits;
+	BitSet andBits;
+	BitSet constBits;
+	BitSet orBits;
+	BitSet notBits;
+	BitSet transBits;
+	BitSet basePropBits; // true if index i is a base prop
+	public int counters[];
 
 	public Component[] allCompArr = null;
-
 	public Proposition[] allBaseArr = null;
 	public Proposition[] allInputArr = null;
-	public Proposition[] allLegalArr = null;
-	public int counters[];
-	// Map<Integer, Proposition> baseBitMap = new HashMap<Integer, Proposition>();
+	public int outputs[][];
+	public int inputs[][];
 
 	/**
 	 * Initializes the PropNetStateMachine. You should compute the topological
@@ -70,29 +73,61 @@ public class StateLessPropNet extends StateMachine {
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
-			allLegalArr = propNet.getAllLegalPropositions().toArray(
-					new Proposition[propNet.getAllLegalPropositions().size()]);
+			allCompArr = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
+
 			for (int ii = 0; ii < allBaseArr.length; ii ++) {
 				allBaseArr[ii].bitIndex = ii;
 				allBaseArr[ii].isBase = true;
-			}
-			for (int ii = 0; ii < allLegalArr.length; ii ++) {
-				allLegalArr[ii].isLegal = true;
 			}
 			for (int ii = 0; ii < allInputArr.length; ii ++) {
 				allInputArr[ii].bitIndex = ii;
 			}
 
+			baseBits = new BitSet(allBaseArr.length);
 			nextBaseBits = new BitSet(allBaseArr.length);
 			inputBits = new BitSet(allInputArr.length);
 
-			allCompArr = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
+			andBits = new BitSet(allCompArr.length);
+			orBits = new BitSet(allCompArr.length);
+			notBits = new BitSet(allCompArr.length);
+			transBits = new BitSet(allCompArr.length);
+
 			counters = new int[allCompArr.length];
 			compBits = new BitSet(allCompArr.length);
-			baseBits = new BitSet(allBaseArr.length);
+			constBits = new BitSet(allCompArr.length);
+
+			outputs = new int[allCompArr.length][];
+			inputs = new int[allCompArr.length][];
+
 			for (int ii = 0; ii < allCompArr.length; ii ++) {
 				allCompArr[ii].compIndex = ii;
+				if (allCompArr[ii] instanceof And) {
+					andBits.set(ii);
+				} else if (allCompArr[ii] instanceof Or) {
+					orBits.set(ii);
+				} else if (allCompArr[ii] instanceof Not) {
+					notBits.set(ii);
+				} else if (allCompArr[ii] instanceof Transition) {
+					transBits.set(ii);
+				} else if (allCompArr[ii] instanceof Constant) {
+					constBits.set(ii);
+				}
+				outputs[ii] = new int[allCompArr[ii].outputs.size()];
+				inputs[ii] = new int[allCompArr[ii].inputs.size()];
 			}
+			for (int ii = 0; ii < allCompArr.length; ii ++) {
+				for (int jj = 0; jj < allCompArr[ii].outputs.size(); jj ++) {
+					outputs[ii][jj] = allCompArr[ii].outputs.get(jj).compIndex;
+				}
+				for (int jj = 0; jj < allCompArr[ii].inputs.size(); jj ++) {
+					inputs[ii][jj] = allCompArr[ii].inputs.get(jj).compIndex;
+				}
+			}
+			basePropBits = new BitSet(allCompArr.length);
+			for (Proposition p : allBaseArr) {
+				basePropBits.set(p.compIndex);
+			}
+
 			init = doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -136,21 +171,17 @@ public class StateLessPropNet extends StateMachine {
 	}
 
 	private MachineState doInitWork() {
-		for (Component c : propNet.getComponents()) {
-			if (c instanceof Constant) {
-				forwardpropmark(c, c.getValue(), false);
-			}
+		for (int ii = constBits.nextSetBit(0); ii != -1; ii = constBits.nextSetBit(ii + 1)) {
+			forwardpropmark(ii, allCompArr[ii].getValue(), false);
 		}
-		Set<Proposition> bases = propNet.getAllBasePropositions();
-		for (Proposition base : bases) {
-			forwardpropmark(base, compBits.get(base.compIndex), false);
+		for (Proposition base : allBaseArr) {
+			forwardpropmark(base.compIndex, false, false);
 		}
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true, true);
+			forwardpropmark(propNet.getInitProposition().compIndex, true, true);
 		}
-
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
-		for (Proposition base : bases) {
+		for (Proposition base : allBaseArr) {
 			if (compBits.get(base.getSingleInput().getSingleInput().compIndex)) {
 				sentences.add(base.getName());
 				nextBaseBits.set(base.bitIndex);
@@ -161,14 +192,14 @@ public class StateLessPropNet extends StateMachine {
 		}
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false, false);
+			forwardpropmark(propNet.getInitProposition().compIndex, false, false);
 		}
 
 		for (Component c : propNet.getComponents()) {
-			if (c instanceof And || c instanceof Or) {
+			if (andBits.get(c.compIndex) || orBits.get(c.compIndex)) {
 				counters[c.compIndex] = 0;
-				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (compBits.get(c.inputs.get(ii).compIndex)) {
+				for (int ii = 0; ii < inputs[c.compIndex].length; ii ++) {
+					if (compBits.get(inputs[c.compIndex][ii])) {
 						counters[c.compIndex] ++;
 					}
 				}
@@ -177,8 +208,6 @@ public class StateLessPropNet extends StateMachine {
 
 		return new MachineState(sentences);
 	}
-
-	Set<Proposition> trueLegals = new HashSet<Proposition>();
 
 	/**
 	 * Returns the initial state. The initial state can be computed
@@ -214,6 +243,17 @@ public class StateLessPropNet extends StateMachine {
 		updatePropnetState(state);
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
+//		for (int ii = legalBits.nextSetBit(0); ii != -1; ii = legalBits.nextSetBit(ii + 1)) {
+//			Proposition p = allLegalArr[ii];
+//			if (legals.contains(p)) {
+//				Move m = propToMove.get(p);
+//				if (m == null) {
+//					m = new Move(p.getName().get(1));
+//					propToMove.put(p, m);
+//				}
+//				legalMoves.add(m);
+//			}
+//		}
 		for (Proposition p : legals) {
 			if (compBits.get(p.compIndex)) {
 				Move m = propToMove.get(p);
@@ -243,63 +283,62 @@ public class StateLessPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (newValue == compBits.get(c.compIndex) && differential) {
+	public void forwardpropmark(int c, boolean newValue, boolean differential) {
+		if (newValue == compBits.get(c) && differential) {
 			return; // stop forward propagating
 		}
+		if (newValue) compBits.set(c);
+		else compBits.clear(c);
 
-		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
-		}
-		if (newValue) compBits.set(c.compIndex);
-		else compBits.clear(c.compIndex);
-
-		if (c instanceof Transition) {
-			if (newValue) nextBaseBits.set(c.outputs.get(0).bitIndex);
-			else nextBaseBits.clear(c.outputs.get(0).bitIndex);
+		if (basePropBits.get(c)) {
+			if (newValue) baseBits.set(allCompArr[c].bitIndex);
+			else baseBits.clear(allCompArr[c].bitIndex);
+		} else if (transBits.get(c)) { // if c is a transition
+			// transitions always have exactly one output
+			if (newValue) nextBaseBits.set(allCompArr[outputs[c][0]].bitIndex);
+			else nextBaseBits.clear(allCompArr[outputs[c][0]].bitIndex);
 			return;
 		}
-		for (int jj = 0; jj < c.outputs.size(); jj ++) {
-			Component out = c.outputs.get(jj);
+		for (int jj = 0; jj < outputs[c].length; jj ++) {
+			int out_ind = outputs[c][jj];
 			if (differential) {
-				if (newValue) counters[c.compIndex] ++;
-				else counters[c.compIndex] --;
+				if (newValue) counters[out_ind] ++;
+				else counters[out_ind] --;
 			}
-			if (out instanceof Proposition || out instanceof Transition) {
-				forwardpropmark(out, newValue, differential);
-			} else if (out instanceof And) {
+			if (andBits.get(out_ind)) {
 				if (!newValue) {
-					forwardpropmark(out, false, differential);
+					forwardpropmark(out_ind, false, differential);
 				} else if (differential) {
-					forwardpropmark(out, counters[out.compIndex] == out.inputs.size(), differential);
+					forwardpropmark(out_ind, counters[out_ind] == inputs[out_ind].length, differential);
 				} else {
 					boolean result = true;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (compBits.get(out.inputs.get(ii).compIndex)) {
+					for (int ii = 0; ii < inputs[out_ind].length; ii ++) {
+						if (!compBits.get(inputs[out_ind][ii])) {
 							result = false;
 							break;
 						}
 					}
-					forwardpropmark(out, result, differential);
+					forwardpropmark(out_ind, result, differential);
 				}
-			} else if (out instanceof Or) {
+			} else if (orBits.get(out_ind)) {
 				if (newValue) {
-					forwardpropmark(out, true, differential);
+					forwardpropmark(out_ind, true, differential);
 				} else if (differential) {
-					forwardpropmark(out, counters[out.compIndex] > 0, differential);
+					forwardpropmark(out_ind, counters[out_ind] > 0, differential);
 				} else {
 					boolean result = false;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (compBits.get(out.inputs.get(ii).compIndex)) {
+					for (int ii = 0; ii < inputs[out_ind].length; ii ++) {
+						if (compBits.get(inputs[out_ind][ii])) {
 							result = true;
 							break;
 						}
 					}
-					forwardpropmark(out, result, differential);
+					forwardpropmark(out_ind, result, differential);
 				}
-			} else if (out instanceof Not) {
-				forwardpropmark(out, !newValue, differential);
+			} else if (notBits.get(out_ind)) {
+				forwardpropmark(out_ind, !newValue, differential);
+			} else {
+				forwardpropmark(out_ind, newValue, differential);
 			}
 		}
 	}
@@ -311,8 +350,8 @@ public class StateLessPropNet extends StateMachine {
 			stateBits.set(propNet.getBasePropositions().get(s).bitIndex);
 		}
 		stateBits.xor(baseBits);
-		for (int ii = stateBits.nextSetBit(0); ii != -1 ; ii = stateBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allBaseArr[ii], !baseBits.get(ii), true);
+		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
+			forwardpropmark(allBaseArr[ii].compIndex, !baseBits.get(ii), true);
 		}
 	}
 
@@ -324,78 +363,10 @@ public class StateLessPropNet extends StateMachine {
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allInputArr[ii], nowTrue.get(ii), true);
+			forwardpropmark(allInputArr[ii].compIndex, nowTrue.get(ii), true);
 		}
 		inputBits = nowTrue;
 	}
-
-	/**
-	 * This should compute the topological ordering of propositions.
-	 * Each component is either a proposition, logical gate, or transition.
-	 * Logical gates and transitions only have propositions as inputs.
-	 *
-	 * The base propositions and input propositions should always be exempt
-	 * from this ordering.
-	 *
-	 * The base propositions values are set from the MachineState that
-	 * operations are performed on and the input propositions are set from
-	 * the Moves that operations are performed on as well (if any).
-	 *
-	 * @return The order in which the truth values of propositions need to be set.
-	 */
-	public List<Proposition> getOrdering() {
-		// List to contain the topological ordering.
-		List<Proposition> order = new ArrayList<Proposition>();
-
-		// All of the components in the PropNet
-		// List<Component> components = new ArrayList<Component>(propNet.getComponents());
-
-		// All of the propositions in the PropNet.
-//		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
-
-		Queue<Proposition> allSources = new LinkedList<Proposition>();
-		allSources.addAll(propNet.getAllInputProps());
-		allSources.addAll(propNet.getAllBasePropositions());
-
-//		HashSet<Component> visitedNodes = new HashSet<Component>();
-
-		//		while (!allSources.isEmpty()){
-		//			Proposition front = allSources.poll();
-		//			order.add(front);
-		//			visitedNodes.add(front);
-		//			for (Component c : front.getOutputs()){
-		//				if (c instanceof Proposition){
-		//					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
-		//					otherInputs.removeAll(visitedNodes);
-		//					if (otherInputs.isEmpty()){
-		//						allSources.add((Proposition) c);
-		//					}
-		//				}
-		//			}
-		//		}
-		// assert order.size() == propNet.getPropositions().size();
-		order.addAll(allSources);
-		return order;
-	}
-
-	// Test if topological ordering worked. Not supposed to be called at runtime
-	/*public void testTopologicalOrdering(List<Proposition> ordering){
-		for(int i=1; i < ordering.size(); i++){
-			System.out.println(i);
-			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
-			Set<Component> inputs_c = ordering.get(i).getInputs();
-			HashSet<Proposition> inputs = new HashSet<Proposition>();
-			for (Component c : inputs_c){
-				if (c instanceof Proposition){
-					inputs.add((Proposition) c);
-				}
-			}
-			inputs.removeAll(prev);
-			if (!inputs.isEmpty()){
-				throw new Error("Ordering is not topological");
-			}
-		}
-	}*/
 
 	/* Already implemented for you */
 	@Override
@@ -410,8 +381,7 @@ public class StateLessPropNet extends StateMachine {
 	 *
 	 * This translates a list of Moves (backed by a sentence that is simply ?action)
 	 * into GdlSentences that can be used to get Propositions from inputPropositions.
-	 * and accordingly set their values etc.  This is a naive implementation when coupled with
-	 * setting input values, feel free to change this for a more efficient implementation.
+	 * and accordingly set their values etc.
 	 *
 	 * @param moves
 	 * @return
