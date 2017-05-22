@@ -264,9 +264,6 @@ public class BitSetNet extends StateMachine {
 	}
 
 	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (constBits.get(c.compIndex)) {
-			return;
-		}
 		if (newValue == compBits.get(c.compIndex) && differential) {
 			return; // stop forward propagating
 		}
