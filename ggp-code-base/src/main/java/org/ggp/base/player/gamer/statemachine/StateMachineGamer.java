@@ -156,9 +156,9 @@ public abstract class StateMachineGamer extends Gamer
      */
 	public final void resetStateFromMatch() {
         stateMachine = getInitialStateMachine();
-        stateMachine.initialize(getMatch().getGame().getRules());
-        currentState = stateMachine.getMachineStateFromSentenceList(getMatch().getMostRecentState());
         role = stateMachine.getRoleFromConstant(getRoleName());
+        stateMachine.initialize(getMatch().getGame().getRules(), role);
+        currentState = stateMachine.getMachineStateFromSentenceList(getMatch().getMostRecentState());
 	}
 
     // =====================================================================
@@ -176,19 +176,16 @@ public abstract class StateMachineGamer extends Gamer
 	@Override
 	public final void metaGame(long timeout) throws MetaGamingException
 	{
-		try
-		{
+		try {
 			stateMachine = getInitialStateMachine();
-			stateMachine.initialize(getMatch().getGame().getRules());
+			role = stateMachine.getRoleFromConstant(getRoleName());
+			stateMachine.initialize(getMatch().getGame().getRules(), role);
 			currentState = stateMachine.getInitialState();
 
-			role = stateMachine.getRoleFromConstant(getRoleName());
 			getMatch().appendState(currentState.getContents());
 
 			stateMachineMetaGame(timeout);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 		    GamerLogger.logStackTrace("GamePlayer", e);
 			throw new MetaGamingException(e);
 		}

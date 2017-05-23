@@ -73,7 +73,7 @@ public class GameServer extends Thread implements Subject
         Arrays.fill(playerPlaysRandomly, Boolean.FALSE);
 
         stateMachine = new ProverStateMachine();
-        stateMachine.initialize(match.getGame().getRules());
+        stateMachine.initialize(match.getGame().getRules(), null); // TODO only for prover
         currentState = stateMachine.getInitialState();
         previousMoves = null;
 

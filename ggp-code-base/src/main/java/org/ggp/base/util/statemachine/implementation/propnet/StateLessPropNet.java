@@ -66,7 +66,7 @@ public class StateLessPropNet extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public void initialize(List<Gdl> description) {
+	public void initialize(List<Gdl> description, Role r) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
@@ -117,10 +117,10 @@ public class StateLessPropNet extends StateMachine {
 			}
 			for (int ii = 0; ii < allCompArr.length; ii ++) {
 				for (int jj = 0; jj < allCompArr[ii].outputs.size(); jj ++) {
-					outputs[ii][jj] = allCompArr[ii].outputs.get(jj).compIndex;
+					outputs[ii][jj] = allCompArr[ii].output_arr[jj].compIndex;
 				}
 				for (int jj = 0; jj < allCompArr[ii].inputs.size(); jj ++) {
-					inputs[ii][jj] = allCompArr[ii].inputs.get(jj).compIndex;
+					inputs[ii][jj] = allCompArr[ii].input_arr[jj].compIndex;
 				}
 			}
 			basePropBits = new BitSet(allCompArr.length);

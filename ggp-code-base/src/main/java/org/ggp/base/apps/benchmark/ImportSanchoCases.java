@@ -89,7 +89,7 @@ public class ImportSanchoCases {
 			}
 			if (flipAcceptableMoves) {
 				StateMachine theMachine = new ProverStateMachine();
-				theMachine.initialize(PlayerTester.getMediasResGame(gameKey, theState).getRules());
+				theMachine.initialize(PlayerTester.getMediasResGame(gameKey, theState).getRules(), null);
 				List<Move> legalMoves = theMachine.getLegalMoves(theMachine.getInitialState(), theMachine.getRoles().get(thePlayerID));
 				Set<String> newAcceptableMoves = new HashSet<String>();
 				for (Move move : legalMoves) {

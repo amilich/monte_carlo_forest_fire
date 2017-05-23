@@ -51,7 +51,7 @@ public class ForwardDifferentialPropNet extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public void initialize(List<Gdl> description) {
+	public void initialize(List<Gdl> description, Role r) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
@@ -241,8 +241,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 			return;
 		}
 		// Component outputs[] = c.output_arr;
-		for (int jj = 0; jj < c.outputs.size(); jj ++) {
-			Component out = c.outputs.get(jj);
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+			Component out = c.output_arr[jj];
 			if (out instanceof Proposition || out instanceof Transition) {
 				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
@@ -250,8 +250,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 					forwardpropmark(out, false, differential);
 				} else {
 					boolean result = true;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (!out.inputs.get(ii).curVal) {
+					for (int ii = 0; ii < out.input_arr.length; ii ++) {
+						if (!out.input_arr[ii].curVal) {
 							result = false;
 							break;
 						}
@@ -263,8 +263,8 @@ public class ForwardDifferentialPropNet extends StateMachine {
 					forwardpropmark(out, true, differential);
 				} else {
 					boolean result = false;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (out.inputs.get(ii).curVal) {
+					for (int ii = 0; ii < out.input_arr.length; ii ++) {
+						if (out.input_arr[ii].curVal) {
 							result = true;
 							break;
 						}

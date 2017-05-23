@@ -22,7 +22,7 @@ public class GdlCleanerTest extends Assert {
         StaticValidator.validateDescription(description);
 
         StateMachine sm = new ProverStateMachine();
-        sm.initialize(description);
+        sm.initialize(description, null);
         MachineState state = sm.getInitialState();
         assertEquals(1, sm.getRoles().size());
         Role player = sm.getRoles().get(0);

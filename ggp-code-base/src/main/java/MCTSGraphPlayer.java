@@ -26,7 +26,8 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			return new CachedStateMachine(new ProverStateMachine());
 		}
 		return new BitSetPropNet();
-//		return new BitSetNet();
+// 		return new BitSetNet();
+//		return new BasicFactorPropNet();
 //		return new StateLessPropNet();
 	}
 
@@ -82,7 +83,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		machines.add(getStateMachine());
 		for (int ii = 1; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
 			StateMachine m = getInitialStateMachine();
-			m.initialize(getMatch().getGame().getRules());
+			m.initialize(getMatch().getGame().getRules(), getRole());
 			machines.add(m);
 		}
 		System.out.println("[GRAPH] Created machines.");
@@ -125,7 +126,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		} catch (Exception e) {
 			failed = true;
 			this.stateMachine = new CachedStateMachine(new ProverStateMachine());
-			this.stateMachine.initialize(getMatch().getGame().getRules());
+			this.stateMachine.initialize(getMatch().getGame().getRules(), getRole());
 			resetGraphNode();
 			return this.stateMachine.findLegalx(getRole(), getCurrentState());
 		}

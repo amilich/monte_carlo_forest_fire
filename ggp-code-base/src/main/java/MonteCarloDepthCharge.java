@@ -30,7 +30,7 @@ public class MonteCarloDepthCharge extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// initialize the 2nd state machine
 		machine2 = getInitialStateMachine();
-		machine2.initialize(getMatch().getGame().getRules());
+		machine2.initialize(getMatch().getGame().getRules(), getRole());
 		MyHeuristics.numCharges = 0;
 	}
 

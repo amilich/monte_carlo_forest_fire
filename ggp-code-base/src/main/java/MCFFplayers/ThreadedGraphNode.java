@@ -181,10 +181,11 @@ public class ThreadedGraphNode {
 	public ThreadedGraphNode expand() throws MoveDefinitionException, TransitionDefinitionException {
 		if (machine.isTerminal(state)) return this;
 		for (int ii = 0; ii < numMoves; ii ++) {
+			Move myMove = myMoves.get(ii);
+			List<List<Move>> jMoves = machine.getLegalJointMoves(state, player, myMove);
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] == null) {
-					Move myMove = myMoves.get(ii);
-					List<Move> jointMove = machine.getLegalJointMoves(state, player, myMove).get(jj);
+					List<Move> jointMove = jMoves.get(jj);
 					try {
 						MachineState nextState = machine.getNextState(state, jointMove);
 						if (stateMap.containsKey(nextState)) children[ii][jj] = stateMap.get(nextState);

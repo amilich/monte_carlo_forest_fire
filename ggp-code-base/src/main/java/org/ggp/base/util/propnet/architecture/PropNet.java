@@ -552,10 +552,15 @@ public final class PropNet {
 		components.remove(c);
 
 		//Remove all the local links to the component
-		for(Component parent : c.getInputs())
+		for(Component parent : c.getInputs()) {
 			parent.removeOutput(c);
-		for(Component child : c.getOutputs())
+			parent.crystalize();
+		}
+		for(Component child : c.getOutputs()) {
 			child.removeInput(c);
+			child.crystalize();
+		}
+		c.crystalize();
 		//These are actually unnecessary...
 		//c.removeAllInputs();
 		//c.removeAllOutputs();

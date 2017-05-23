@@ -43,7 +43,7 @@ public class BasesInputsValidator implements GameValidator {
 	public List<ValidatorWarning> checkValidity(Game theGame) throws ValidatorException {
 		try {
 			StateMachine sm = new ProverStateMachine();
-			sm.initialize(theGame.getRules());
+			sm.initialize(theGame.getRules(), null);
 
 			AimaProver prover = new AimaProver(theGame.getRules());
 			GdlSentence basesQuery = GdlPool.getRelation(BASE, new GdlTerm[] {X});

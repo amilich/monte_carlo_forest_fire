@@ -27,7 +27,7 @@ public final class SimulationValidator implements GameValidator
 	public List<ValidatorWarning> checkValidity(Game theGame) throws ValidatorException {
 		for (int i = 0; i < numSimulations; i++) {
 			StateMachine stateMachine = new ProverStateMachine();
-			stateMachine.initialize(theGame.getRules());
+			stateMachine.initialize(theGame.getRules(), null);
 
 			MachineState state = stateMachine.getInitialState();
 			for (int depth = 0; !stateMachine.isTerminal(state); depth++) {
