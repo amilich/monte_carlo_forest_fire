@@ -76,7 +76,7 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 		machines.add(getStateMachine());
 		for (int ii = 1; ii < num_mach; ii ++) {
 			StateMachine m = getInitialStateMachine();
-			m.initialize(getMatch().getGame().getRules());
+			m.initialize(getMatch().getGame().getRules(), getRole());
 			machines.add(m);
 		}
 		System.out.println("[GRAPH] Created machines.");

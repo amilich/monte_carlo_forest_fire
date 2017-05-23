@@ -9,16 +9,17 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
+import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.SamplePropNetStateMachine;
+import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 public class MyBoundedMobilityPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
-		// return new CachedStateMachine(new ProverStateMachine());
-		return new SamplePropNetStateMachine();
+		return new CachedStateMachine(new ProverStateMachine());
+		//		return new SamplePropNetStateMachine();
 	}
 
 	@Override
@@ -202,7 +203,7 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 		} else if (level >= maxLevel) {
 			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
 		} else if (level > 2 && MyHeuristics.stateConverges(role, currState, getStateMachine(), decisionTime, prevStates)) {
-			 return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
+			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
 		}
 		List<Move> actions = new ArrayList<Move>();
 		actions.addAll(getStateMachine().getLegalMoves(currState, role));

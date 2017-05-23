@@ -142,8 +142,8 @@ public final class CachedStateMachine extends StateMachine
     }
 
     @Override
-    public void initialize(List<Gdl> description) {
-        backingStateMachine.initialize(description);
+    public void initialize(List<Gdl> description, Role r) {
+        backingStateMachine.initialize(description, null);
     }
 
     @Override

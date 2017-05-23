@@ -28,6 +28,7 @@ public abstract class StateMachine
     // These methods (through findterminalp) layer over other methods
 	// in order to align with notation in the notes for Stanford's CS227B course
 
+
 	/**
 	 * Returns the list of roles for the game.
 	 */
@@ -117,8 +118,9 @@ public abstract class StateMachine
      * <p>
      * This method should only be called once, and it should be called before any
      * other methods on the StateMachine.
+     * @param role
      */
-    public abstract void initialize(List<Gdl> description);
+    public abstract void initialize(List<Gdl> description, Role role);
     /**
      * Returns the goal value for the given role in the given state. Goal values
      * are always between 0 and 100.

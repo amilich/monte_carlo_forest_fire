@@ -43,6 +43,45 @@ public class BitSetNet extends StateMachine {
 		return propNet;
 	}
 
+	public void dfs(Proposition p, Set<Proposition> basesFound) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+//			if (propNet.getAllBasePropositions().contains(currNode)) {
+//				basesFound.add((Proposition) currNode);
+//			}
+			if (currNode instanceof Proposition) {
+				basesFound.add((Proposition) currNode);
+			}
+		}
+	}
+
+	public Set<Proposition> terminalDFS(Proposition t, Set<Proposition> goalLegals) {
+		Set<Proposition> basesFound = new HashSet<Proposition>();
+		dfs(t, basesFound);
+		// propNet.renderToFile("ham.dot");
+		for (Proposition p : goalLegals) {
+			dfs(p, basesFound);
+		}
+		// System.out.println(basesFound);
+		Set<Proposition> toIgnore = new HashSet<Proposition>();
+		for (Proposition p : propNet.getAllBasePropositions()) {
+			if (!basesFound.contains(p)) {
+				// System.out.println("Ignore: " + p);
+				toIgnore.add(p);
+			}
+		}
+		// System.out.println(ignoreBases);
+		return toIgnore;
+	}
+
+	Set<Proposition> ignoreBases;
+
 	MachineState init;
 	BitSet baseBits;
 	BitSet inputBits;
@@ -53,6 +92,7 @@ public class BitSetNet extends StateMachine {
 	BitSet orBits;
 	BitSet notBits;
 	BitSet transBits;
+	BitSet ignoreBits;
 	public int counters[];
 
 	public Component[] allCompArr = null;
@@ -65,10 +105,15 @@ public class BitSetNet extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public void initialize(List<Gdl> description) {
+	public void initialize(List<Gdl> description, Role r) {
+		// System.out.println("[PropNet] Initializing for role " + r);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
+//			 Set<Proposition> startFrom = new HashSet<Proposition>();
+//			 startFrom.addAll(propNet.getGoalPropositions().get(r));
+//			 startFrom.addAll(propNet.getLegalPropositions().get(r));
+//			 ignoreBases = terminalDFS(propNet.getTerminalProposition(), startFrom);
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
@@ -94,9 +139,13 @@ public class BitSetNet extends StateMachine {
 			counters = new int[allCompArr.length];
 			compBits = new BitSet(allCompArr.length);
 			constBits = new BitSet(allCompArr.length);
+//			ignoreBits = new BitSet(allCompArr.length);
 
 			for (int ii = 0; ii < allCompArr.length; ii ++) {
 				allCompArr[ii].compIndex = ii;
+//				if (ignoreBases.contains(allCompArr[ii])) {
+//					ignoreBits.set(ii);
+//				}
 				if (allCompArr[ii] instanceof And) {
 					andBits.set(ii);
 				} else if (allCompArr[ii] instanceof Or) {
@@ -110,46 +159,16 @@ public class BitSetNet extends StateMachine {
 				}
 			}
 
+			for (Component c : propNet.getComponents()) {
+				c.crystalize();
+			}
+
 			init = doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
 
-		System.out.println("[PropNet] Initialization done");
-	}
-
-	/**
-	 * Computes if the state is terminal. Should return the value
-	 * of the terminal proposition for the state.
-	 */
-	@Override
-	public boolean isTerminal(MachineState state) {
-		updatePropnetState(state);
-		return compBits.get(propNet.getTerminalProposition().compIndex);
-	}
-
-	/**
-	 * Computes the goal for a role in the current state.
-	 * Should return the value of the goal proposition that
-	 * is true for that role. If there is not exactly one goal
-	 * proposition true for that role, then you should throw a
-	 * GoalDefinitionException because the goal is ill-defined.
-	 */
-	@Override
-	public int getGoal(MachineState state, Role role)
-			throws GoalDefinitionException {
-		updatePropnetState(state);
-		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
-
-		for (Proposition p : rewards) {
-			if (compBits.get(p.compIndex)) {
-				if (p.goal == -1) {
-					p.goal = Integer.parseInt(p.getName().get(1).toString());
-				}
-				return p.goal;
-			}
-		}
-		return 0;
+		System.out.println("[PropNet] Initialization done [Role = " + r + "]");
 	}
 
 	private MachineState doInitWork() {
@@ -159,6 +178,16 @@ public class BitSetNet extends StateMachine {
 		for (Proposition base : allBaseArr) {
 			initforwardpropmark(base, false);
 		}
+//		Random r = new Random();
+//		for (Proposition b : ignoreBases) {
+//			initforwardpropmark(b, r.nextBoolean());
+//		}
+//		for (Role r : roles) {
+//			for (Proposition p : propNet.getLegalPropositions().get(r)) {
+//				compBits.set(p.compIndex);
+//			}
+//		}
+
 		if (propNet.getInitProposition() != null) {
 			forwardpropmark(propNet.getInitProposition(), true);
 		}
@@ -180,8 +209,8 @@ public class BitSetNet extends StateMachine {
 		for (Component c : propNet.getComponents()) {
 			if (andBits.get(c.compIndex) || orBits.get(c.compIndex)) {
 				counters[c.compIndex] = 0;
-				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (compBits.get(c.inputs.get(ii).compIndex)) {
+				for (int ii = 0; ii < c.input_arr.length; ii ++) {
+					if (compBits.get(c.input_arr[ii].compIndex)) {
 						counters[c.compIndex] ++;
 					}
 				}
@@ -191,11 +220,29 @@ public class BitSetNet extends StateMachine {
 		return new MachineState(sentences);
 	}
 
-	/**
-	 * Returns the initial state. The initial state can be computed
-	 * by only setting the truth value of the INIT proposition to true,
-	 * and then computing the resulting state.
-	 */
+	@Override
+	public boolean isTerminal(MachineState state) {
+		updatePropnetState(state);
+		return compBits.get(propNet.getTerminalProposition().compIndex);
+	}
+
+	@Override
+	public int getGoal(MachineState state, Role role)
+			throws GoalDefinitionException {
+		updatePropnetState(state);
+		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
+
+		for (Proposition p : rewards) {
+			if (compBits.get(p.compIndex)) {
+				if (p.goal == -1) {
+					p.goal = Integer.parseInt(p.getName().get(1).toString());
+				}
+				return p.goal;
+			}
+		}
+		return 0;
+	}
+
 	@Override
 	public MachineState getInitialState() {
 		return init;
@@ -275,18 +322,18 @@ public class BitSetNet extends StateMachine {
 		} else if (transBits.get(c.compIndex)) { // if c is a transition
 			// transitions always have exactly one output
 			if (newValue) nextBaseBits.set(c.bitIndex);
-			else nextBaseBits.clear(c.outputs.get(0).bitIndex);
+			else nextBaseBits.clear(c.output_arr[0].bitIndex);
 			return;
 		}
-		for (int jj = 0; jj < c.outputs.size(); jj ++) {
-			Component out = c.outputs.get(jj);
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+			Component out = c.output_arr[jj];
 			if (andBits.get(out.compIndex)) {
 				if (!newValue) {
 					initforwardpropmark(out, false);
 				} else {
 					boolean result = true;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (!compBits.get(out.inputs.get(ii).compIndex)) {
+						if (!compBits.get(out.input_arr[ii].compIndex)) {
 							result = false;
 							break;
 						}
@@ -299,7 +346,7 @@ public class BitSetNet extends StateMachine {
 				} else {
 					boolean result = false;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (compBits.get(out.inputs.get(ii).compIndex)) {
+						if (compBits.get(out.input_arr[ii].compIndex)) {
 							result = true;
 							break;
 						}
@@ -315,6 +362,9 @@ public class BitSetNet extends StateMachine {
 	}
 
 	public void forwardpropmark(Component c, boolean newValue) {
+//		if (ignoreBases.contains(c)) {
+//			return;
+//		}
 		if (newValue == compBits.get(c.compIndex)) {
 			return; // stop forward propagating
 		}
@@ -324,14 +374,13 @@ public class BitSetNet extends StateMachine {
 		if (c.isBase) {
 			if (newValue) baseBits.set(c.bitIndex);
 			else baseBits.clear(c.bitIndex);
-		} else if (transBits.get(c.compIndex)) { // if c is a transition
-			// transitions always have exactly one output
-			if (newValue) nextBaseBits.set(c.outputs.get(0).bitIndex);
-			else nextBaseBits.clear(c.outputs.get(0).bitIndex);
+		} else if (transBits.get(c.compIndex)) { // transitions always have exactly one output
+			if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
+			else nextBaseBits.clear(c.output_arr[0].bitIndex);
 			return;
 		}
-		for (int jj = 0; jj < c.outputs.size(); jj ++) {
-			Component out = c.outputs.get(jj);
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+			Component out = c.output_arr[jj];
 			if (newValue) counters[out.compIndex] ++;
 			else counters[out.compIndex] --;
 
@@ -347,7 +396,9 @@ public class BitSetNet extends StateMachine {
 		}
 	}
 
+	// int counter = 0;
 	public void updatePropnetState(MachineState state) {
+		// counter ++;
 		Set<GdlSentence> stateGdl = state.getContents();
 		BitSet stateBits = new BitSet(allBaseArr.length);
 		for (GdlSentence s : stateGdl) {
@@ -355,6 +406,15 @@ public class BitSetNet extends StateMachine {
 		}
 		stateBits.xor(baseBits);
 		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
+			/* if (counter > 100 && ignoreBits.get(ii)) {
+				// baseBits.flip(ii);
+				// compBits.flip(allBaseArr[ii].compIndex);
+				// System.out.println("Skipping update of " + allBaseArr[ii]);
+				continue;
+			} // TODO bitset here */
+//			if (ignoreBits.get(ii)) {
+//				continue;
+//			}
 			forwardpropmark(allBaseArr[ii], !baseBits.get(ii));
 		}
 	}

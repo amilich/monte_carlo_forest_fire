@@ -12,19 +12,18 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.propnet.BitSetNet;
-import org.ggp.base.util.statemachine.implementation.propnet.SamplePropNetStateMachine;
 
 public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 		// return new CachedStateMachine(new ProverStateMachine());
-		// return new BasicFactorPropNet();
+//		return new BasicFactorPropNet();
 		// return new BitSetPropNet();
 		return new BitSetNet();
 	}
 
-	SamplePropNetStateMachine machineP = null;
+	// SamplePropNetStateMachine machineP = null;
 
 	@Override
 	public void stateMachineMetaGame(long timeout)
@@ -44,10 +43,10 @@ public class MyLegalPlayer extends StateMachineGamer {
 
 	public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		Random r = new Random();
-		System.out.println(state);
+		// System.out.println(state);
 		int num = 0;
 		while(!getStateMachine().isTerminal(state)) {
-			System.out.println("\t " + state);
+			// System.out.println("\t " + state);
 			List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
 			state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
 			num ++;
@@ -68,16 +67,17 @@ public class MyLegalPlayer extends StateMachineGamer {
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
-		for (int ii = 0; ii < 0; ii ++) {
+		for (int ii = 0; ii < 10000; ii ++) {
 			MachineState m = customdc(state);
-			total += machine.getGoal(state, role);
+			total += machine.getGoal(m, role);
 			// System.out.println("DC: " + m);
 		}
-		total /= 20;
+		total /= 10000;
 		System.out.println("AVG: " + total);
 		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
 		// System.out.println(machine.getNextStates(getCurrentState()));
 		System.out.println(machine.getLegalJointMoves(getCurrentState()));
+		System.out.println(machine.getLegalMoves(getCurrentState(), getRole()));
 		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		// getInitialStateMachine().
 		// Random r = new Random();

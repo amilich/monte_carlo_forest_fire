@@ -52,7 +52,7 @@ public class MyThreadedMonteCarlo extends StateMachineGamer {
 		machines.clear();
 		for (int ii = 0; ii < ThreadedNode.NUM_THREADS; ii ++) {
 			StateMachine m = getInitialStateMachine();
-			m.initialize(getMatch().getGame().getRules());
+			m.initialize(getMatch().getGame().getRules(), getRole());
 			machines.add(m);
 		}
 	}

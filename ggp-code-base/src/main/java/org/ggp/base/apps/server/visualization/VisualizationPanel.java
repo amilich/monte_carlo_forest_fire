@@ -175,7 +175,7 @@ public final class VisualizationPanel extends JPanel implements Observer
         frame.setVisible(true);
 
         StateMachine theMachine = new CachedStateMachine(new ProverStateMachine());
-        theMachine.initialize(theGame.getRules());
+        theMachine.initialize(theGame.getRules(), null);
         try {
             MachineState theCurrentState = theMachine.getInitialState();
             do {

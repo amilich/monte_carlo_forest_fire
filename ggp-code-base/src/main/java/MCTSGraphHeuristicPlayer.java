@@ -87,7 +87,7 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		resetGraphNode();
 		moveNum = 0;
-		mobilityHeuristic();
+		// mobilityHeuristic();
 		expandTree(timeout); // TODO
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 	}
@@ -133,7 +133,7 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 		machines.add(getStateMachine());
 		for (int ii = 1; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
 			StateMachine m = getInitialStateMachine();
-			m.initialize(getMatch().getGame().getRules());
+			m.initialize(getMatch().getGame().getRules(), getRole());
 			machines.add(m);
 		}
 		System.out.println("[GRAPH] Created machines.");
@@ -176,7 +176,7 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 		} catch (Exception e) {
 			failed = true;
 			this.stateMachine = new CachedStateMachine(new ProverStateMachine());
-			this.stateMachine.initialize(getMatch().getGame().getRules());
+			this.stateMachine.initialize(getMatch().getGame().getRules(), getRole());
 			resetGraphNode();
 			return this.stateMachine.findLegalx(getRole(), getCurrentState());
 		}

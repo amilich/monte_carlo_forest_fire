@@ -23,7 +23,7 @@ public class MyBasicMonteCarloPlayer extends StateMachineGamer {
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		machine2 = getInitialStateMachine();
-		machine2.initialize(getMatch().getGame().getRules());
+		machine2.initialize(getMatch().getGame().getRules(), getRole());
 		Node.numCharges = 0;
 		moveNum = 0;
 		initRoot();

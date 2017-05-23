@@ -175,36 +175,32 @@ public class BasicFactorPropNet extends StateMachine {
 		for (Proposition p : goals) {
 			dfs(p, basesFound);
 		}
-
 		System.out.println(basesFound);
-		Set<Proposition> importantBases = new HashSet<Proposition>();
+		Set<Proposition> ignoreBases = new HashSet<Proposition>();
 		for (Proposition p : propNet.getAllBasePropositions()) {
-			if (basesFound.contains(p)) {
-				importantBases.add(p);
+			if (!basesFound.contains(p)) {
+				ignoreBases.add(p);
 			}
 		}
-		System.out.println(importantBases);
-		return importantBases;
+		System.out.println(ignoreBases);
+		return ignoreBases;
 	}
 
-	/**
-	 * Initializes the PropNetStateMachine. You should compute the topological
-	 * ordering here. Additionally you may compute the initial state here, at
-	 * your discretion.
-	 */
+	Set<Proposition> ignoreBases;
+
 	@Override
-	public void initialize(List<Gdl> description) {
+	public void initialize(List<Gdl> description, Role r) {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
 			ordering = getOrdering();
 
-			Set<Proposition> factoredBases = factorSubgames();
-			allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
+			// Set<Proposition> factoredBases = factorSubgames();
+			// allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
 
-			// Set<Proposition> importantBases = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
+			ignoreBases = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
 			// allBaseArr = importantBases.toArray(new Proposition[importantBases.size()]);
-			// allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
+			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
 
 			doInitWork();
@@ -355,9 +351,9 @@ public class BasicFactorPropNet extends StateMachine {
 			else trueProps.remove(o.getName());
 			return;
 		}
-		List<Component> outputs = c.getOutputs();
-		for (int jj = 0; jj < outputs.size(); jj ++) {
-			Component out = outputs.get(jj);
+		// List<Component> outputs = c.getOutputs();
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+			Component out = c.output_arr[jj];
 			if (out instanceof Proposition || out instanceof Transition) {
 				forwardpropmark(out, newValue, differential);
 			} else if (out instanceof And) {
@@ -366,7 +362,7 @@ public class BasicFactorPropNet extends StateMachine {
 				} else {
 					boolean result = true;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (!out.inputs.get(ii).curVal) {
+						if (!out.input_arr[ii].curVal) {
 							result = false;
 							break;
 						}
@@ -379,7 +375,7 @@ public class BasicFactorPropNet extends StateMachine {
 				} else {
 					boolean result = false;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (out.inputs.get(ii).curVal) {
+						if (out.input_arr[ii].curVal) {
 							result = true;
 							break;
 						}

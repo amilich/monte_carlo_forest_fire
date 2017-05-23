@@ -63,7 +63,8 @@ public class BitSetPropNet extends StateMachine {
 	 * your discretion.
 	 */
 	@Override
-	public void initialize(List<Gdl> description) {
+	public void initialize(List<Gdl> description, Role r) {
+		System.out.println("[PropNet] Initializing for role " + r);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
@@ -89,9 +90,9 @@ public class BitSetPropNet extends StateMachine {
 			inputBits = new BitSet(allInputArr.length);
 			legalBits = new BitSet(allLegalArr.length);
 
-//			for (Component c : propNet.getComponents()) {
-//				c.crystalize();
-//			}
+			for (Component c : propNet.getComponents()) {
+				c.crystalize();
+			}
 
 			init = doInitWork();
 		} catch (InterruptedException e) {
@@ -179,7 +180,7 @@ public class BitSetPropNet extends StateMachine {
 			if (c instanceof And || c instanceof Or) {
 				c.numTrue = 0;
 				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (c.inputs.get(ii).curVal) c.numTrue ++;
+					if (c.input_arr[ii].curVal) c.numTrue ++;
 				}
 			}
 		}
@@ -278,12 +279,12 @@ public class BitSetPropNet extends StateMachine {
 			else legalBits.clear(c.bitIndex);
 		} */
 		if (c instanceof Transition) {
-			if (newValue) nextBaseBits.set(c.outputs.get(0).bitIndex);
-			else nextBaseBits.clear(c.outputs.get(0).bitIndex);
+			if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
+			else nextBaseBits.clear(c.output_arr[0].bitIndex);
 			return;
 		}
 		for (int jj = 0; jj < c.outputs.size(); jj ++) {
-			Component out = c.outputs.get(jj);
+			Component out = c.output_arr[jj];
 			if (differential) {
 				if (newValue) out.numTrue ++;
 				else out.numTrue --;
