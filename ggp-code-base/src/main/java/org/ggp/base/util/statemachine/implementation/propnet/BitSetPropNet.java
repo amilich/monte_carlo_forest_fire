@@ -57,11 +57,6 @@ public class BitSetPropNet extends StateMachine {
 	public Proposition[] allLegalArr = null;
 	// Map<Integer, Proposition> baseBitMap = new HashMap<Integer, Proposition>();
 
-	/**
-	 * Initializes the PropNetStateMachine. You should compute the topological
-	 * ordering here. Additionally you may compute the initial state here, at
-	 * your discretion.
-	 */
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);

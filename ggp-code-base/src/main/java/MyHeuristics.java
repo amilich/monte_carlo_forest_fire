@@ -181,6 +181,15 @@ public class MyHeuristics {
 		return false;
 	}
 
+	public static boolean checkTime(long decisionTime, long threshold) {
+		long currTime = System.currentTimeMillis(); // TODOght way to do this
+		if (decisionTime - currTime < threshold) {
+			System.out.println("** TIME EXPIRED ** Returning decision now.");
+			return true;
+		}
+		return false;
+	}
+
 	public static double goalStateSimilarity(Role role, MachineState state, StateMachine machine, long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		ArrayList<MachineState> terminalStates = new ArrayList<MachineState>();

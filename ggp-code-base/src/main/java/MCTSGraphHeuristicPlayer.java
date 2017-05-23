@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
@@ -13,7 +14,7 @@ import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.BitSetNet;
+import org.ggp.base.util.statemachine.implementation.propnet.BitSetPropNet;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 import MCFFplayers.ThreadedGraphNode;
@@ -27,8 +28,21 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 		if (failed) {
 			return new CachedStateMachine(new ProverStateMachine());
 		}
-		return new BitSetNet();
+		return new BitSetPropNet();
 		//	return new StateLessPropNet();
+	}
+
+	public MachineState customdc(MachineState state, StateMachine machine) throws TransitionDefinitionException, MoveDefinitionException {
+		Random r = new Random();
+		while (true) {
+			List<List<Move>> jmoves = machine.getLegalJointMoves(state);
+			MachineState nextState = machine.getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
+			if (machine.isTerminal(nextState)) {
+				return state;
+			} else {
+				state = nextState;
+			}
+		}
 	}
 
 	public int myMobility(Role role, MachineState state, StateMachine machine)
@@ -39,17 +53,16 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 	}
 
 	// http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
-	public static double Correlation(int[] xs, int[] ys) {
+	public double Correlation(List<Integer> xs, List<Integer> ys) {
 		double sx = 0.0;
 		double sy = 0.0;
 		double sxx = 0.0;
 		double syy = 0.0;
 		double sxy = 0.0;
-		int n = xs.length;
-		for (int i = 0; i < n; ++i) {
-			double x = xs[i];
-			double y = ys[i];
-
+		int n = xs.size();
+		for (int i = 0; i < n; i ++) {
+			double x = xs.get(i).doubleValue();
+			double y = ys.get(i).doubleValue();
 			sx += x;
 			sy += y;
 			sxx += x * x;
@@ -57,27 +70,36 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 			sxy += x * y;
 		}
 		// covariation
-		double cov = sxy / n - sx * sy / n / n;
+//		double cov = sxy / n - sx * sy / n / n;
 		// standard error of x
-		double sigmax = Math.sqrt(sxx / n -  sx * sx / n / n);
+//		double sigmax = Math.sqrt(sxx / n -  sx * sx / n / n);
 		// standard error of y
-		double sigmay = Math.sqrt(syy / n -  sy * sy / n / n);
+//		double val = syy / n -  sy * sy / n / n;
+//		double sigmay = Math.sqrt(val);
 		// correlation is just a normalized covariation
-		return cov / sigmax / sigmay;
+		double numerator = n * sxy - sx * sy;
+		if (Math.abs(numerator) < 0.001) {
+			return 0;
+		}
+		double denominator = Math.sqrt(n * sxx - sx * sx) * Math.sqrt(n * syy - sy * sy);
+		return numerator / denominator;
 	}
 
-	int num_charges = 250;
 	static final double corr_threshold = 0.5;
-	public void mobilityHeuristic() throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		int ourScore[] = new int[num_charges];
-		int heuristic[] = new int[num_charges];
-		for (int ii = 0; ii < num_charges; ii ++) {
-			MachineState next = getStateMachine().performDepthCharge(getCurrentState(), null);
-			ourScore[ii] = getStateMachine().getGoal(next, getRole());
-			heuristic[ii] = myMobility(getRole(), next, getStateMachine());
+	public void mobilityHeuristic(long timeout)
+			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		List<Integer> ourScore = new ArrayList<Integer>();
+		List<Integer> heuristic = new ArrayList<Integer>();
+		long newTimeout = System.currentTimeMillis() + 15000;
+		System.out.println("Starting correlation");
+		while (!MyHeuristics.checkTime(timeout - 20000) && !MyHeuristics.checkTime(newTimeout)) {
+			MachineState next = customdc(getCurrentState(), getStateMachine());
+			ourScore.add(getStateMachine().getGoal(next, getRole()));
+			heuristic.add(myMobility(getRole(), next, getStateMachine()));
 		}
 		double corr = Correlation(ourScore, heuristic);
 		System.out.println("Corr = " + corr);
+		System.out.println("Num charges = " + heuristic.size());
 	}
 
 	// List of machines used for depth charges
@@ -87,7 +109,7 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		resetGraphNode();
 		moveNum = 0;
-		// mobilityHeuristic();
+		mobilityHeuristic(timeout);
 		expandTree(timeout); // TODO
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 	}

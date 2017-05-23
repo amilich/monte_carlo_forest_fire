@@ -100,7 +100,7 @@ public final class PropNet {
 	private final Map<Proposition, Proposition> legalInputMap;
 
 	/** A helper list of all of the roles. */
-	private final List<Role> roles;
+	public List<Role> roles;
 
 	public void addComponent(Component c) {
 		components.add(c);
