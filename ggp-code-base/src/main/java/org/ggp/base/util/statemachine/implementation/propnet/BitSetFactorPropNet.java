@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -111,17 +112,22 @@ public class BitSetFactorPropNet extends StateMachine {
 			Set<Component> curWcc = undirectedDfsFromNode(p, allVisited, wccIsRelevant, r);
 			wccs.add(curWcc);
 		}
+		Set<Component> curWcc = undirectedDfsFromNode(term, allVisited, wccIsRelevant, r);
+		wccs.add(curWcc);
 
 		int numWccsRemoved = 0;
+		int numR = 0;
 		for (int i = 0; i < wccs.size(); i++) {
 			if (!wccIsRelevant.get(i)) {
 				for (Component c : wccs.get(i)) {
 					propNet.removeComponent(c);
+					numR ++;
 				}
 				numWccsRemoved++;
 				propNet.renderToFile("factor_removed_" + numWccsRemoved + "_wccs.dot");
 			}
 		}
+		System.out.println("Removed " + numR + " components.");
 		Set<Role> relevantRoles = new HashSet<Role>();
 		for (int i = 0; i < wccs.size(); i++) {
 			if (wccIsRelevant.get(i)) {
@@ -141,10 +147,16 @@ public class BitSetFactorPropNet extends StateMachine {
 				}
 			}
 		}
-		System.out.println(relevantRoles);
-		List<Role> propRoles = new ArrayList<Role>();
-		propRoles.addAll(relevantRoles);
-		propNet.roles = propRoles;
+
+		Iterator<Role> it = propNet.roles.iterator();
+		while (it.hasNext()) {
+		  Role role = it.next();
+		  if (!relevantRoles.contains(role)) {
+		    it.remove();
+		  }
+		}
+		// System.out.println(relevantRoles);
+		// System.out.println(propNet.roles);
 	}
 
 	public Set<Component> terminalDFS(Proposition t, Set<Proposition> goals) {
@@ -176,7 +188,9 @@ public class BitSetFactorPropNet extends StateMachine {
 			for (Component c : ignoreComps) {
 				propNet.removeComponent(c);
 			}*/
-			factorSubgamesWCC(r);
+			if (propNet.getComponents().size() < 5000) {
+				factorSubgamesWCC(r); // TODO
+			}
 
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 
