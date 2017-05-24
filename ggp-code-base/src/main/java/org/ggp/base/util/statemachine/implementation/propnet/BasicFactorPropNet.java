@@ -63,23 +63,6 @@ public class BasicFactorPropNet extends StateMachine {
 		}
 	}
 
-	public void andOrDfs(Proposition p, Set<Proposition> basesFound) {
-		Queue<Component> nodesToVisit = new LinkedList<Component>();
-		Set<Component> visited = new HashSet<Component>();
-		nodesToVisit.add(p);
-		while (!nodesToVisit.isEmpty()) {
-			Component currNode = nodesToVisit.poll();
-			if (visited.contains(currNode)) continue;
-			else visited.add(currNode);
-
-			if (currNode instanceof Proposition && currNode != p) {
-				basesFound.add((Proposition) currNode);
-			} else {
-				nodesToVisit.addAll(currNode.inputs);
-			}
-		}
-	}
-
 	public void mergeddfs(Proposition p, Set<Proposition> basesFound, Map<Proposition, Set<Proposition>> allGames) {
 		Queue<Component> nodesToVisit = new LinkedList<Component>();
 		Set<Component> visited = new HashSet<Component>();
@@ -141,12 +124,34 @@ public class BasicFactorPropNet extends StateMachine {
 		return f;
 	}
 
-	public Set<Proposition> factorSubgames() {
+	public Set<Proposition> andOrDfs(Proposition p) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		Set<Proposition> basesFound = new HashSet<Proposition>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+
+			if (currNode instanceof Proposition && currNode != p) {
+				basesFound.add((Proposition) currNode);
+			} else {
+				nodesToVisit.addAll(currNode.inputs);
+			}
+		}
+		if (basesFound.size() == 0) {
+			basesFound.add(p);
+		}
+		return basesFound;
+	}
+
+	public Set<Proposition> factorSubgames(Role r) {
 		Proposition term = propNet.getTerminalProposition();
 		Set<Proposition> gameRoots = new HashSet<Proposition>();
-		andOrDfs(term, gameRoots);
+		gameRoots.addAll(andOrDfs(term));
 		for (Proposition p : propNet.getAllGoalPropositions()) {
-			andOrDfs(term, gameRoots);
+			gameRoots.addAll(andOrDfs(p));
 		}
 
 		System.out.println("Game Roots: " + gameRoots);
@@ -155,18 +160,24 @@ public class BasicFactorPropNet extends StateMachine {
 			Set<Proposition> game = new HashSet<Proposition>();
 			mergeddfs(p, game, allGames);
 		}
-		Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
-		Set<Proposition> goalRoots = new HashSet<Proposition>();
-		andOrDfs(bestGoal, goalRoots);
-		System.out.println("Best goal: " + bestGoal);
-		Proposition root = goalRoots.iterator().next();
+		System.out.println("There are " + allGames.size() + " games. Roots = " + allGames.keySet() + ".");
+		// Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
+		// Set<Proposition> goalRoots = new HashSet<Proposition>();
+		// andOrDfs(bestGoal, goalRoots);
+		// System.out.println("Best goal: " + bestGoal);
+
+		/* Proposition root = goalRoots.iterator().next();
 		for (Proposition key : allGames.keySet()) {
 			if (allGames.get(key).contains(root) || root == key) {
 				System.out.println("Factored game to key " + key);
 				return allGames.get(key);
 			}
-		}
-		return allGames.values().iterator().next();
+		}*/
+		Set<Proposition> myGoals = propNet.getGoalPropositions().get(r);
+
+		propNet.renderToFile("dual.dot");
+		// return allGames.values().iterator().next();
+		return null;
 	}
 
 	public Set<Proposition> terminalDFS(Proposition t, Set<Proposition> goals) {
@@ -195,13 +206,16 @@ public class BasicFactorPropNet extends StateMachine {
 			roles = propNet.getRoles();
 			ordering = getOrdering();
 
-			// Set<Proposition> factoredBases = factorSubgames();
+			Set<Proposition> factoredBases = factorSubgames(r);
 			// allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
 
-			ignoreBases = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
+			// ignoreBases = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
 			// allBaseArr = importantBases.toArray(new Proposition[importantBases.size()]);
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
+			for (Component c : propNet.getComponents()) {
+				c.crystalize();
+			}
 
 			doInitWork();
 		} catch (InterruptedException e) {

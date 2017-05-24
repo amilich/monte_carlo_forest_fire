@@ -114,6 +114,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			} else {
 				System.out.println("[GRAPH] First move: advanced tree.");
 			}*/
+
 			if (moveNum != 0) {
 				root = new ThreadedGraphNode(getCurrentState());
 			}

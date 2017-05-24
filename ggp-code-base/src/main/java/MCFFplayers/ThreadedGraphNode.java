@@ -23,10 +23,11 @@ public class ThreadedGraphNode {
 	public static final int NUM_THREADS = 3;
 	public static final int NUM_DEPTH_CHARGES = 3; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
+	public static int num = 0;
 
 	public static HashMap<MachineState, ThreadedGraphNode> stateMap = new HashMap<MachineState, ThreadedGraphNode>();
 	public static int numCharges = 0;
-	public double utility = 0;
+	public double utility = -1;
 
 	// Variables used to calculate standard deviation
 	// http://stackoverflow.com/questions/5543651/computing-standard-deviation-in-a-stream
@@ -76,11 +77,27 @@ public class ThreadedGraphNode {
 
 	List<Move> myMoves;
 	List<List<Move>> jMoves;
+	String myStr = "Parent";
+
+	@Override
+	public String toString() {
+		return myStr;
+	}
+
+	public ThreadedGraphNode(MachineState state, String toStr)
+			throws MoveDefinitionException {
+		this(state);
+		myStr = toStr;
+	}
+
+	int numExpanded = 0;
+	int numChildren = -1;
 
 	// Node constructor
 	public ThreadedGraphNode(MachineState state)
 			throws MoveDefinitionException {
 		this.state = state;
+		num ++;
 		isTerminal = machine.isTerminal(state);
 		if (isTerminal) {
 			this.numMoves = 0;
@@ -95,6 +112,7 @@ public class ThreadedGraphNode {
 		oCounts = new double[numMoves][numEnemyMoves];
 		oVals = new double[numMoves][numEnemyMoves];
 		children = new ThreadedGraphNode[numMoves][numEnemyMoves];
+		numChildren = numMoves * numEnemyMoves;
 	}
 
 	// Add the values of an array
@@ -106,17 +124,32 @@ public class ThreadedGraphNode {
 
 	// Return the best move available from the current state.
 	public Move getBestMove() throws MoveDefinitionException {
-		double maxUtility = 0;
-		int maxMove = 0;
-		for (int ii = 0; ii < pVals.length; ii ++) {
-			double tempUtility = pVals[ii] / pCounts[ii];
-			if (tempUtility > maxUtility) {
-				maxUtility = tempUtility;
-				maxMove = ii;
+		if (explored) {
+			double maxUtility = 0;
+			int maxI = 0;
+			for (int ii = 0; ii < this.numMoves; ii ++){
+				for (int jj = 0; jj < this.numEnemyMoves; jj ++) {
+					if (children[ii][jj].utility > maxUtility) {
+						maxUtility = children[ii][jj].utility;
+						maxI = ii;
+					}
+				}
 			}
+			System.out.println("[GRAPH] Solved utility of best move = " + maxUtility);
+			return myMoves.get(maxI);
+		} else {
+			double maxUtility = 0;
+			int maxMove = 0;
+			for (int ii = 0; ii < pVals.length; ii ++) {
+				double tempUtility = pVals[ii] / pCounts[ii];
+				if (tempUtility > maxUtility) {
+					maxUtility = tempUtility;
+					maxMove = ii;
+				}
+			}
+			System.out.println("[GRAPH] Utility of best move = " + maxUtility);
+			return myMoves.get(maxMove);
 		}
-		System.out.println("[GRAPH] Utility of best move = " + maxUtility);
-		return myMoves.get(maxMove);
 	}
 
 	// Perform selection and expansion for a MCTS node.
@@ -139,6 +172,8 @@ public class ThreadedGraphNode {
 		}
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
 				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+		//return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
+		//		Math.sqrt(50 * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
 	protected double selectfn(int pMove, int oMove) {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
@@ -155,6 +190,7 @@ public class ThreadedGraphNode {
 					if (currNode.children[ii][jj] == null) return currNode;
 				}
 			}
+			// if (currNode.numExpanded < currNode.numChildren) return currNode; // TODO
 			double pMoveScore = Double.NEGATIVE_INFINITY;
 			double oMoveScore = Double.NEGATIVE_INFINITY;
 			int resultP = 0;
@@ -190,7 +226,8 @@ public class ThreadedGraphNode {
 						MachineState nextState = machine.getNextState(state, jointMove);
 						if (stateMap.containsKey(nextState)) children[ii][jj] = stateMap.get(nextState);
 						else {
-							children[ii][jj] = new ThreadedGraphNode(nextState);
+							children[ii][jj] = new ThreadedGraphNode(nextState, jointMove.toString());
+							this.numExpanded ++;
 							stateMap.put(nextState, children[ii][jj]);
 						}
 						return children[ii][jj];
@@ -232,6 +269,28 @@ public class ThreadedGraphNode {
 		return null;
 	}
 
+	public boolean updateSolved(ThreadedGraphNode n) {
+		if (n.isTerminal) return true;
+		double maxUtility = 0;
+		for (int ii = 0; ii < n.numMoves; ii ++) {
+			for (int jj = 0; jj < n.numEnemyMoves; jj ++) {
+				if (n.children[ii][jj] == null) {
+					return false;
+				}
+				if (!n.children[ii][jj].explored) {
+					return false;
+				}
+				if (n.children[ii][jj].utility > maxUtility) {
+					maxUtility = n.children[ii][jj].utility;
+				}
+			}
+		}
+		n.explored = true;
+		n.utility = maxUtility;
+		return true;
+	}
+
+	public static final int TOT_CHARG = NUM_THREADS * NUM_DEPTH_CHARGES;
 	// Backpropagate a score through the path taken in the graph.
 	public void backpropagate(ArrayList<ThreadedGraphNode> path, double score) {
 		boolean onePlayer = machine.getRoles().size() == 1;
@@ -239,17 +298,25 @@ public class ThreadedGraphNode {
 			System.out.println("GraphNode backprop error: path length < 2");
 			return;
 		}
+		/*for (int ii = path.size() - 1; ii >= 0; ii --) {
+			if (!updateSolved(path.get(ii))) {
+				break;
+			}
+			if (ii == 0) {
+				System.out.println("Root solved");
+			}
+		}*/
 		for (int ii = path.size() - 2; ii >= 0; ii --) {
 			Pair pair = getMoveIndex(path.get(ii), path.get(ii + 1));
 			if (onePlayer) {
-				path.get(ii).pCounts[pair.first] ++;
-				path.get(ii).pVals[pair.first] += score;
+				path.get(ii).pCounts[pair.first] += TOT_CHARG;
+				path.get(ii).pVals[pair.first] += score * TOT_CHARG;
 				// No opponent
 			} else {
-				path.get(ii).pCounts[pair.first] ++;
-				path.get(ii).pVals[pair.first] += score;
-				path.get(ii).oCounts[pair.first][pair.second] ++;
-				path.get(ii).oVals[pair.first][pair.second] += score;
+				path.get(ii).pCounts[pair.first] += TOT_CHARG;
+				path.get(ii).pVals[pair.first] += score * TOT_CHARG;
+				path.get(ii).oCounts[pair.first][pair.second] += TOT_CHARG;
+				path.get(ii).oVals[pair.first][pair.second] += score * TOT_CHARG;
 			}
 		}
 	}
@@ -260,7 +327,8 @@ public class ThreadedGraphNode {
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException, InterruptedException, ExecutionException {
 		if (machine.isTerminal(state)) {
 			explored = true;
-			return machine.getGoal(state, player);
+			if (utility < 0) utility = machine.getGoal(state, player);
+			return utility;
 		}
 		if (roleIndex < 0) roleIndex = getRoleIndex();
 		if (SIMPLE) {
