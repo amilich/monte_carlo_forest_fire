@@ -154,6 +154,7 @@ public class BasicFactorPropNet extends StateMachine {
 	}
 
 	public Set<Proposition> factorSubgames(Role r) {
+		propNet.renderToFile("start.dot");
 		Proposition term = propNet.getTerminalProposition();
 		// Map<Proposition, Set<Proposition>> gameRoots = new HashMap<Proposition, Set<Proposition>>();
 		// gameRoots.put(term, andOrDfs(term));
@@ -187,16 +188,16 @@ public class BasicFactorPropNet extends StateMachine {
 			System.out.println("Game is " + allGames.get(p));
 			System.out.println("Game contains terminal is: " + allGames.get(p).contains(propNet.getTerminalProposition()));
 		}
-		propNet.renderToFile("dual.dot");
 		int count = 0;
 		for (Proposition key : allGames.keySet()) {
 			if (count != 0) {
 				for (Component val : allGames.get(key)) {
-					// propNet.removeComponent(val);
+					 propNet.removeComponent(val);
 				}
 			}
 			count ++;
 		}
+		propNet.renderToFile("dual.dot");
 
 		// return allGames.values().iterator().next();
 		return null;
@@ -233,6 +234,7 @@ public class BasicFactorPropNet extends StateMachine {
 				propNet.removeComponent(c);
 			}
 			Set<Proposition> factoredBases = factorSubgames(r);
+
 			// allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
 
 			// allBaseArr = importantBases.toArray(new Proposition[importantBases.size()]);
