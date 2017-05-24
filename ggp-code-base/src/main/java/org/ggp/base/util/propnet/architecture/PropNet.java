@@ -520,8 +520,10 @@ public final class PropNet {
 			GdlSentence name = p.getName();
 			if(basePropositions.containsKey(name)) {
 				basePropositions.remove(name);
+				allBaseProps.remove(p);
 			} else if(inputPropositions.containsKey(name)) {
 				inputPropositions.remove(name);
+				allInputProps.remove(p);
 				//The map goes both ways...
 				Proposition partner = legalInputMap.get(p);
 				if(partner != null) {
@@ -533,6 +535,7 @@ public final class PropNet {
 			} else if(name == GdlPool.getProposition(GdlPool.getConstant("terminal"))) {
 				throw new RuntimeException("The terminal component cannot be removed.");
 			} else {
+				allLegalProps.remove(p);
 				for(Set<Proposition> propositions : legalPropositions.values()) {
 					if(propositions.contains(p)) {
 						propositions.remove(p);
@@ -543,6 +546,7 @@ public final class PropNet {
 						}
 					}
 				}
+				allGoalProps.remove(p);
 				for(Set<Proposition> propositions : goalPropositions.values()) {
 					propositions.remove(p);
 				}

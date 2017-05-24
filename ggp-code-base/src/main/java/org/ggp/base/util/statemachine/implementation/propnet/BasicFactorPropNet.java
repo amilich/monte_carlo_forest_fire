@@ -280,7 +280,6 @@ public class BasicFactorPropNet extends StateMachine {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles();
-			ordering = getOrdering();
 
 			Set<Component> ignoreComps = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
 			for (Component c : ignoreComps) {
@@ -288,6 +287,7 @@ public class BasicFactorPropNet extends StateMachine {
 			}
 			factorSubgamesWCC(r);
 //			Set<Proposition> factoredBases = factorSubgames(r);
+			ordering = getOrdering();
 
 			// allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
 
