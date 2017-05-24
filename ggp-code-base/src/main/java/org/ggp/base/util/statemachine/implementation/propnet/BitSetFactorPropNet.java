@@ -31,17 +31,13 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBuilder;
 
-public class BitSetPropNet extends StateMachine {
+public class BitSetFactorPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
 	// private List<Proposition> ordering;
 	/** The player roles */
 	private Role roles[];
-
-	public PropNet getPropnet() {
-		return propNet;
-	}
 
 	MachineState init;
 	BitSet baseBits; // = new BitSet();
@@ -57,11 +53,131 @@ public class BitSetPropNet extends StateMachine {
 	public Proposition[] allLegalArr = null;
 	// Map<Integer, Proposition> baseBitMap = new HashMap<Integer, Proposition>();
 
+	public Set<Component> dfs(Proposition p) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+		}
+		return visited;
+	}
+
+	public Set<Component> undirectedDfsFromNode(Proposition p, Set<Component> allVisited, List<Boolean> wccIsRelevant, Role r) {
+		assert !allVisited.contains(p);
+		Set<Component> result = new HashSet<Component>();
+		Queue<Component> frontier = new LinkedList<Component>();
+		frontier.add(p);
+		boolean isRelevant = false;
+		while (!frontier.isEmpty()) {
+			Component cur = frontier.poll();
+			if (allVisited.contains(cur))
+				continue;
+			if (cur.equals(propNet.getInitProposition())) // ignore the init proposition when determining WCCs
+				continue;
+
+			allVisited.add(cur);
+			result.add(cur);
+			if (propNet.getGoalPropositions().get(r).contains(cur) || propNet.getTerminalProposition().equals(cur))
+				isRelevant = true;
+
+			propNet.getInputPropositions().get(r);
+
+			frontier.addAll(cur.inputs);
+			frontier.addAll(cur.outputs);
+		}
+		wccIsRelevant.add(isRelevant);
+		return result;
+	}
+
+	/**
+	 * Factors game into weakly connected components, ignoring init.
+	 * @param r
+	 * @return
+	 */
+	public void factorSubgamesWCC(Role r) {
+		propNet.renderToFile("start_w.dot");
+		Proposition term = propNet.getTerminalProposition();
+		Set<Component> allVisited = new HashSet<Component>();
+		List<Set<Component>> wccs = new ArrayList<Set<Component>>();
+		List<Boolean> wccIsRelevant = new ArrayList<Boolean>();
+
+		for (Proposition p : propNet.getAllGoalPropositions()) {
+			if (allVisited.contains(p))
+				continue;
+			Set<Component> curWcc = undirectedDfsFromNode(p, allVisited, wccIsRelevant, r);
+			wccs.add(curWcc);
+		}
+
+		int numWccsRemoved = 0;
+		for (int i = 0; i < wccs.size(); i++) {
+			if (!wccIsRelevant.get(i)) {
+				for (Component c : wccs.get(i)) {
+					propNet.removeComponent(c);
+				}
+				numWccsRemoved++;
+				propNet.renderToFile("factor_removed_" + numWccsRemoved + "_wccs.dot");
+			}
+		}
+		Set<Role> relevantRoles = new HashSet<Role>();
+		for (int i = 0; i < wccs.size(); i++) {
+			if (wccIsRelevant.get(i)) {
+				for (Component c : wccs.get(i)) {
+					for (Role role : propNet.roles) {
+						if (propNet.getGoalPropositions().get(role).contains(c)) {
+							relevantRoles.add(role);
+							break;
+						}
+					}
+					for (Role role : propNet.roles) {
+						if (propNet.getLegalPropositions().get(role).contains(c)) {
+							relevantRoles.add(role);
+							break;
+						}
+					}
+				}
+			}
+		}
+		System.out.println(relevantRoles);
+		List<Role> propRoles = new ArrayList<Role>();
+		propRoles.addAll(relevantRoles);
+		propNet.roles = propRoles;
+	}
+
+	public Set<Component> terminalDFS(Proposition t, Set<Proposition> goals) {
+		Set<Component> found = new HashSet<Component>();
+		found.addAll(dfs(t));
+		for (Proposition p : goals) {
+			found.addAll(dfs(p));
+		}
+		// System.out.println(basesFound);
+		Set<Component> ignore = new HashSet<Component>();
+		for (Component p : propNet.getComponents()) {
+			if (!found.contains(p)) {
+				ignore.add(p);
+			}
+		}
+		// System.out.println(ignoreBases);
+		return ignore;
+	}
+
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
+
+			/*Set<Proposition> important = new HashSet<Proposition>(propNet.getAllGoalPropositions());
+			important.addAll(propNet.getAllLegalPropositions());
+			Set<Component> ignoreComps = terminalDFS(propNet.getTerminalProposition(), important);
+			for (Component c : ignoreComps) {
+				propNet.removeComponent(c);
+			}*/
+			factorSubgamesWCC(r);
+
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
@@ -326,6 +442,7 @@ public class BitSetPropNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet nowTrue = new BitSet(allInputArr.length);
 		for (GdlSentence s : moveGdl) {
+			Proposition p = propNet.getInputPropositions().get(s);
 			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
 		}
 		inputBits.xor(nowTrue);
