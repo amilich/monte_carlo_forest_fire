@@ -2,7 +2,6 @@ package org.ggp.base.util.statemachine.implementation.propnet;
 
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,144 +63,198 @@ public class BasicFactorPropNet extends StateMachine {
 		return visited;
 	}
 
-	public void mergeddfs(Proposition p, Map<Proposition, Set<Component>> allGames) {
-		Set<Component> compsFound = new HashSet<Component>();
-		Queue<Component> nodesToVisit = new LinkedList<Component>();
-		Set<Component> visited = new HashSet<Component>();
-		nodesToVisit.add(p);
-		List<Proposition> potentialKeys = new ArrayList<Proposition>();
-		while (!nodesToVisit.isEmpty()) {
-			Component currNode = nodesToVisit.poll();
-			if (visited.contains(currNode)) continue;
-			else visited.add(currNode);
-			/* if (propNet.getAllBasePropositions().contains(currNode)) {
-				basesFound.add(currNode);
-				for (Proposition key : allGames.keySet()) {
-					if (allGames.get(key).contains((Proposition) currNode)) {
-						potentialKeys.add(key);
-					}
-				}
-			} else {
-			}*/
-			for (Proposition key : allGames.keySet()) {
-				if (allGames.get(key).contains(currNode)) {
-					potentialKeys.add(key);
-				}
-			}
-			nodesToVisit.addAll(currNode.inputs);
-		}
-		if (potentialKeys.size() == 0) {
-			allGames.put(p, visited);
-		} else {
-			for (Proposition key : potentialKeys) {
-				visited.addAll(allGames.get(key));
-				visited.add(key);
-				/* if (propNet.getAllBasePropositions().contains(key)) {
+//	public void mergeddfs(Proposition p, Map<Proposition, Set<Component>> allGames) {
+//		Set<Component> compsFound = new HashSet<Component>();
+//		Queue<Component> nodesToVisit = new LinkedList<Component>();
+//		Set<Component> visited = new HashSet<Component>();
+//		nodesToVisit.add(p);
+//		List<Proposition> potentialKeys = new ArrayList<Proposition>();
+//		while (!nodesToVisit.isEmpty()) {
+//			Component currNode = nodesToVisit.poll();
+//			if (visited.contains(currNode)) continue;
+//			else visited.add(currNode);
+//			/* if (propNet.getAllBasePropositions().contains(currNode)) {
+//				basesFound.add(currNode);
+//				for (Proposition key : allGames.keySet()) {
+//					if (allGames.get(key).contains((Proposition) currNode)) {
+//						potentialKeys.add(key);
+//					}
+//				}
+//			} else {
+//			}*/
+//			for (Proposition key : allGames.keySet()) {
+//				if (allGames.get(key).contains(currNode)) {
+//					potentialKeys.add(key);
+//				}
+//			}
+//			nodesToVisit.addAll(currNode.inputs);
+//		}
+//		if (potentialKeys.size() == 0) {
+//			allGames.put(p, visited);
+//		} else {
+//			for (Proposition key : potentialKeys) {
+//				visited.addAll(allGames.get(key));
+//				visited.add(key);
+//				/* if (propNet.getAllBasePropositions().contains(key)) {
+//
+//				}*/
+//			}
+//			for (Proposition key : potentialKeys) {
+//				allGames.remove(key);
+//			}
+//			allGames.put(p, visited);
+//		}
+//	}
 
-				}*/
-			}
-			for (Proposition key : potentialKeys) {
-				allGames.remove(key);
-			}
-			allGames.put(p, visited);
-		}
-	}
-
-	public double getNumSteps(Set<Proposition> propositions) {
-		double maxStep = -1;
-		for (Proposition p : propositions) {
-			if (p.toString().contains("step")) {
-				int stepNum = Integer.parseInt(p.getName().getBody().get(1).toString());
-				if (stepNum > maxStep) maxStep = stepNum;
-			}
-		}
-		return maxStep;
-	}
+//	public double getNumSteps(Set<Proposition> propositions) {
+//		double maxStep = -1;
+//		for (Proposition p : propositions) {
+//			if (p.toString().contains("step")) {
+//				int stepNum = Integer.parseInt(p.getName().getBody().get(1).toString());
+//				if (stepNum > maxStep) maxStep = stepNum;
+//			}
+//		}
+//		return maxStep;
+//	}
 
 	// ASSUMING ONE PLAYER
-	public Proposition findBestGoal(Set<Proposition> goals) {
-		int maxGoal = -1;
-		Proposition f = null;
-		Set<Proposition> rewards = propNet.getGoalPropositions().get(propNet.getRoles().get(0));
-		for (Proposition p : rewards) {
-			int val = Integer.parseInt(p.getName().get(1).toString());
-			if (val > maxGoal) {
-				maxGoal = val;
-				f = p;
-			}
+//	public Proposition findBestGoal(Set<Proposition> goals) {
+//		int maxGoal = -1;
+//		Proposition f = null;
+//		Set<Proposition> rewards = propNet.getGoalPropositions().get(propNet.getRoles().get(0));
+//		for (Proposition p : rewards) {
+//			int val = Integer.parseInt(p.getName().get(1).toString());
+//			if (val > maxGoal) {
+//				maxGoal = val;
+//				f = p;
+//			}
+//		}
+//		return f;
+//	}
+
+//	public Set<Proposition> dfsUpToPropositions(Proposition p) {
+//		Queue<Component> nodesToVisit = new LinkedList<Component>();
+//		Set<Component> visited = new HashSet<Component>();
+//		Set<Proposition> basesFound = new HashSet<Proposition>();
+//		nodesToVisit.add(p);
+//		while (!nodesToVisit.isEmpty()) {
+//			Component currNode = nodesToVisit.poll();
+//			if (visited.contains(currNode)) continue;
+//			else visited.add(currNode);
+//
+//			if (currNode instanceof Proposition && currNode != p) {
+//				basesFound.add((Proposition) currNode);
+//			} else {
+//				nodesToVisit.addAll(currNode.inputs);
+//			}
+//		}
+//		return basesFound;
+//	}
+
+	public Set<Component> undirectedDfsFromNode(Proposition p, Set<Component> allVisited, List<Boolean> wccIsRelevant, Role r) {
+		assert !allVisited.contains(p);
+		Set<Component> result = new HashSet<Component>();
+		Queue<Component> frontier = new LinkedList<Component>();
+		frontier.add(p);
+		boolean isRelevant = false;
+		while (!frontier.isEmpty()) {
+			Component cur = frontier.poll();
+			if (allVisited.contains(cur))
+				continue;
+			if (cur.equals(propNet.getInitProposition())) // ignore the init proposition when determining WCCs
+				continue;
+
+			allVisited.add(cur);
+			result.add(cur);
+			if (propNet.getGoalPropositions().get(r).contains(cur) || propNet.getTerminalProposition().equals(cur))
+				isRelevant = true;
+
+			propNet.getInputPropositions().get(r);
+
+			frontier.addAll(cur.inputs);
+			frontier.addAll(cur.outputs);
 		}
-		return f;
+		wccIsRelevant.add(isRelevant);
+		return result;
 	}
 
-	public Set<Proposition> andOrDfs(Proposition p) {
-		Queue<Component> nodesToVisit = new LinkedList<Component>();
-		Set<Component> visited = new HashSet<Component>();
-		Set<Proposition> basesFound = new HashSet<Proposition>();
-		nodesToVisit.add(p);
-		while (!nodesToVisit.isEmpty()) {
-			Component currNode = nodesToVisit.poll();
-			if (visited.contains(currNode)) continue;
-			else visited.add(currNode);
-
-			if (currNode instanceof Proposition && currNode != p) {
-				basesFound.add((Proposition) currNode);
-			} else {
-				nodesToVisit.addAll(currNode.inputs);
-			}
-		}
-		// basesFound.add(p);
-		return basesFound;
-	}
-
-	public Set<Proposition> factorSubgames(Role r) {
-		propNet.renderToFile("start.dot");
+	/**
+	 * Factors game into weakly connected components, ignoring init.
+	 * @param r
+	 * @return
+	 */
+	public void factorSubgamesWCC(Role r) {
+		propNet.renderToFile("start_w.dot");
 		Proposition term = propNet.getTerminalProposition();
-		// Map<Proposition, Set<Proposition>> gameRoots = new HashMap<Proposition, Set<Proposition>>();
-		// gameRoots.put(term, andOrDfs(term));
-		Set<Proposition> roots = new HashSet<Proposition>();
+		Set<Component> allVisited = new HashSet<Component>();
+		List<Set<Component>> wccs = new ArrayList<Set<Component>>();
+		List<Boolean> wccIsRelevant = new ArrayList<Boolean>();
+
 		for (Proposition p : propNet.getAllGoalPropositions()) {
-			// gameRoots.put(p, andOrDfs(p));
-			roots.addAll(andOrDfs(p));
+			if (allVisited.contains(p))
+				continue;
+			Set<Component> curWcc = undirectedDfsFromNode(p, allVisited, wccIsRelevant, r);
+			wccs.add(curWcc);
 		}
-		// Set<Proposition> values = new HashSet<Proposition>(gameRoots.values());
-		System.out.println("Game Roots: " + roots);
-		 Map<Proposition, Set<Component>> allGames = new HashMap<Proposition, Set<Component>>();
-		for (Proposition p : roots) {
-			mergeddfs(p, allGames);
-		}
-		System.out.println("There are " + roots.size() + " games. Roots = " + roots + ".");
-		// Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
-		// Set<Proposition> goalRoots = new HashSet<Proposition>();
-		// andOrDfs(bestGoal, goalRoots);
-		// System.out.println("Best goal: " + bestGoal);
 
-		/* Proposition root = goalRoots.iterator().next();
-		for (Proposition key : allGames.keySet()) {
-			if (allGames.get(key).contains(root) || root == key) {
-				System.out.println("Factored game to key " + key);
-				return allGames.get(key);
-			}
-		}*/
-		Set<Proposition> myGoals = propNet.getGoalPropositions().get(r);
-		for (Proposition p : allGames.keySet()) {
-			System.out.println("Game has " + allGames.get(p).size() + " nodes.");
-			System.out.println("Game is " + allGames.get(p));
-			System.out.println("Game contains terminal is: " + allGames.get(p).contains(propNet.getTerminalProposition()));
-		}
-		int count = 0;
-		for (Proposition key : allGames.keySet()) {
-			if (count != 0) {
-				for (Component val : allGames.get(key)) {
-					 propNet.removeComponent(val);
+		int numWccsRemoved = 0;
+		for(int i = 0; i < wccs.size(); i++) {
+			if (!wccIsRelevant.get(i)) {
+				for (Component c : wccs.get(i)) {
+					propNet.removeComponent(c);
 				}
+				numWccsRemoved++;
+				propNet.renderToFile("factor_removed_" + numWccsRemoved + "_wccs.dot");
 			}
-			count ++;
 		}
-		propNet.renderToFile("dual.dot");
-
-		// return allGames.values().iterator().next();
-		return null;
 	}
+
+
+//	public Set<Proposition> factorSubgames(Role r) {
+//		propNet.renderToFile("start.dot");
+//		Proposition term = propNet.getTerminalProposition();
+//		Set<Proposition> roots = new HashSet<Proposition>();
+//		for (Proposition p : propNet.getAllGoalPropositions()) {
+//			roots.addAll(dfsUpToPropositions(p));
+//		}
+//		System.out.println("Game Roots: " + roots);
+//		 Map<Proposition, Set<Component>> allGames = new HashMap<Proposition, Set<Component>>();
+//		for (Proposition p : roots) {
+//			mergeddfs(p, allGames);
+//		}
+//		System.out.println("There are " + roots.size() + " games. Roots = " + roots + ".");
+//		// Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
+//		// Set<Proposition> goalRoots = new HashSet<Proposition>();
+//		// andOrDfs(bestGoal, goalRoots);
+//		// System.out.println("Best goal: " + bestGoal);
+//
+//		/* Proposition root = goalRoots.iterator().next();
+//		for (Proposition key : allGames.keySet()) {
+//			if (allGames.get(key).contains(root) || root == key) {
+//				System.out.println("Factored game to key " + key);
+//				return allGames.get(key);
+//			}
+//		}*/
+//		Set<Proposition> myGoals = propNet.getGoalPropositions().get(r);
+//		for (Proposition p : allGames.keySet()) {
+//			System.out.println("Game has " + allGames.get(p).size() + " nodes.");
+//			System.out.println("Game is " + allGames.get(p));
+//			System.out.println("Game contains terminal is: " + allGames.get(p).contains(propNet.getTerminalProposition()));
+//		}
+//		int count = 0;
+//		for (Proposition key : allGames.keySet()) {
+//			if (count != 0) {
+//				for (Component val : allGames.get(key)) {
+//					 propNet.removeComponent(val);
+//				}
+//			}
+//			count ++;
+//		}
+//		propNet.renderToFile("dual.dot");
+//
+//		// return allGames.values().iterator().next();
+//		return null;
+//	}
 
 	public Set<Component> terminalDFS(Proposition t, Set<Proposition> goals) {
 		Set<Component> found = new HashSet<Component>();
@@ -233,7 +286,8 @@ public class BasicFactorPropNet extends StateMachine {
 			for (Component c : ignoreComps) {
 				propNet.removeComponent(c);
 			}
-			Set<Proposition> factoredBases = factorSubgames(r);
+			factorSubgamesWCC(r);
+//			Set<Proposition> factoredBases = factorSubgames(r);
 
 			// allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
 
