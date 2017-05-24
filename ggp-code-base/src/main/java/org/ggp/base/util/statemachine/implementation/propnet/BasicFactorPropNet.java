@@ -48,7 +48,7 @@ public class BasicFactorPropNet extends StateMachine {
 		return propNet;
 	}
 
-	public void dfs(Proposition p, Set<Proposition> basesFound) {
+	public Set<Component> dfs(Proposition p) {
 		Queue<Component> nodesToVisit = new LinkedList<Component>();
 		Set<Component> visited = new HashSet<Component>();
 		nodesToVisit.add(p);
@@ -57,13 +57,15 @@ public class BasicFactorPropNet extends StateMachine {
 			if (visited.contains(currNode)) continue;
 			else visited.add(currNode);
 			nodesToVisit.addAll(currNode.inputs);
-			if (propNet.getAllBasePropositions().contains(currNode)) {
-				basesFound.add((Proposition) currNode);
-			}
+			//if (propNet.getAllBasePropositions().contains(currNode)) {
+			//	basesFound.add((Proposition) currNode);
+			//}
 		}
+		return visited;
 	}
 
-	public void mergeddfs(Proposition p, Set<Proposition> basesFound, Map<Proposition, Set<Proposition>> allGames) {
+	public void mergeddfs(Proposition p, Map<Proposition, Set<Component>> allGames) {
+		Set<Component> compsFound = new HashSet<Component>();
 		Queue<Component> nodesToVisit = new LinkedList<Component>();
 		Set<Component> visited = new HashSet<Component>();
 		nodesToVisit.add(p);
@@ -72,29 +74,36 @@ public class BasicFactorPropNet extends StateMachine {
 			Component currNode = nodesToVisit.poll();
 			if (visited.contains(currNode)) continue;
 			else visited.add(currNode);
-			nodesToVisit.addAll(currNode.inputs);
-			if (propNet.getAllBasePropositions().contains(currNode)) {
-				basesFound.add((Proposition) currNode);
+			/* if (propNet.getAllBasePropositions().contains(currNode)) {
+				basesFound.add(currNode);
 				for (Proposition key : allGames.keySet()) {
 					if (allGames.get(key).contains((Proposition) currNode)) {
 						potentialKeys.add(key);
 					}
 				}
+			} else {
+			}*/
+			for (Proposition key : allGames.keySet()) {
+				if (allGames.get(key).contains(currNode)) {
+					potentialKeys.add(key);
+				}
 			}
+			nodesToVisit.addAll(currNode.inputs);
 		}
 		if (potentialKeys.size() == 0) {
-			allGames.put(p, basesFound);
+			allGames.put(p, visited);
 		} else {
 			for (Proposition key : potentialKeys) {
-				basesFound.addAll(allGames.get(key));
-				if (propNet.getAllBasePropositions().contains(key)) {
-					basesFound.add(key);
-				}
+				visited.addAll(allGames.get(key));
+				visited.add(key);
+				/* if (propNet.getAllBasePropositions().contains(key)) {
+
+				}*/
 			}
 			for (Proposition key : potentialKeys) {
 				allGames.remove(key);
 			}
-			allGames.put(p, basesFound);
+			allGames.put(p, visited);
 		}
 	}
 
@@ -140,27 +149,26 @@ public class BasicFactorPropNet extends StateMachine {
 				nodesToVisit.addAll(currNode.inputs);
 			}
 		}
-		if (basesFound.size() == 0) {
-			basesFound.add(p);
-		}
+		// basesFound.add(p);
 		return basesFound;
 	}
 
 	public Set<Proposition> factorSubgames(Role r) {
 		Proposition term = propNet.getTerminalProposition();
-		Set<Proposition> gameRoots = new HashSet<Proposition>();
-		gameRoots.addAll(andOrDfs(term));
+		// Map<Proposition, Set<Proposition>> gameRoots = new HashMap<Proposition, Set<Proposition>>();
+		// gameRoots.put(term, andOrDfs(term));
+		Set<Proposition> roots = new HashSet<Proposition>();
 		for (Proposition p : propNet.getAllGoalPropositions()) {
-			gameRoots.addAll(andOrDfs(p));
+			// gameRoots.put(p, andOrDfs(p));
+			roots.addAll(andOrDfs(p));
 		}
-
-		System.out.println("Game Roots: " + gameRoots);
-		Map<Proposition, Set<Proposition>> allGames = new HashMap<Proposition, Set<Proposition>>();
-		for (Proposition p : gameRoots) {
-			Set<Proposition> game = new HashSet<Proposition>();
-			mergeddfs(p, game, allGames);
+		// Set<Proposition> values = new HashSet<Proposition>(gameRoots.values());
+		System.out.println("Game Roots: " + roots);
+		 Map<Proposition, Set<Component>> allGames = new HashMap<Proposition, Set<Component>>();
+		for (Proposition p : roots) {
+			mergeddfs(p, allGames);
 		}
-		System.out.println("There are " + allGames.size() + " games. Roots = " + allGames.keySet() + ".");
+		System.out.println("There are " + roots.size() + " games. Roots = " + roots + ".");
 		// Proposition bestGoal = findBestGoal(propNet.getAllGoalPropositions());
 		// Set<Proposition> goalRoots = new HashSet<Proposition>();
 		// andOrDfs(bestGoal, goalRoots);
@@ -174,27 +182,41 @@ public class BasicFactorPropNet extends StateMachine {
 			}
 		}*/
 		Set<Proposition> myGoals = propNet.getGoalPropositions().get(r);
-
+		for (Proposition p : allGames.keySet()) {
+			System.out.println("Game has " + allGames.get(p).size() + " nodes.");
+			System.out.println("Game is " + allGames.get(p));
+			System.out.println("Game contains terminal is: " + allGames.get(p).contains(propNet.getTerminalProposition()));
+		}
 		propNet.renderToFile("dual.dot");
+		int count = 0;
+		for (Proposition key : allGames.keySet()) {
+			if (count != 0) {
+				for (Component val : allGames.get(key)) {
+					// propNet.removeComponent(val);
+				}
+			}
+			count ++;
+		}
+
 		// return allGames.values().iterator().next();
 		return null;
 	}
 
-	public Set<Proposition> terminalDFS(Proposition t, Set<Proposition> goals) {
-		Set<Proposition> basesFound = new HashSet<Proposition>();
-		dfs(t, basesFound);
+	public Set<Component> terminalDFS(Proposition t, Set<Proposition> goals) {
+		Set<Component> found = new HashSet<Component>();
+		found.addAll(dfs(t));
 		for (Proposition p : goals) {
-			dfs(p, basesFound);
+			found.addAll(dfs(p));
 		}
-		System.out.println(basesFound);
-		Set<Proposition> ignoreBases = new HashSet<Proposition>();
-		for (Proposition p : propNet.getAllBasePropositions()) {
-			if (!basesFound.contains(p)) {
-				ignoreBases.add(p);
+		// System.out.println(basesFound);
+		Set<Component> ignore = new HashSet<Component>();
+		for (Component p : propNet.getComponents()) {
+			if (!found.contains(p)) {
+				ignore.add(p);
 			}
 		}
-		System.out.println(ignoreBases);
-		return ignoreBases;
+		// System.out.println(ignoreBases);
+		return ignore;
 	}
 
 	Set<Proposition> ignoreBases;
@@ -206,10 +228,13 @@ public class BasicFactorPropNet extends StateMachine {
 			roles = propNet.getRoles();
 			ordering = getOrdering();
 
+			Set<Component> ignoreComps = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
+			for (Component c : ignoreComps) {
+				propNet.removeComponent(c);
+			}
 			Set<Proposition> factoredBases = factorSubgames(r);
 			// allBaseArr = factoredBases.toArray(new Proposition[factoredBases.size()]);
 
-			// ignoreBases = terminalDFS(propNet.getTerminalProposition(), propNet.getAllGoalPropositions());
 			// allBaseArr = importantBases.toArray(new Proposition[importantBases.size()]);
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
