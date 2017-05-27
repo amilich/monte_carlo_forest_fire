@@ -173,7 +173,7 @@ public class MyHeuristics {
 	 * Check if time is about to expire.
 	 */
 	public static boolean checkTime(long decisionTime) {
-		long currTime = System.currentTimeMillis(); // TODOght way to do this
+		long currTime = System.currentTimeMillis();
 		if (decisionTime - currTime < MAX_DELIB_THRESHOLD) {
 			System.out.println("** TIME EXPIRED ** Returning decision now.");
 			return true;

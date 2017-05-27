@@ -1,11 +1,16 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.statemachine.Move;
+import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
@@ -52,6 +57,41 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		ThreadedGraphNode.numCharges = 0;
 		createMachines(); // Clears and adds new machines
 		initRoot();
+	}
+
+	private void resetGraphNodeAsync(long timeout) throws MoveDefinitionException, GoalDefinitionException {
+		ExecutorService executor = Executors.newFixedThreadPool(ThreadedGraphNode.NUM_THREADS + 1); // +1 for the backup ProverStateMachine.
+
+		// Make the prover
+		// this.stateMachine.initialize(getMatch().getGame().getRules(), getRole());
+		final List<Gdl> rules = getMatch().getGame().getRules();
+		final Role role = getRole();
+		Future<StateMachine> proverFut = executor.submit(new Callable<StateMachine>() {
+	        @Override
+	        public StateMachine call() {
+	           StateMachine sm = new CachedStateMachine(new ProverStateMachine());
+	           sm.initialize(rules, role);
+	           return sm;
+	        }
+	    });
+
+		machines.clear();
+		machines.add(getStateMachine());
+		List<Future<StateMachine>> propnetFuts = new ArrayList<Future<StateMachine>>();
+		for (int ii = 1; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
+			final StateMachine m = getInitialStateMachine();
+			Future<StateMachine> fut = executor.submit(new Callable<StateMachine>() {
+		        @Override
+		        public StateMachine call() {
+		           m.initialize(rules, role);
+		           return m;
+		        }
+			});
+
+
+			m.initialize(getMatch().getGame().getRules(), getRole());
+			machines.add(m);
+		}
 	}
 
 	private final int MAX_ITERATIONS = 5000000; // Unnecessary to explore
@@ -129,7 +169,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			failed = true;
 			this.stateMachine = new CachedStateMachine(new ProverStateMachine());
 			this.stateMachine.initialize(getMatch().getGame().getRules(), getRole());
-			resetGraphNode();
+			resetGraphNode(); // TODO: this seems wrong. Shouldnt be rebuilding propnets when failed is true -Russell
 			return this.stateMachine.findLegalx(getRole(), getCurrentState());
 		}
 	}
