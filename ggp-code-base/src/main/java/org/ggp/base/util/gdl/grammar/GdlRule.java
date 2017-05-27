@@ -12,7 +12,7 @@ public final class GdlRule extends Gdl
 	private transient Boolean ground;
 	private final GdlSentence head;
 
-	GdlRule(GdlSentence head, ImmutableList<GdlLiteral> body)
+	public GdlRule(GdlSentence head, ImmutableList<GdlLiteral> body)
 	{
 		this.head = head;
 		this.body = body;
