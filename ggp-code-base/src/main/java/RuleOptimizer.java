@@ -17,59 +17,96 @@ import com.google.common.collect.ImmutableList;
 
 public class RuleOptimizer {
 	public static List<Gdl> optimizeRules(List<Gdl> description){
-		List<Gdl> reorderedSubgoals  = reorderSubgoals(description);
-
-		return reorderedSubgoals;
+		List<Gdl> optmizedSubgoals  = optimizeSubgoals(description);
+		return optmizedSubgoals;
 	}
 
-	private static List<Gdl> reorderSubgoals(List<Gdl> description){
-		List<Gdl> result = new ArrayList<Gdl>();
-		for (Gdl gdl : description) {
-			if (gdl instanceof GdlRule) {
-				result.add(reorder((GdlRule) gdl));
-			}
-		}
-
-	}
-
-	private static GdlRule reorder(GdlRule rule){
+	private static GdlRule removeRedundantSubgaols(GdlRule rule){
+		String beforeStr = rule.toString();
 		GdlSentence head = rule.getHead();
 		ArrayList<GdlLiteral> newBody = new ArrayList<GdlLiteral>();
 		Set<GdlVariable> seenVars = new HashSet<GdlVariable>();
-		List<GdlLiteral> subgoals = rule.getBody();
+		ArrayList<GdlLiteral> subgoals = new ArrayList<GdlLiteral>(rule.getBody());
 
+		int i = 0;
 		while (subgoals.size() > 0){
 			GdlLiteral bestSubgoal = getBest(subgoals, seenVars);
 			newBody.add(bestSubgoal);
-			List<GdlVariable> vars = findVariables(bestSubgoal);
-			seenVars.addAll(vars);
+			i++;
 		}
+		GdlRule newRule = new GdlRule(head, ImmutableList.copyOf(newBody));
+		String afterStr = newRule.toString();
+		if (!beforeStr.equals(afterStr)){
+			System.out.println("before " + beforeStr);
+			System.out.println("after  " + afterStr);
+		}
+		return newRule;
+	}
+	private static List<Gdl> optimizeSubgoals(List<Gdl> description){
+		List<Gdl> result = new ArrayList<Gdl>();
+		for (Gdl gdl : description) {
+			if (gdl instanceof GdlRule) {
+				GdlRule reorderedRule = reorder((GdlRule) gdl);
 
-		return new GdlRule(head, ImmutableList.copyOf(newBody));
+				result.add(removeRedundantSubgaols(reorderedRule));
+			}
+		}
+		return result;
+	}
+
+	private static GdlRule reorder(GdlRule rule){
+		String beforeStr = rule.toString();
+		GdlSentence head = rule.getHead();
+		ArrayList<GdlLiteral> newBody = new ArrayList<GdlLiteral>();
+		Set<GdlVariable> seenVars = new HashSet<GdlVariable>();
+		ArrayList<GdlLiteral> subgoals = new ArrayList<GdlLiteral>(rule.getBody());
+		int i = 0;
+		while (subgoals.size() > 0){
+			GdlLiteral bestSubgoal = getBest(subgoals, seenVars);
+			newBody.add(bestSubgoal);
+			i++;
+		}
+		GdlRule newRule = new GdlRule(head, ImmutableList.copyOf(newBody));
+		String afterStr = newRule.toString();
+		if (!beforeStr.equals(afterStr)){
+			System.out.println("before " + beforeStr);
+			System.out.println("after  " + afterStr);
+		}
+		return newRule;
 	}
 
 	private static GdlLiteral getBest(List<GdlLiteral> subgoals, Set<GdlVariable> seenVars){
-		int varNum = 10000;
+		int varNum = 100000;
 		int bestIdx = 0;
+		HashSet<GdlVariable> newVars = null;
 		for (int i = 0; i < subgoals.size(); i++){
-			int dum = unboundvarnum(subgoals.get(i), seenVars);
-			if (dum < varNum){
-				varNum = dum;
-				bestIdx = i;
+			if (subgoals.get(i) instanceof GdlRelation){
+				HashSet<GdlVariable> candidateVars = new HashSet<GdlVariable>();
+				int dum = unboundvarnum((GdlRelation)subgoals.get(i), seenVars, candidateVars);
+				if (dum < varNum){
+					varNum = dum;
+					bestIdx = i;
+					newVars = candidateVars;
+				}
 			}
+		}
+		if (!(newVars == null)){
+			// means we found a GdlDistinct or something that is not a relation
+			seenVars.addAll(newVars);
 		}
 		GdlLiteral best = subgoals.get(bestIdx);
 		subgoals.remove(bestIdx);
 		return best;
 	}
 
-	private static int unboundvarnum(GdlLiteral subgoal, Set<GdlVariable> seenVars){
+	private static int unboundvarnum(GdlRelation subgoal, Set<GdlVariable> seenVars, Set<GdlVariable> candidateVars){
 		 // cast because we want to be in the domain of Variable/Constant/Function, but subgoals are GdlRelations, which is a different, but equivalent, hierarchy
-		List<GdlVariable> unboundVars = getUnboundVars(((GdlRelation) subgoal).toTerm(), new ArrayList<GdlVariable>(), seenVars);
+		Set<GdlVariable> unboundVars = getUnboundVars(subgoal.toTerm(), new HashSet<GdlVariable>(), seenVars);
+		candidateVars.addAll(unboundVars);
 		return unboundVars.size();
 	}
 
-	private static List<GdlVariable> getUnboundVars(GdlTerm term, List<GdlVariable> unboundVars, Set<GdlVariable> seenVars){
+	private static Set<GdlVariable> getUnboundVars(GdlTerm term, Set<GdlVariable> unboundVars, Set<GdlVariable> seenVars){
 		if (term instanceof GdlVariable){
 			GdlVariable var = (GdlVariable) term;
 			if(!seenVars.contains(var)){
@@ -86,16 +123,5 @@ public class RuleOptimizer {
 			unboundVars = getUnboundVars(body.get(i), unboundVars, seenVars);
 		}
 		return unboundVars;
-	}
-
-	private static List<GdlVariable> findVariables(Gdl subgoal){
-		List<GdlVariable> vars = new ArrayList<GdlVariable>();
-		for(GdlLiteral g : subgoal.getBody()){
-			if (g instanceof GdlRelation){
-
-			}
-		}
-
-		return vars;
 	}
 }

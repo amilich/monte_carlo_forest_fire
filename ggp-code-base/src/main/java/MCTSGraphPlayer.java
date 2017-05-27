@@ -11,7 +11,6 @@ import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.BitSetPropNet;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 import MCFFplayers.ThreadedGraphNode;
@@ -22,10 +21,10 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		if (failed) {
+//		if (failed) {
 			return new CachedStateMachine(new ProverStateMachine());
-		}
-		return new BitSetPropNet();
+//		}
+//		return new BitSetPropNet();
 	}
 
 	// List of machines used for depth charges
@@ -80,7 +79,8 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		machines.add(getStateMachine());
 		for (int ii = 1; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
 			StateMachine m = getInitialStateMachine();
-			m.initialize(getMatch().getGame().getRules());
+			List<Gdl> optimizedRules = RuleOptimizer.optimizeRules(getMatch().getGame().getRules());
+			m.initialize(optimizedRules);
 			machines.add(m);
 		}
 		System.out.println("[GRAPH] Created machines.");
