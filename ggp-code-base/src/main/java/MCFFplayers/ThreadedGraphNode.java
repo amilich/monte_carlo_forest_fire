@@ -163,17 +163,17 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
-	static final int C = 40;
+	static final int C = 10000;
 	static final double C1 = 0.7;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
 		if (Double.isNaN(stddev)) {
 			stddev = C;
 		}
+		// return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
+		//		Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
-		//return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-		//		Math.sqrt(50 * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+				Math.sqrt(C * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
 	protected double selectfn(int pMove, int oMove) {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);

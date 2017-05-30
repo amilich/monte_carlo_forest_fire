@@ -130,6 +130,9 @@ public class ExpFactorPropNet extends StateMachine {
 		for (Proposition p : propNet.getAllLegalPropositions()) {
 			important.addAll(dfs(p));
 		}
+		for (Proposition p : propNet.getAllInputProps()) {
+			important.addAll(dfs(p));
+		}
 		Set<Component> toRemove = new HashSet<Component>();
 		for (Component c : propNet.getComponents()) {
 			if (!important.contains(c)) {
@@ -139,7 +142,7 @@ public class ExpFactorPropNet extends StateMachine {
 		for (Component c : toRemove) {
 			propNet.removeComponent(c);
 		}
-		propNet.renderToFile("optimized.dot");
+		// propNet.renderToFile("optimized.dot");
 	}
 
 	@Override
@@ -148,10 +151,10 @@ public class ExpFactorPropNet extends StateMachine {
 		description = sanitizeDistinct(description);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
-			propNet.renderToFile("start.dot");
+			// propNet.renderToFile("start.dot");
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 			if (roles.length == 1) {
-				doOnePlayerOptimization();
+				 doOnePlayerOptimization();
 			}
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
@@ -445,7 +448,8 @@ public class ExpFactorPropNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet nowTrue = new BitSet(allInputArr.length);
 		for (GdlSentence s : moveGdl) {
-			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
+			Proposition p = propNet.getInputPropositions().get(s);
+			if (p != null) nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {

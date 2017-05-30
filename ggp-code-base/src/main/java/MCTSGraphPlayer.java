@@ -101,7 +101,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		try {
-			/* if (root == null) {
+			if (root == null) {
 				initRoot();
 			} else if (moveNum != 0){
 				ThreadedGraphNode matchingChild = root.findMatchingState(getCurrentState());
@@ -114,11 +114,11 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 				}
 			} else {
 				System.out.println("[GRAPH] First move: advanced tree.");
-			}*/
-
-			if (moveNum != 0) {
-				root = new ThreadedGraphNode(getCurrentState());
 			}
+
+			/* if (moveNum != 0) {
+				root = new ThreadedGraphNode(getCurrentState());
+			}*/
 
 			expandTree(timeout);
 			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);

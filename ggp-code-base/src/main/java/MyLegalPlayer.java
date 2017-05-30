@@ -47,7 +47,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// System.out.println(state);
 		int num = 0;
 		while(!getStateMachine().isTerminal(state)) {
-			// System.out.println("\t " + state);
+			System.out.println("\t " + state);
 			List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
 			state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
 			num ++;
@@ -68,12 +68,12 @@ public class MyLegalPlayer extends StateMachineGamer {
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
-		for (int ii = 0; ii < 10000; ii ++) {
+		for (int ii = 0; ii < 3; ii ++) {
 			MachineState m = customdc(state);
 			total += machine.getGoal(m, role);
 			// System.out.println("DC: " + m);
 		}
-		total /= 10000;
+		total /= 3;
 		System.out.println("AVG: " + total);
 		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
 		// System.out.println(machine.getNextStates(getCurrentState()));
