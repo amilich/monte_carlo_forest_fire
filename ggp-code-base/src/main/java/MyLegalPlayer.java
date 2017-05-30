@@ -11,14 +11,15 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.BasicFactorPropNet;
+import org.ggp.base.util.statemachine.implementation.propnet.ExpFactorPropNet;
 
 public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 		// return new CachedStateMachine(new ProverStateMachine());
-		return new BasicFactorPropNet();
+		// return new BasicFactorPropNet();
+		return new ExpFactorPropNet();
 		// return new BitSetPropNet();
 //		return new BitSetNet();
 	}

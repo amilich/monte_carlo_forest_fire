@@ -1,11 +1,16 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
+import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
@@ -16,9 +21,10 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 import MCFFplayers.ThreadedGraphNode;
 
-public class MCTSGraphPlayer extends StateMachineGamer {
+public class ABMCTSPlayer extends StateMachineGamer {
 	ThreadedGraphNode root = null;
 	List<Gdl> prevRules = null;
+	ExecutorService executor = Executors.newFixedThreadPool(1);
 
 	@Override
 	public StateMachine getInitialStateMachine() {
@@ -100,6 +106,9 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		AlphaBetaThread r = new AlphaBetaThread(getStateMachine(), getCurrentState(), getRole());
+		Future<?> ab_thread = executor.submit(r);
+
 		try {
 			/* if (root == null) {
 				initRoot();
@@ -124,7 +133,14 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
 			moveNum ++;
 			Move m = root.getBestMove();
-			return m;
+			if (r.finished && r.action != null) {
+				System.out.println("Using alpha beta move");
+				return r.action;
+			} else {
+				// TODO delete thread
+				ab_thread.cancel(false);
+				return m;
+			}
 		} catch (Exception e) {
 			failed = true;
 			this.stateMachine = new CachedStateMachine(new ProverStateMachine());
@@ -154,6 +170,39 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public String getName() {
-		return "GraphMCTSPlayer";
+		return "ABMCTSPlayer";
+	}
+
+	class AlphaBetaThread implements Runnable {
+		Move action = null;
+		MachineState s = null;
+		StateMachine m = null;
+		Role r = null;
+		boolean finished = false;
+
+		public AlphaBetaThread(StateMachine m, MachineState s, Role r) {
+			this.s = s; this.r = r; this.m = m;
+		}
+
+		@Override
+		public void run() {
+			finished = false;
+			if (getStateMachine().getRoles().size() == 1) {
+				try {
+					action = MyBoundedMobilityPlayer.singlePlayerBestMove(r, s, m);
+				} catch (Exception e) {
+					e.printStackTrace();
+					return;
+				}
+			} else {
+				try {
+					action = MyAlphaBetaPlayer.staticBest(m, s, r);
+				} catch (Exception e) {
+					e.printStackTrace();
+					return;
+				}
+			}
+			finished = true;
+		}
 	}
 }
