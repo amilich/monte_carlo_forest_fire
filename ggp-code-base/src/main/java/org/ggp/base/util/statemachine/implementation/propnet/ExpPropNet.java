@@ -101,9 +101,9 @@ public class ExpPropNet extends StateMachine {
 				} else if (allCompArr[ii] instanceof Not) {
 					allLongs[ii] = -1 * allCompArr[ii].input_arr.length;
 				} else if (allCompArr[ii] instanceof Transition) {
-
+					// empty - no counter needed
 				} else if (allCompArr[ii] instanceof Constant) {
-
+					// empty - no counter needed
 				}
 			}
 
@@ -152,7 +152,7 @@ public class ExpPropNet extends StateMachine {
 	private MachineState doInitWork() {
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				forwardpropmark(c, c.getValue(), false);
+				initforwardpropmark(c, c.getValue());
 			}
 		}
 		Set<Proposition> bases = propNet.getAllBasePropositions();
@@ -161,11 +161,11 @@ public class ExpPropNet extends StateMachine {
 			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
 		}*/
 		for (Proposition base : bases) {
-			forwardpropmark(base, false, false);
+			initforwardpropmark(base, false);
 		}
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true, false);
+			initforwardpropmark(propNet.getInitProposition(), true);
 		}
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
@@ -186,7 +186,7 @@ public class ExpPropNet extends StateMachine {
 		}
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false, false);
+			initforwardpropmark(propNet.getInitProposition(), false);
 		}
 
 		for (Component c : propNet.getComponents()) {
@@ -278,8 +278,58 @@ public class ExpPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (newValue == c.curVal && differential) {
+	public void initforwardpropmark(Component c, boolean newValue) {
+		c.curVal = newValue;
+
+		if (c.isBase) {
+			if (newValue) baseBits.set(c.bitIndex);
+			else baseBits.clear(c.bitIndex);
+		} else if (c instanceof Transition) { // if c is a transition
+			// transitions always have exactly one output
+			if (c.output_arr.length > 0) {
+				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
+				else nextBaseBits.clear(c.output_arr[0].bitIndex);
+			}
+			return;
+		}
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+			Component out = c.output_arr[jj];
+			if (out instanceof And) {
+				if (!newValue) {
+					initforwardpropmark(out, false);
+				} else {
+					boolean result = true;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (!out.input_arr[ii].curVal) {
+							result = false;
+							break;
+						}
+					}
+					initforwardpropmark(out, result);
+				}
+			} else if (out instanceof Or) {
+				if (newValue) {
+					initforwardpropmark(out, true);
+				} else {
+					boolean result = false;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (out.input_arr[ii].curVal) {
+							result = true;
+							break;
+						}
+					}
+					initforwardpropmark(out, result);
+				}
+			} else if (out instanceof Not) {
+				initforwardpropmark(out, !newValue);
+			} else {
+				initforwardpropmark(out, newValue);
+			}
+		}
+	}
+
+	public void forwardpropmark(Component c, boolean newValue) {
+		if (newValue == c.curVal) {
 			return; // stop forward propagating
 		}
 		c.curVal = newValue;
@@ -296,32 +346,12 @@ public class ExpPropNet extends StateMachine {
 		}
 		for (int jj = 0; jj < c.outputs.size(); jj ++) {
 			Component out = c.output_arr[jj];
-			if (differential) {
-				// if (newValue) out.numTrue ++;
-				// else out.numTrue --;
-				allLongs[out.compIndex] += newValue? 1 : -1;
-			}
+			allLongs[out.compIndex] += newValue? 1 : -1;
 			if (out instanceof Proposition || out instanceof Transition) {
-				forwardpropmark(out, newValue, differential);
-			} else if (differential) {
-				boolean corrected = ((allLongs[c.compIndex] >> 31) & 1) == 1;
-				forwardpropmark(out, corrected, differential);
-			} else if (out instanceof And) {
-				if (!newValue) {
-					forwardpropmark(out, false, differential);
-				} else {
-					boolean result = ((And) out).getValue();
-					forwardpropmark(out, result, differential);
-				}
-			} else if (out instanceof Or) {
-				if (newValue) {
-					forwardpropmark(out, true, differential);
-				} else {
-					boolean result = ((Or) out).getValue();
-					forwardpropmark(out, result, differential);
-				}
-			} else if (out instanceof Not) {
-				forwardpropmark(out, !newValue, differential);
+				forwardpropmark(out, newValue);
+			} else {
+				boolean corrected = ((allLongs[out.compIndex] >> 31) & 1) == 1;
+				forwardpropmark(out, corrected);
 			}
 		}
 	}
@@ -334,7 +364,7 @@ public class ExpPropNet extends StateMachine {
 		}
 		stateBits.xor(baseBits);
 		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allBaseArr[ii], !baseBits.get(ii), true);
+			forwardpropmark(allBaseArr[ii], !baseBits.get(ii));
 		}
 	}
 
@@ -346,7 +376,7 @@ public class ExpPropNet extends StateMachine {
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allInputArr[ii], nowTrue.get(ii), true);
+			forwardpropmark(allInputArr[ii], nowTrue.get(ii));
 		}
 		inputBits = nowTrue;
 	}
@@ -366,37 +396,38 @@ public class ExpPropNet extends StateMachine {
 	 * @return The order in which the truth values of propositions need to be set.
 	 */
 	public List<Proposition> getOrdering() {
+		System.out.println("Sort start");
 		// List to contain the topological ordering.
 		List<Proposition> order = new ArrayList<Proposition>();
 
 		// All of the components in the PropNet
-		// List<Component> components = new ArrayList<Component>(propNet.getComponents());
+		 List<Component> components = new ArrayList<Component>(propNet.getComponents());
 
 		// All of the propositions in the PropNet.
-//		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
+		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
 
 		Queue<Proposition> allSources = new LinkedList<Proposition>();
 		allSources.addAll(propNet.getAllInputProps());
 		allSources.addAll(propNet.getAllBasePropositions());
+		HashSet<Component> visitedNodes = new HashSet<Component>();
 
-//		HashSet<Component> visitedNodes = new HashSet<Component>();
-
-		//		while (!allSources.isEmpty()){
-		//			Proposition front = allSources.poll();
-		//			order.add(front);
-		//			visitedNodes.add(front);
-		//			for (Component c : front.getOutputs()){
-		//				if (c instanceof Proposition){
-		//					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
-		//					otherInputs.removeAll(visitedNodes);
-		//					if (otherInputs.isEmpty()){
-		//						allSources.add((Proposition) c);
-		//					}
-		//				}
-		//			}
-		//		}
+		while (!allSources.isEmpty()){
+			Proposition front = allSources.poll();
+			order.add(front);
+			visitedNodes.add(front);
+			for (Component c : front.getOutputs()){
+				if (c instanceof Proposition){
+					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
+					otherInputs.removeAll(visitedNodes);
+					if (otherInputs.isEmpty()){
+						allSources.add((Proposition) c);
+					}
+				}
+			}
+		}
 		// assert order.size() == propNet.getPropositions().size();
 		order.addAll(allSources);
+		System.out.println("Sort done");
 		return order;
 	}
 
