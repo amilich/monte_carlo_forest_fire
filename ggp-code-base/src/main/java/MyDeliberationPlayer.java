@@ -9,18 +9,18 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
+import org.ggp.base.util.statemachine.implementation.propnet.BitSetPropNet;
 
 // Andrew
 
 public class MyDeliberationPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new CachedStateMachine(new ProverStateMachine());
+//		return new CachedStateMachine(new ProverStateMachine());
+		return new BitSetPropNet();
 	}
 
 	@Override
@@ -42,12 +42,7 @@ public class MyDeliberationPlayer extends StateMachineGamer {
 		long decisionTime = timeout;
 		System.out.println("***** SELECT MOVE *****");
 		Move action = null;
-		try {
-			action = bestmove(getRole(), currState, decisionTime, machine);
-		} catch(Exception e) {
-			System.out.println("Error occurred while finding action: " + e);
-			return machine.getLegalMoves(currState, getRole()).get(0);
-		}
+		action = bestmove(getRole(), currState, decisionTime, machine);
 		return action;
 	}
 

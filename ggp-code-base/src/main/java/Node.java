@@ -1,4 +1,9 @@
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
@@ -8,8 +13,9 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
+import MCFFplayers.DepthCharger;
+
 public class Node {
-	static final int NUM_DEPTH_CHARGES = 2; // TODO
 	public static int numCharges = 0;
 
 	private Node parent;
@@ -27,6 +33,7 @@ public class Node {
 	static StateMachine machine;
 	static StateMachine machine2;
 	static Role player;
+	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
 	public static void setStateMachine(StateMachine machine) {
 		Node.machine = machine;
@@ -94,6 +101,7 @@ public class Node {
 				maxMove = ii;
 			}
 		}
+		System.out.println("Avg utility of best move = " + avgUtility);
 		return machine.getLegalMoves(state, player).get(maxMove);
 	}
 
@@ -104,7 +112,6 @@ public class Node {
 
 	public Node select() {
 		if (machine.isTerminal(state)) return this; // TODO
-
 		for (int ii = 0; ii < numMoves; ii ++){
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (this.children[ii][jj] == null) return this;
@@ -172,9 +179,7 @@ public class Node {
 		} else {
 			double ourScore = scores[getRoleIndex()];
 			double enemyAvgScore = 0;
-			for (int ii = 0; ii < scores.length; ii ++) {
-				enemyAvgScore += scores[ii];
-			}
+			for (int ii = 0; ii < scores.length; ii ++) enemyAvgScore += scores[ii];
 			enemyAvgScore -= ourScore;
 			enemyAvgScore /= (machine.getRoles().size() - 1);
 			parent.pCounts[moveIndex] ++;
@@ -188,6 +193,7 @@ public class Node {
 		}
 	}
 
+	static final int NUM_DEPTH_CHARGES = 3; // TODO
 	public double[] simulate() // Check if immediate next state is terminal TODO
 			throws GoalDefinitionException, TransitionDefinitionException, MoveDefinitionException {
 		double[] avgScores = new double[machine.getRoles().size()];
@@ -198,29 +204,20 @@ public class Node {
 			}
 			return avgScores;
 		}
-		/* int[] tempDepth = new int[1];
-		for (int ii = 0; ii < NUM_DEPTH_CHARGES; ii ++) {
-			numCharges ++;
-			MachineState depthCharge = machine.performDepthCharge(state, tempDepth);
-			List<Integer> goals = machine.getGoals(depthCharge);
-			for (int jj = 0; jj < goals.size(); jj ++) {
-				avgScores[jj] += goals.get(jj);
+
+		// TODO switched to callables...
+		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, getRoleIndex());
+		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, getRoleIndex());
+//		SmartCharger d2 = new SmartCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
+		Collection<Future<?>> futures = new LinkedList<Future<?>>();
+		futures.add(executor.submit(d1));
+		futures.add(executor.submit(d2));
+		for (Future<?> future:futures) {
+			try {
+				future.get();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		}
-		for (int ii = 0; ii < machine.getRoles().size(); ii ++) {
-			avgScores[ii] /= NUM_DEPTH_CHARGES;
-		} */
-		DepthCharger d1 = new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, true);
-		DepthCharger d2 = new DepthCharger(machine2, state, player, NUM_DEPTH_CHARGES, true);
-		Thread t1 = new Thread(d1);
-		Thread t2 = new Thread(d2);
-		t1.start();
-		t2.start();
-		try {
-			t1.join();
-			t2.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 		double value1[] = d1.getValues();
 		double value2[] = d2.getValues();
@@ -228,8 +225,9 @@ public class Node {
 			avgScores[ii] = (value1[ii] + value2[ii]) / 2;
 			// System.out.print(avgScores[ii] + ",");
 		}
-		numCharges += NUM_DEPTH_CHARGES * 2;
-		// System.out.println();
+		numCharges += NUM_DEPTH_CHARGES;
+		numCharges += NUM_DEPTH_CHARGES;
+//		System.out.println("NEW TURN");
 		return avgScores;
 	}
 

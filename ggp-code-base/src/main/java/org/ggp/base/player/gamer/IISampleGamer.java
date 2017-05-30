@@ -44,7 +44,7 @@ public abstract class IISampleGamer extends IIGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException, InterruptedException {
 
 		iimatch = new IIMatch(getMatch());
-		normalStateMachine.initialize(iimatch.getGame().getRules());
+		normalStateMachine.initialize(iimatch.getGame().getRules(), null);
 		iistateMachine.initialize(normalStateMachine, iimatch.getGame().getRules());
 
 		currentState = iistateMachine.getInitialState();

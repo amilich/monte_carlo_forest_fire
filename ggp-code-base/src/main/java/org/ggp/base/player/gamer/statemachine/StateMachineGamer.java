@@ -14,11 +14,9 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
 /**
@@ -158,9 +156,9 @@ public abstract class StateMachineGamer extends Gamer
      */
 	public final void resetStateFromMatch() {
         stateMachine = getInitialStateMachine();
-        stateMachine.initialize(getMatch().getGame().getRules());
-        currentState = stateMachine.getMachineStateFromSentenceList(getMatch().getMostRecentState());
         role = stateMachine.getRoleFromConstant(getRoleName());
+        stateMachine.initialize(getMatch().getGame().getRules(), role);
+        currentState = stateMachine.getMachineStateFromSentenceList(getMatch().getMostRecentState());
 	}
 
     // =====================================================================
@@ -178,19 +176,16 @@ public abstract class StateMachineGamer extends Gamer
 	@Override
 	public final void metaGame(long timeout) throws MetaGamingException
 	{
-		try
-		{
+		try {
 			stateMachine = getInitialStateMachine();
-			stateMachine.initialize(getMatch().getGame().getRules());
+			role = stateMachine.getRoleFromConstant(getRoleName());
+			stateMachine.initialize(getMatch().getGame().getRules(), role);
 			currentState = stateMachine.getInitialState();
 
-			role = stateMachine.getRoleFromConstant(getRoleName());
 			getMatch().appendState(currentState.getContents());
 
 			stateMachineMetaGame(timeout);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 		    GamerLogger.logStackTrace("GamePlayer", e);
 			throw new MetaGamingException(e);
 		}
@@ -274,5 +269,5 @@ public abstract class StateMachineGamer extends Gamer
     // Internal state about the current state of the state machine.
     private Role role;
     private MachineState currentState;
-    private StateMachine stateMachine;
+    public StateMachine stateMachine;
 }

@@ -92,11 +92,13 @@ task clojureGamer(type: JavaExec) {
 }
 */
 
-def playerJvmArgs = ['-mx1500m',
+def playerJvmArgs = ['-mx2g',
         '-server',
+        '-XX:+UseG1GC',
         '-XX:-DontCompileHugeMethods',
         '-XX:MinHeapFreeRatio=10',
-        '-XX:MaxHeapFreeRatio=10']
+        '-XX:MaxHeapFreeRatio=10' 
+        ]
 
 //See playerRunner.sh
 task playerRunner(type: JavaExec) {

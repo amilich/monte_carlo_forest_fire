@@ -41,7 +41,7 @@ public class FailsafeStateMachine extends StateMachine
     }
 
     @Override
-    public synchronized void initialize(List<Gdl> description) {
+    public synchronized void initialize(List<Gdl> description, Role r) {
         this.gameDescription = description;
 
         if(attemptLoadingInitialMachine())
@@ -73,7 +73,7 @@ public class FailsafeStateMachine extends StateMachine
 
     private boolean attemptLoadingInitialMachine() {
         try {
-            theBackingMachine.initialize(gameDescription);
+            theBackingMachine.initialize(gameDescription, null);
             GamerLogger.log("StateMachine", "Failsafe Machine: successfully activated initial state machine for use!");
             return true;
         } catch(Exception e1) {
@@ -87,7 +87,7 @@ public class FailsafeStateMachine extends StateMachine
     private boolean attemptLoadingProverMachine() {
         try {
             StateMachine theStateMachine = new ProverStateMachine();
-            theStateMachine.initialize(gameDescription);
+            theStateMachine.initialize(gameDescription, null);
             theBackingMachine = theStateMachine;
             GamerLogger.log("StateMachine", "Failsafe Machine: successfully loaded traditional prover.");
             return true;

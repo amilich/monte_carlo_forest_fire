@@ -15,12 +15,10 @@ import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
  * only express the action itself.
  */
 @SuppressWarnings("serial")
-public class Move implements Serializable
-{
+public class Move implements Serializable {
     protected final GdlTerm contents;
 
-    public Move(GdlTerm contents)
-    {
+    public Move(GdlTerm contents) {
         this.contents = contents;
     }
 
@@ -33,8 +31,7 @@ public class Move implements Serializable
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         if ((o != null) && (o instanceof Move)) {
             Move move = (Move) o;
             return move.contents.equals(contents);
@@ -43,20 +40,17 @@ public class Move implements Serializable
         return false;
     }
 
-    public GdlTerm getContents()
-    {
+    public GdlTerm getContents() {
         return contents;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return contents.hashCode();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return contents.toString();
     }
 }

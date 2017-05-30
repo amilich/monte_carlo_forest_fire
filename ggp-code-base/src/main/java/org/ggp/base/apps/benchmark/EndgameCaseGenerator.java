@@ -42,7 +42,7 @@ public class EndgameCaseGenerator {
 	public static void generateTestCase(String gameKey, int nRole, int nBackoff, int nMaxDepth, StateMachine theMachine) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
         // Load the game and create a state machine for it
 		Game theGame = GameRepository.getDefaultRepository().getGame(gameKey);
-        theMachine.initialize(theGame.getRules());
+        theMachine.initialize(theGame.getRules(), null);
         Role ourRole = theMachine.getRoles().get(nRole);
 
         // Once the game is loaded, run depth charges until we find a suitable

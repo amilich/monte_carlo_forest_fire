@@ -8,18 +8,19 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
+import org.ggp.base.util.statemachine.implementation.propnet.BitSetPropNet;
 
 // Andrew
 
 public class MyAlphaBetaPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new CachedStateMachine(new ProverStateMachine());
+		// return new CachedStateMachine(new ProverStateMachine());
+		//		return new SamplePropNetStateMachine();
+		return new BitSetPropNet();
 	}
 
 	@Override
@@ -105,7 +106,7 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 */
 	private double minscore(Role role, Move move, MachineState state, double alpha, double beta, long decisionTime, double level,
 			List<MachineState> prevStates, int maxLevel)
-			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+					throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		List<List<Move>> jointActions = getStateMachine().getLegalJointMoves(state, role, move);
 		for (List<Move> jointAction : jointActions) { // Opponent's move
 			if (MyHeuristics.checkTime(decisionTime)) break;
@@ -128,15 +129,15 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 */
 	private double maxscore(Role role, MachineState currState, double alpha, double beta, long decisionTime, double level,
 			List<MachineState> prevStates, int maxLevel)
-			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
+					throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 
 		if (getStateMachine().isTerminal(currState)) {
 			return getStateMachine().getGoal(currState, role);
-		} else if (level >= maxLevel) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
+		} /* else if (level >= maxLevel) {
+			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
 		} else if (level > 2 && MyHeuristics.stateConverges(role, currState, getStateMachine(), decisionTime, prevStates)) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine(), decisionTime);
-		}
+			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
+		}*/
 
 		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
 		for (Move action : actions) {

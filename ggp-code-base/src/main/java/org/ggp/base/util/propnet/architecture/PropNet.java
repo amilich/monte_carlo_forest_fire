@@ -66,8 +66,12 @@ import org.ggp.base.util.statemachine.Role;
  * @author Sam Schreiber
  */
 
-public final class PropNet
-{
+public final class PropNet {
+	private final Set<Proposition> allLegalProps; // ADDED TODO
+	private final Set<Proposition> allBaseProps; // ADDED TODO
+	private final Set<Proposition> allInputProps; // ADDED TODO
+	private final Set<Proposition> allGoalProps; // ADDED TODO
+
 	/** References to every component in the PropNet. */
 	private final Set<Component> components;
 
@@ -96,10 +100,9 @@ public final class PropNet
 	private final Map<Proposition, Proposition> legalInputMap;
 
 	/** A helper list of all of the roles. */
-	private final List<Role> roles;
+	public List<Role> roles;
 
-	public void addComponent(Component c)
-	{
+	public void addComponent(Component c) {
 		components.add(c);
 		if (c instanceof Proposition) propositions.add((Proposition)c);
 	}
@@ -111,8 +114,11 @@ public final class PropNet
 	 * @param components
 	 *            A list of Components.
 	 */
-	public PropNet(List<Role> roles, Set<Component> components)
-	{
+	public PropNet(List<Role> roles, Set<Component> components) {
+		allLegalProps = new HashSet<Proposition>();
+		allBaseProps = new HashSet<Proposition>();
+		allInputProps = new HashSet<Proposition>();
+		allGoalProps = new HashSet<Proposition>();
 
 	    this.roles = roles;
 		this.components = components;
@@ -126,13 +132,11 @@ public final class PropNet
 		this.legalInputMap = makeLegalInputMap();
 	}
 
-	public List<Role> getRoles()
-	{
+	public List<Role> getRoles() {
 	    return roles;
 	}
 
-	public Map<Proposition, Proposition> getLegalInputMap()
-	{
+	public Map<Proposition, Proposition> getLegalInputMap() {
 		return legalInputMap;
 	}
 
@@ -165,8 +169,7 @@ public final class PropNet
 	 * @return References to every BaseProposition in the PropNet, indexed by
 	 *         name.
 	 */
-	public Map<GdlSentence, Proposition> getBasePropositions()
-	{
+	public Map<GdlSentence, Proposition> getBasePropositions() {
 		return basePropositions;
 	}
 
@@ -175,8 +178,7 @@ public final class PropNet
 	 *
 	 * @return References to every Component in the PropNet.
 	 */
-	public Set<Component> getComponents()
-	{
+	public Set<Component> getComponents() {
 		return components;
 	}
 
@@ -186,8 +188,7 @@ public final class PropNet
 	 * @return References to every GoalProposition in the PropNet, indexed by
 	 *         player name.
 	 */
-	public Map<Role, Set<Proposition>> getGoalPropositions()
-	{
+	public Map<Role, Set<Proposition>> getGoalPropositions() {
 		return goalPropositions;
 	}
 
@@ -196,8 +197,7 @@ public final class PropNet
 	 *
 	 * @return
 	 */
-	public Proposition getInitProposition()
-	{
+	public Proposition getInitProposition() {
 		return initProposition;
 	}
 
@@ -207,8 +207,7 @@ public final class PropNet
 	 * @return References to every InputProposition in the PropNet, indexed by
 	 *         name.
 	 */
-	public Map<GdlSentence, Proposition> getInputPropositions()
-	{
+	public Map<GdlSentence, Proposition> getInputPropositions() {
 		return inputPropositions;
 	}
 
@@ -302,6 +301,8 @@ public final class PropNet
 			Component component = proposition.getSingleInput();
 			if (component instanceof Transition) {
 				basePropositions.put(proposition.getName(), proposition);
+
+				allBaseProps.add(proposition);
 			}
 		}
 
@@ -318,24 +319,24 @@ public final class PropNet
 	 *
 	 * @return An index over the GoalPropositions in the PropNet.
 	 */
-	private Map<Role, Set<Proposition>> recordGoalPropositions()
-	{
+	private Map<Role, Set<Proposition>> recordGoalPropositions() {
 		Map<Role, Set<Proposition>> goalPropositions = new HashMap<Role, Set<Proposition>>();
-		for (Proposition proposition : propositions)
-		{
+		for (Proposition proposition : propositions) {
 		    // Skip all propositions that aren't GdlRelations.
 		    if (!(proposition.getName() instanceof GdlRelation))
 		        continue;
 
 			GdlRelation relation = (GdlRelation) proposition.getName();
-			if (!relation.getName().getValue().equals("goal"))
-			    continue;
+			if (!relation.getName().getValue().equals("goal")) {
+				continue;
+			}
 
 			Role theRole = new Role((GdlConstant) relation.get(0));
 			if (!goalPropositions.containsKey(theRole)) {
 				goalPropositions.put(theRole, new HashSet<Proposition>());
 			}
 			goalPropositions.get(theRole).add(proposition);
+			allGoalProps.add(proposition);
 		}
 
 		return goalPropositions;
@@ -379,10 +380,28 @@ public final class PropNet
 			GdlRelation relation = (GdlRelation) proposition.getName();
 			if (relation.getName().getValue().equals("does")) {
 				inputPropositions.put(proposition.getName(), proposition);
+
+				allInputProps.add(proposition);
 			}
 		}
 
 		return inputPropositions;
+	}
+
+	public Set<Proposition> getAllGoalPropositions() {
+		return allGoalProps;
+	}
+
+	public Set<Proposition> getAllLegalPropositions() {
+		return allLegalProps;
+	}
+
+	public Set<Proposition> getAllBasePropositions() {
+		return allBaseProps;
+	}
+
+	public Set<Proposition> getAllInputProps() {
+		return allInputProps;
 	}
 
 	/**
@@ -390,11 +409,9 @@ public final class PropNet
 	 *
 	 * @return An index over the LegalPropositions in the PropNet.
 	 */
-	private Map<Role, Set<Proposition>> recordLegalPropositions()
-	{
+	private Map<Role, Set<Proposition>> recordLegalPropositions() {
 		Map<Role, Set<Proposition>> legalPropositions = new HashMap<Role, Set<Proposition>>();
-		for (Proposition proposition : propositions)
-		{
+		for (Proposition proposition : propositions) {
 		    // Skip all propositions that aren't GdlRelations.
 			if (!(proposition.getName() instanceof GdlRelation))
 			    continue;
@@ -407,6 +424,8 @@ public final class PropNet
 					legalPropositions.put(r, new HashSet<Proposition>());
 				}
 				legalPropositions.get(r).add(proposition);
+
+				allLegalProps.add(proposition);
 			}
 		}
 
@@ -418,11 +437,9 @@ public final class PropNet
 	 *
 	 * @return An index over Propositions in the PropNet.
 	 */
-	private Set<Proposition> recordPropositions()
-	{
+	private Set<Proposition> recordPropositions() {
 		Set<Proposition> propositions = new HashSet<Proposition>();
-		for (Component component : components)
-		{
+		for (Component component : components) {
 			if (component instanceof Proposition) {
 				propositions.add((Proposition) component);
 			}
@@ -435,15 +452,11 @@ public final class PropNet
 	 *
 	 * @return A reference to the single, unqiue, TerminalProposition.
 	 */
-	private Proposition recordTerminalProposition()
-	{
-		for ( Proposition proposition : propositions )
-		{
-			if ( proposition.getName() instanceof GdlProposition )
-			{
+	private Proposition recordTerminalProposition(){
+		for ( Proposition proposition : propositions ) {
+			if ( proposition.getName() instanceof GdlProposition ) {
 				GdlConstant constant = ((GdlProposition) proposition.getName()).getName();
-				if ( constant.getValue().equals("terminal") )
-				{
+				if ( constant.getValue().equals("terminal") ) {
 					return proposition;
 				}
 			}
@@ -459,7 +472,7 @@ public final class PropNet
 	public int getNumAnds() {
 		int andCount = 0;
 		for(Component c : components) {
-			if(c instanceof And)
+			if (c instanceof And)
 				andCount++;
 		}
 		return andCount;
@@ -467,8 +480,8 @@ public final class PropNet
 
 	public int getNumOrs() {
 		int orCount = 0;
-		for(Component c : components) {
-			if(c instanceof Or)
+		for (Component c : components) {
+			if (c instanceof Or)
 				orCount++;
 		}
 		return orCount;
@@ -476,8 +489,8 @@ public final class PropNet
 
 	public int getNumNots() {
 		int notCount = 0;
-		for(Component c : components) {
-			if(c instanceof Not)
+		for (Component c : components) {
+			if (c instanceof Not)
 				notCount++;
 		}
 		return notCount;
@@ -485,7 +498,7 @@ public final class PropNet
 
 	public int getNumLinks() {
 		int linkCount = 0;
-		for(Component c : components) {
+		for (Component c : components) {
 			linkCount += c.getOutputs().size();
 		}
 		return linkCount;
@@ -501,8 +514,6 @@ public final class PropNet
 	 * The INIT and terminal components cannot be removed.
 	 */
 	public void removeComponent(Component c) {
-
-
 		//Go through all the collections it could appear in
 		if(c instanceof Proposition) {
 			Proposition p = (Proposition) c;
@@ -541,10 +552,15 @@ public final class PropNet
 		components.remove(c);
 
 		//Remove all the local links to the component
-		for(Component parent : c.getInputs())
+		for(Component parent : c.getInputs()) {
 			parent.removeOutput(c);
-		for(Component child : c.getOutputs())
+			parent.crystalize();
+		}
+		for(Component child : c.getOutputs()) {
 			child.removeInput(c);
+			child.crystalize();
+		}
+		c.crystalize();
 		//These are actually unnecessary...
 		//c.removeAllInputs();
 		//c.removeAllOutputs();

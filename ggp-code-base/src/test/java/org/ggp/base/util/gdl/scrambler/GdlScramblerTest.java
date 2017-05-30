@@ -114,8 +114,8 @@ public class GdlScramblerTest extends Assert {
     		// but that would be expensive.
 			ProverStateMachine pNormal = new ProverStateMachine();
 			ProverStateMachine pScrambled = new ProverStateMachine();
-			pNormal.initialize(game.getRules());
-			pScrambled.initialize(theScrambledRules);
+			pNormal.initialize(game.getRules(), null);
+			pScrambled.initialize(theScrambledRules, null);
 			assertEquals(gameKey, pNormal.getRoles().size(), pScrambled.getRoles().size());
 			assertEquals(gameKey, pNormal.getInitialState().getContents().size(), pScrambled.getInitialState().getContents().size());
     	}

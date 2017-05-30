@@ -14,12 +14,9 @@ public final class Or extends Component
 	 * @see org.ggp.base.util.propnet.architecture.Component#getValue()
 	 */
 	@Override
-	public boolean getValue()
-	{
-		for ( Component component : getInputs() )
-		{
-			if ( component.getValue() )
-			{
+	public boolean getValue() {
+		for ( Component component : inputs ) {
+			if ( component.curVal ) {
 				return true;
 			}
 		}
