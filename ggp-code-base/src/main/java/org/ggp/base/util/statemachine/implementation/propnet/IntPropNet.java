@@ -57,10 +57,12 @@ public class IntPropNet extends StateMachine {
 	final int NUM_BITS_INPUT = 19;
 	final int NUM_BITS_OUTPUT = 19;
 	final int NUM_BITS_OUTPUT_OFFSET = 23;
+	final long NUM_INPUT_MASK = ((1l << (long)NUM_BITS_INPUT) -1) << ((long)NUM_BITS_OUTPUT + (long)NUM_BITS_OUTPUT_OFFSET);
+	final long NUM_OUTPUT_MASK = ((1l << (long)NUM_BITS_OUTPUT) -1) << (long)NUM_BITS_OUTPUT_OFFSET;
+	final long NUM_OUTPUT_OFFSET_MASK = ((1l << (long)NUM_BITS_OUTPUT_OFFSET) -1);
 	private long[] compInfo;
 
 	private int[] compOutputs;
-
 
 	private GdlSentence[] baseNames;
 
@@ -73,14 +75,18 @@ public class IntPropNet extends StateMachine {
 	BitSet nextBaseBits;
 
 	// The first three bits of the longs in compInfo define the proposition type
-	private long INPUT_TYPE_MASK = 0;
-	private long OTHER_PROP_TYPE_MASK = 1 << 61;
-	private long BASE_TYPE_MASK = 2 << 61;
-	private long AND_TYPE_MASK = 3 << 61;
-	private long OR_TYPE_MASK = 4 << 61;
-	private long NOT_TYPE_MASK = 5 << 61;
-	private long TRANSITION_TYPE_MASK = 6 << 61;
-	private long CONSTANT_TYPE_MASK = 7 << 61;
+    private final long INPUT_TYPE_MASK = 0;
+    private final long OTHER_PROP_TYPE_MASK = 1 << 61;
+    private final long BASE_TYPE_MASK = 2 << 61;
+    private final long AND_TYPE_MASK = 3 << 61;
+    private final long OR_TYPE_MASK = 4 << 61;
+    private final long NOT_TYPE_MASK = 5 << 61;
+    private final long TRANSITION_TYPE_MASK = 6 << 61;
+    private final long CONSTANT_TYPE_MASK = 7 << 61;
+    private final long TYPE_MASK = 7 << 61; // call compInfo[i] & TYPE_MASK to get the type
+
+    private final int TRUE_INT = 0x80000000;
+    private final int FALSE_INT = 0x7FFFFFFF;
 
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
@@ -115,6 +121,9 @@ public class IntPropNet extends StateMachine {
 			int curOffset = 0;
 			for (int i = 0; i < origComps.length; i++) {
 				Component cur = origComps[i];
+				int numInputs = cur.inputs.size();
+				int numOutputs = cur.outputs.size();
+				initCompState[i] = FALSE_INT;
 
 				// Component type
 				long curInfo = 0;
@@ -127,29 +136,27 @@ public class IntPropNet extends StateMachine {
 						curInfo &= OTHER_PROP_TYPE_MASK;
 				} else if (cur instanceof And) {
 					curInfo &= AND_TYPE_MASK;
-					initCompState[i] = 0x80000000;
+					initCompState[i] = TRUE_INT - numInputs;
 				} else if (cur instanceof Or) {
 					curInfo &= OR_TYPE_MASK;
-					initCompState[i] = 0x7FFFFFFF;
+					initCompState[i] = FALSE_INT;
 				} else if (cur instanceof Not) {
 					curInfo &= NOT_TYPE_MASK;
 				} else if (cur instanceof Transition) {
 					curInfo &= TRANSITION_TYPE_MASK;
 				} else if (cur instanceof Constant) {
 					curInfo &= CONSTANT_TYPE_MASK;
-					initCompState[i] = ((Constant)cur).getValue() ? 0x80000000 : 0; // 1 or 0 in most-sig bit
+					initCompState[i] = ((Constant)cur).getValue() ? TRUE_INT : FALSE_INT;
 				} else {
 					assert false; // something is fucked up
 				}
 
 				// Component inputs
-				int numInputs = cur.inputs.size();
 				assert numInputs < (1 << NUM_BITS_INPUT); // if not, wont fit in representation
 				long numInputsMask = numInputs << NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET;
 				curInfo &= numInputsMask;
 
 				// Component outputs
-				int numOutputs = cur.outputs.size();
 				assert numOutputs < (1 << NUM_BITS_OUTPUT); // if not, wont fit in representation
 				long numOutputsMask = numOutputs << NUM_BITS_OUTPUT_OFFSET;
 				curInfo &= numOutputsMask;
@@ -158,6 +165,8 @@ public class IntPropNet extends StateMachine {
 				long offsetMask = curOffset;
 				assert offsetMask < (1 << NUM_BITS_OUTPUT_OFFSET); // if not, won't fit in representation
 				curInfo &= offsetMask;
+
+				compInfo[i] = curInfo;
 
 				// Update the connectivity array while updating curOffset
 				for (Component output : cur.getOutputs()) {
@@ -171,57 +180,7 @@ public class IntPropNet extends StateMachine {
 				compOutputs[i] = compOutputsTemp.get(i);
 			}
 
-
-
-
-
-			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
-			allLegalArr = propNet.getAllLegalPropositions().toArray(
-					new Proposition[propNet.getAllLegalPropositions().size()]);
-			for (int ii = 0; ii < allBaseArr.length; ii ++) {
-				allBaseArr[ii].bitIndex = ii;
-				allBaseArr[ii].isBase = true;
-			}
-			for (int ii = 0; ii < allLegalArr.length; ii ++) {
-				allLegalArr[ii].bitIndex = ii;
-				allLegalArr[ii].isLegal = true;
-			}
-			for (int ii = 0; ii < allInputArr.length; ii ++) {
-				allInputArr[ii].bitIndex = ii;
-			}
-
-			baseBits = new BitSet(allBaseArr.length);
-			nextBaseBits = new BitSet(allBaseArr.length);
-			inputBits = new BitSet(allInputArr.length);
-			legalBits = new BitSet(allLegalArr.length);
-
-			for (Component c : propNet.getComponents()) {
-				c.crystalize();
-			}
-			allCompArr = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
-			allLongs = new int[allCompArr.length];
-			for (int ii = 0; ii < allCompArr.length; ii ++) {
-				allCompArr[ii].compIndex = ii;
-				if (allCompArr[ii] instanceof And) {
-					allLongs[ii] = 0x80000000 - allCompArr[ii].input_arr.length;
-				} else if (allCompArr[ii] instanceof Or) {
-					allLongs[ii] = 0x7FFFFFFF;
-				} else if (allCompArr[ii] instanceof Not) {
-					allLongs[ii] = -1 * allCompArr[ii].input_arr.length;
-				} else if (allCompArr[ii] instanceof Transition) {
-					// empty - no counter needed
-				} else if (allCompArr[ii] instanceof Constant) {
-					// empty - no counter needed
-				}
-			}
-
-			// TODO
-//			compState = new int[NUM_THREADS][numComponents];
-//			for (int th = 0; th < NUM_THREADS; th++) {
-//
-//			}
-
-			init = doInitWork();
+			init = doInitWork(initCompState); // TODO doInitWork doesnt work yet
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -263,7 +222,20 @@ public class IntPropNet extends StateMachine {
 		return 0;
 	}
 
-	private MachineState doInitWork() {
+	private MachineState doInitWork(int[] initCompState) {
+
+
+
+
+
+
+
+
+
+
+
+
+
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
 				initforwardpropmark(c, c.getValue());
@@ -392,54 +364,131 @@ public class IntPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void initforwardpropmark(Component c, boolean newValue) {
-		c.curVal = newValue;
+	private int getNumOutputs(int compId){
+		long info = compInfo[compId];
+		long numOutputsSection = info & NUM_OUTPUT_MASK;
+		return (int) (numOutputsSection >> NUM_BITS_OUTPUT_OFFSET);
+	}
 
-		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
-		} else if (c instanceof Transition) { // if c is a transition
-			// transitions always have exactly one output
-			if (c.output_arr.length > 0) {
-				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-				else nextBaseBits.clear(c.output_arr[0].bitIndex);
-			}
-			return;
-		}
-		for (int jj = 0; jj < c.output_arr.length; jj ++) {
-			Component out = c.output_arr[jj];
-			if (out instanceof And) {
-				if (!newValue) {
-					initforwardpropmark(out, false);
-				} else {
-					boolean result = true;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (!out.input_arr[ii].curVal) {
-							result = false;
-							break;
-						}
+	private int getNumInputs(int compId){
+		long info = compInfo[compId];
+		long numInputsSection = info & NUM_INPUT_MASK;
+		return (int) (numInputsSection >> (NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET));
+	}
+
+	private int getOutputOffset(int compId){
+		long info = compInfo[compId];
+		long outputOffsetSection = info & NUM_OUTPUT_OFFSET_MASK;
+		return (int) outputOffsetSection;
+	}
+
+	// not differential
+	public void initforwardpropmark(int compId, int newValue, boolean isRecCall, /*boolean inputChanged,*/ int[] initCompState) {
+//		long type = compInfo[compId] & TYPE_MASK;
+//		if (type == INPUT_TYPE_MASK) {
+//		    assert false; // wtf are you tryna do
+//		} else if (type == AND_TYPE_MASK) {
+//			// if the value changed to true, increment
+//			if (newValue && (initCompState[compId] & TRUE_INT == TRUE_INT))
+//		} else if (type == OR_TYPE_MASK) {
+//		} else if (type == NOT_TYPE_MASK ) {
+//		} else if (type == TRANSITION_TYPE_MASK) {
+//		} else if (type == CONSTANT_TYPE_MASK) {
+//		}
+
+		// heavily WIP
+		long type = compInfo[compId] & TYPE_MASK;
+		boolean valueChanged = newValue == initCompState[compId];
+		initCompState[compId] = newValue;
+		if (isProp){
+			if (valueChanged || !isRecCall){
+				long curInfo = compInfo[compId];
+				int numOutputs = getNumOutputs(compId);
+				int outputOffset = getOutputOffset(compId);
+				for (int i = outputOffset; i < outputOffset + numOutputs; i++){
+					int outputId = compOutputs[i];
+					long outputType = compInfo[outputId] & TYPE_MASK;
+					if ((outputType == AND_TYPE_MASK) || (outputType == OR_TYPE_MASK)){
+						int outputValue = initCompState[outputId];
+						outputValue += ((newValue & TRUE_INT) == TRUE_INT)? 1:-1; // increment counter if true, decrement if false
+						initforwardpropmark(outputId, outputValue, true, initCompState);
+					} else if (outputType == NOT_TYPE_MASK){
+						int outputValue = ((newValue & TRUE_INT) == TRUE_INT) ? FALSE_INT : TRUE_INT;
+						initforwardpropmark(outputId, outputValue, true, initCompState);
 					}
-					initforwardpropmark(out, result);
 				}
-			} else if (out instanceof Or) {
-				if (newValue) {
-					initforwardpropmark(out, true);
-				} else {
-					boolean result = false;
-					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-						if (out.input_arr[ii].curVal) {
-							result = true;
-							break;
-						}
-					}
-					initforwardpropmark(out, result);
-				}
-			} else if (out instanceof Not) {
-				initforwardpropmark(out, !newValue);
-			} else {
-				initforwardpropmark(out, newValue);
-			}
+					if output is AND or OR:
+
+						outputVal  += ((newValue & TRUE_INT) == TRUE_INT)? 1:-1;
+						initforwardpropmark(compId of output, outputVal, )
+					if NOT:
+						outputVal = !value
+						initforwardpropmark(compId of output, outputVal, )
+			else if !value changed && isRecCall
+				for output is AND or OR:
+					sameValue = output.Value
+					initforwardpropmark(compId, sameValue)
+
+		if transition:
+			update base bits, DO NOT RECURSE
 		}
+
+
+
+
+//		c.curVal = newValue;
+//
+//
+//
+//
+//
+//
+//
+//		if (c.isBase) {
+//			if (newValue) baseBits.set(c.bitIndex);
+//			else baseBits.clear(c.bitIndex);
+//		} else if (c instanceof Transition) { // if c is a transition
+//			// transitions always have exactly one output
+//			if (c.output_arr.length > 0) {
+//				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
+//				else nextBaseBits.clear(c.output_arr[0].bitIndex);
+//			}
+//			return;
+//		}
+//		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+//			Component out = c.output_arr[jj];
+//			if (out instanceof And) {
+//				if (!newValue) {
+//					initforwardpropmark(out, false);
+//				} else {
+//					boolean result = true;
+//					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+//						if (!out.input_arr[ii].curVal) {
+//							result = false;
+//							break;
+//						}
+//					}
+//					initforwardpropmark(out, result);
+//				}
+//			} else if (out instanceof Or) {
+//				if (newValue) {
+//					initforwardpropmark(out, true);
+//				} else {
+//					boolean result = false;
+//					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+//						if (out.input_arr[ii].curVal) {
+//							result = true;
+//							break;
+//						}
+//					}
+//					initforwardpropmark(out, result);
+//				}
+//			} else if (out instanceof Not) {
+//				initforwardpropmark(out, !newValue);
+//			} else {
+//				initforwardpropmark(out, newValue);
+//			}
+//		}
 	}
 
 	public void forwardpropmark(Component c, boolean newValue) {
