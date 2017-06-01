@@ -142,6 +142,7 @@ public class ExpFactorPropNet extends StateMachine {
 		for (Component c : toRemove) {
 			propNet.removeComponent(c);
 		}
+		// System.out.println("Removed " + toRemove.size() + " components.");
 		// propNet.renderToFile("optimized.dot");
 	}
 
@@ -149,12 +150,15 @@ public class ExpFactorPropNet extends StateMachine {
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
 		description = sanitizeDistinct(description);
+		System.out.println("Sanitized.");
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
+			System.out.println("propNet built.");
 			// propNet.renderToFile("start.dot");
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
-			if (roles.length == 1) {
-				 doOnePlayerOptimization();
+			if (roles.length == 1 && propNet.getComponents().size() < 10000) { // TODO
+				System.out.println("Trying to optimize");
+				doOnePlayerOptimization();
 			}
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
@@ -190,7 +194,7 @@ public class ExpFactorPropNet extends StateMachine {
 					// empty - no counter needed
 				}
 			}
-
+			System.out.println("Going to init work.");
 			init = doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -236,7 +240,8 @@ public class ExpFactorPropNet extends StateMachine {
 	private MachineState doInitWork() {
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				initforwardpropmark(c, c.getValue());
+				Set<Component> visited = new HashSet<Component>();
+				initforwardpropmark(c, c.getValue(), visited);
 			}
 		}
 		Set<Proposition> bases = propNet.getAllBasePropositions();
@@ -244,17 +249,25 @@ public class ExpFactorPropNet extends StateMachine {
 		/* for (int ii = 0; ii < ordering.size(); ii ++) {
 			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
 		}*/
+		System.out.println("There are " + bases.size() + " base propositions.");
 		for (Proposition base : bases) {
-			initforwardpropmark(base, false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(base, false, visited);
 		}
+		System.out.println("Done with bases");
+		/*for (Component c : propNet.getComponents()) {
+			if (c instanceof Not) {
+				initforwardpropmark(c, !c.input_arr[0].curVal);
+			}
+		}*/
 
 		if (propNet.getInitProposition() != null) {
-			initforwardpropmark(propNet.getInitProposition(), true);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), true, visited);
 		}
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : bases) {
-			System.out.println(base);
 			if (base.getSingleInput().getSingleInput().curVal) {
 				sentences.add(base.getName());
 				nextBaseBits.set(base.bitIndex);
@@ -265,7 +278,8 @@ public class ExpFactorPropNet extends StateMachine {
 		}
 
 		if (propNet.getInitProposition() != null) {
-			initforwardpropmark(propNet.getInitProposition(), false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), false, visited);
 		}
 
 		for (Component c : propNet.getComponents()) {
@@ -357,7 +371,9 @@ public class ExpFactorPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void initforwardpropmark(Component c, boolean newValue) {
+	public void initforwardpropmark(Component c, boolean newValue, Set<Component> visited) {
+		if (visited.contains(c)) return;
+		visited.add(c);
 		c.curVal = newValue;
 
 		if (c.isBase) {
@@ -373,9 +389,11 @@ public class ExpFactorPropNet extends StateMachine {
 		}
 		for (int jj = 0; jj < c.output_arr.length; jj ++) {
 			Component out = c.output_arr[jj];
-			if (out instanceof And) {
+			if (out instanceof Transition || out instanceof Proposition) {
+				initforwardpropmark(out, newValue, visited);
+			} else if (out instanceof And) {
 				if (!newValue) {
-					initforwardpropmark(out, false);
+					initforwardpropmark(out, false, visited);
 				} else {
 					boolean result = true;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
@@ -384,11 +402,11 @@ public class ExpFactorPropNet extends StateMachine {
 							break;
 						}
 					}
-					initforwardpropmark(out, result);
+					initforwardpropmark(out, result, visited);
 				}
 			} else if (out instanceof Or) {
 				if (newValue) {
-					initforwardpropmark(out, true);
+					initforwardpropmark(out, true, visited);
 				} else {
 					boolean result = false;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
@@ -397,12 +415,10 @@ public class ExpFactorPropNet extends StateMachine {
 							break;
 						}
 					}
-					initforwardpropmark(out, result);
+					initforwardpropmark(out, result, visited);
 				}
 			} else if (out instanceof Not) {
-				initforwardpropmark(out, !newValue);
-			} else {
-				initforwardpropmark(out, newValue);
+				initforwardpropmark(out, !newValue, visited);
 			}
 		}
 	}
