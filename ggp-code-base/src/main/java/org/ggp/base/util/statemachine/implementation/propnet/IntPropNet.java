@@ -40,7 +40,7 @@ public class IntPropNet extends StateMachine {
 	}
 
 	MachineState init;
-	final int NUM_THREADS = 4;
+	final int NUM_THREADS = 1;
 
 	public Proposition[] allBaseArr; // TODO we should get rid of this eventually
 	public Proposition[] allInputArr; // TODO we should get rid of this eventually
@@ -64,12 +64,6 @@ public class IntPropNet extends StateMachine {
 	private long[] compInfo;
 
 	private int[] compOutputs;
-
-	private GdlSentence[] baseNames;
-
-	private int numBases;
-	private int numLegals;
-	private int numInputs;
 
 	// All
 	BitSet compBits;
@@ -114,7 +108,7 @@ public class IntPropNet extends StateMachine {
 		System.out.println("[PropNet] Initializing for role " + r);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
-			roles = (Role[])propNet.getRoles().toArray();
+			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 
 			// initialize all component states to 0
 			int nComps = propNet.getComponents().size();
@@ -125,19 +119,10 @@ public class IntPropNet extends StateMachine {
 		    isBase = new BitSet(nComps);
 		    isInput = new BitSet(nComps);
 
-			allBaseArr = (Proposition[])propNet.getAllBasePropositions().toArray();
-			baseNames = new GdlSentence[allBaseArr.length];
-			for (int i = 0; i < allBaseArr.length; i++) {
-				baseNames[i] = allBaseArr[i].getName();
-			}
+			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
+			allInputArr = propNet.getInputPropositions().values().toArray(new Proposition[propNet.getAllInputProps().size()]);
 
-			allInputArr = (Proposition[])propNet.getInputPropositions().values().toArray();
-			Proposition[] allLegalArr = (Proposition[])propNet.getAllLegalPropositions().toArray();
-			numBases = allBaseArr.length;
-			numInputs = allInputArr.length;
-			numLegals = allLegalArr.length;
-
-			origComps = (Component[])propNet.getComponents().toArray();
+			origComps = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
 			componentIds = new HashMap<Component, Integer>();
 			for (int i = 0; i < origComps.length; i++) {
 				componentIds.put(origComps[i], i);
