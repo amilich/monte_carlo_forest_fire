@@ -54,13 +54,13 @@ public class IntPropNet extends StateMachine {
 
 	// An entry in compInfo is a long of the form:
 	// COMPONENT_TYPE (3 bits) + NUM_INPUTS (19 bits) + NUM_OUTPUTS (19 bits) + OUTPUT_OFFSET (23 bits)
-	final int NUM_BITS_COMPONENT_TYPE = 3;
-	final int NUM_BITS_INPUT = 19;
-	final int NUM_BITS_OUTPUT = 19;
-	final int NUM_BITS_OUTPUT_OFFSET = 23;
-	final long NUM_INPUT_MASK = ((1l << (long)NUM_BITS_INPUT) -1) << ((long)NUM_BITS_OUTPUT + (long)NUM_BITS_OUTPUT_OFFSET); // TODO: we can get rid of this in compInfo b/c we do initialization based on objects
-	final long NUM_OUTPUT_MASK = ((1l << (long)NUM_BITS_OUTPUT) -1) << (long)NUM_BITS_OUTPUT_OFFSET;
-	final long NUM_OUTPUT_OFFSET_MASK = ((1l << (long)NUM_BITS_OUTPUT_OFFSET) -1);
+	final long NUM_BITS_COMPONENT_TYPE = 3;
+	final long NUM_BITS_INPUT = 19;
+	final long NUM_BITS_OUTPUT = 19;
+	final long NUM_BITS_OUTPUT_OFFSET = 23;
+	final long NUM_INPUT_MASK = ((1l << NUM_BITS_INPUT) -1l) << (NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET); // TODO: we can get rid of this in compInfo b/c we do initialization based on objects
+	final long NUM_OUTPUT_MASK = ((1l << NUM_BITS_OUTPUT) -1l) << NUM_BITS_OUTPUT_OFFSET;
+	final long NUM_OUTPUT_OFFSET_MASK = ((1l << NUM_BITS_OUTPUT_OFFSET) -1l);
 	private long[] compInfo;
 
 	private int[] compOutputs;
@@ -73,14 +73,14 @@ public class IntPropNet extends StateMachine {
 
 	// The first three bits of the longs in compInfo define the proposition type
     private final long INPUT_TYPE_MASK = 0;
-    private final long OTHER_PROP_TYPE_MASK = 1 << 61;
-    private final long BASE_TYPE_MASK = 2 << 61;
-    private final long AND_TYPE_MASK = 3 << 61;
-    private final long OR_TYPE_MASK = 4 << 61;
-    private final long NOT_TYPE_MASK = 5 << 61;
-    private final long TRANSITION_TYPE_MASK = 6 << 61;
-    private final long CONSTANT_TYPE_MASK = 7 << 61;
-    private final long TYPE_MASK = 7 << 61; // call compInfo[i] & TYPE_MASK to get the type
+    private final long OTHER_PROP_TYPE_MASK = 1l << 61l;
+    private final long BASE_TYPE_MASK = 2l << 61l;
+    private final long AND_TYPE_MASK = 3l << 61l;
+    private final long OR_TYPE_MASK = 4l << 61l;
+    private final long NOT_TYPE_MASK = 5l << 61l;
+    private final long TRANSITION_TYPE_MASK = 6l << 61l;
+    private final long CONSTANT_TYPE_MASK = 7l << 61l;
+    private final long TYPE_MASK = 7l << 61l; // call compInfo[i] & TYPE_MASK to get the type
 
     private final int TRUE_INT = 0x80000000;
     private final int FALSE_INT = 0x7FFFFFFF;
@@ -169,18 +169,18 @@ public class IntPropNet extends StateMachine {
 				}
 
 				// Component inputs
-				assert numInputs < (1 << NUM_BITS_INPUT); // if not, wont fit in representation
-				long numInputsMask = numInputs << NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET;
+				assert numInputs < (1l << NUM_BITS_INPUT); // if not, wont fit in representation
+				long numInputsMask = ((long)numInputs) << (NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET);
 				curInfo |= numInputsMask;
 
 				// Component outputs
-				assert numOutputs < (1 << NUM_BITS_OUTPUT); // if not, wont fit in representation
-				long numOutputsMask = numOutputs << NUM_BITS_OUTPUT_OFFSET;
+				assert numOutputs < (1l << NUM_BITS_OUTPUT); // if not, wont fit in representation
+				long numOutputsMask = ((long)numOutputs) << NUM_BITS_OUTPUT_OFFSET;
 				curInfo |= numOutputsMask;
 
 				// Component offset
 				long offsetMask = curOffset;
-				assert offsetMask < (1 << NUM_BITS_OUTPUT_OFFSET); // if not, won't fit in representation
+				assert offsetMask < (1l << NUM_BITS_OUTPUT_OFFSET); // if not, won't fit in representation
 				curInfo |= offsetMask;
 
 				compInfo[i] = curInfo;
@@ -190,6 +190,8 @@ public class IntPropNet extends StateMachine {
 					compOutputsTemp.add(componentIds.get(output));
 					curOffset++;
 				}
+
+				System.out.println("After component " + i + ", compInfo=" + curInfo);
 
 				cur.crystalize(); // necessary for doInitWork and initforwardpropmark
 			}
@@ -251,6 +253,7 @@ public class IntPropNet extends StateMachine {
 	}
 
 	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
+//		propNet.renderToFile("intpropnet.dot");
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
 				Set<Component> visited = new HashSet<Component>();
@@ -260,6 +263,7 @@ public class IntPropNet extends StateMachine {
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 
 		System.out.println("There are " + bases.size() + " base propositions.");
+		System.out.println("There are " + propNet.getComponents().size() + " components.");
 		for (Proposition base : bases) {
 			Set<Component> visited = new HashSet<Component>();
 			initforwardpropmark(base, false, visited, componentIds);
@@ -297,7 +301,11 @@ public class IntPropNet extends StateMachine {
 					}
 				}
 			} else {
-				initCompState[componentIds.get(c)] = FALSE_INT;
+				if (c.curVal) {
+					initCompState[componentIds.get(c)] = TRUE_INT;
+				} else {
+					initCompState[componentIds.get(c)] = FALSE_INT;
+				}
 			}
 		}
 
@@ -446,19 +454,19 @@ public class IntPropNet extends StateMachine {
 		if (newValue) {
 			// increment each output's counter
 			for (int i = offset; i < offset + numOutputs; i++) {
-				boolean orig = val(i, thread);
+				boolean orig = val(compOutputs[i], thread);
 				compState[thread][compOutputs[i]]++; // TODO: is this right for not gates and propositions??
-				if (val(i, thread) != orig) {
-					forwardpropmarkRec(i, thread);
+				if (val(compOutputs[i], thread) != orig) {
+					forwardpropmarkRec(compOutputs[i], thread);
 				}
 			}
 		} else {
 			// decrement each output's counter
 			for (int i = offset; i < offset + numOutputs; i++) {
-				boolean orig = val(i, thread);
+				boolean orig = val(compOutputs[i], thread);
 				compState[thread][compOutputs[i]]--; // TODO: is this right for not gates and propositions??
-				if (val(i, thread) != orig) {
-					forwardpropmarkRec(i, thread);
+				if (val(compOutputs[i], thread) != orig) {
+					forwardpropmarkRec(compOutputs[i], thread);
 				}
 			}
 		}
