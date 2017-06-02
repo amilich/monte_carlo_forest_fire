@@ -11,16 +11,17 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.BasicFactorPropNet;
+import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 
 public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 		// return new CachedStateMachine(new ProverStateMachine());
-		return new BasicFactorPropNet();
+//		return new BasicFactorPropNet();
 		// return new BitSetPropNet();
 //		return new BitSetNet();
+		return new IntPropNet();
 	}
 
 	// SamplePropNetStateMachine machineP = null;
@@ -67,7 +68,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
-		for (int ii = 0; ii < 10000; ii ++) {
+		for (int ii = 0; ii < 0; ii ++) {
 			MachineState m = customdc(state);
 			total += machine.getGoal(m, role);
 			// System.out.println("DC: " + m);
