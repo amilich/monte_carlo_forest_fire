@@ -103,6 +103,14 @@ public class IntPropNet extends StateMachine {
     	return (compState[thread][compId] & TRUE_INT) == TRUE_INT;
     }
 
+    int num = 0;
+    private void convertAndRender(String filename) {
+    	for (Component c : propNet.getComponents()) {
+    		c.curVal = val(componentIds.get(c), 0);
+    	}
+    	propNet.renderToFile(filename + ++num + ".dot");
+    }
+
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
@@ -294,6 +302,7 @@ public class IntPropNet extends StateMachine {
 		// Now, copy the object propnet state into our representation
 
 		for (Component c : propNet.getComponents()) {
+			if (c.equals(propNet.getInitProposition())) continue;
 			if (c instanceof And || c instanceof Or || c instanceof Not) {
 				for (int ii = 0; ii < c.inputs.size(); ii ++) {
 					if (c.input_arr[ii].curVal) {
@@ -345,6 +354,9 @@ public class IntPropNet extends StateMachine {
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
+
+		convertAndRender("ttt");
+
 		updatePropnetState(state);
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
@@ -513,6 +525,9 @@ public class IntPropNet extends StateMachine {
 
 		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
 			forwardpropmark(ii, !val(ii, 0), 0);
+		}
+		for (int ii = isInput.nextSetBit(0); ii != -1; ii = isInput.nextSetBit(ii + 1)) {
+			if (newBits.get(ii)) compBits.flip(ii);
 		}
 	}
 
