@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -15,40 +14,6 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.propnet.ExpFactorPropNet;
 
 public class MyLegalPlayer extends StateMachineGamer {
-	public List<String> movesS = new ArrayList<String>();
-
-	public String move_temp[] = {
-			"3 2",
-			"3 1",
-			"2 1",
-			"1 1",
-			"1 2",
-			"2 2",
-			"2 1",
-			"3 1",
-			"3 2",
-			"2 2",
-			"2 3",
-			"3 3",
-			"3 2",
-			"3 1",
-			"2 1",
-			"1 1",
-			"1 2",
-			"2 2",
-			"2 3",
-			"1 3",
-			"1 2",
-			"2 2",
-			"3 2",
-			"3 1",
-			"2 1",
-			"1 1",
-			"1 2",
-			"2 2",
-			"3 2",
-			"3 3"
-	};
 
 	@Override
 	public StateMachine getInitialStateMachine() {
@@ -62,33 +27,16 @@ public class MyLegalPlayer extends StateMachineGamer {
 
 	// SamplePropNetStateMachine machineP = null;
 
-	boolean eight = false;
-	String eightstr = "( tile 1 ) ( tile 2 ) ( tile 3 ) ( tile 4 ) ( tile 5 ) ( tile 6 ) ( tile 7 ) ( tile 8 ) ( tile b )";
 
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// TODO Auto-generated method stub
-		if (getMatch().getGame().getRulesheet().toString().contains(eightstr)) {
-			System.out.println("EIGHT PUZZLE!");
-			eight = true;
-		}
 		System.out.println(getMatch().getGame().getDescription());
 		System.out.println(getMatch().getGame().getName());
 		System.out.println(getMatch().getGame().getStylesheet());
 		System.out.println(getMatch().getGame().getRulesheet());
 		moveNum = 0;
-		int numSwaps = 0;
-		Random r = new Random();
-		for (int ii = 0; ii < move_temp.length; ii ++) {
-			movesS.add(move_temp[ii]);
-			if (ii < move_temp.length - 1 && r.nextBoolean() && r.nextBoolean()
-					&& r.nextBoolean() && numSwaps < 4) {
-				numSwaps ++;
-				movesS.add(move_temp[ii + 1]);
-				movesS.add(move_temp[ii]);
-			}
-		}
 		// machineP = (SamplePropNetStateMachine) getStateMachine();
 		// machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
 
@@ -141,17 +89,6 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// Random r = new Random();
 		// return moves.get(r.nextInt(moves.size()));
 		// System.out.println("Size: " + moves.size());
-		String correctM = movesS.get(moveNum);
-		moveNum ++;
-		for (int ii = 0; ii < moves.size(); ii ++) {
-			System.out.println("WANT: " + correctM);
-			if (moves.get(ii).toString().contains(correctM)) {
-				System.out.println("YES: " + moves.get(ii));
-				return moves.get(ii);
-			} else {
-				System.out.println("NO: " + moves.get(ii));
-			}
-		}
 		return moves.get(0);
 	}
 
