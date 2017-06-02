@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -46,6 +44,9 @@ public class IntPropNet extends StateMachine {
 
 	public Proposition[] allBaseArr; // TODO we should get rid of this eventually
 	public Proposition[] allInputArr; // TODO we should get rid of this eventually
+	Component[] origComps;
+
+	private int terminalCompId;
 
 	// TODO: maybe instead of using pointers in compInfo into compOutputs,
 	// we could combine compInfo and compOutputs into one large array for extra cache locality
@@ -57,7 +58,7 @@ public class IntPropNet extends StateMachine {
 	final int NUM_BITS_INPUT = 19;
 	final int NUM_BITS_OUTPUT = 19;
 	final int NUM_BITS_OUTPUT_OFFSET = 23;
-	final long NUM_INPUT_MASK = ((1l << (long)NUM_BITS_INPUT) -1) << ((long)NUM_BITS_OUTPUT + (long)NUM_BITS_OUTPUT_OFFSET);
+	final long NUM_INPUT_MASK = ((1l << (long)NUM_BITS_INPUT) -1) << ((long)NUM_BITS_OUTPUT + (long)NUM_BITS_OUTPUT_OFFSET); // TODO: we can get rid of this in compInfo b/c we do initialization based on objects
 	final long NUM_OUTPUT_MASK = ((1l << (long)NUM_BITS_OUTPUT) -1) << (long)NUM_BITS_OUTPUT_OFFSET;
 	final long NUM_OUTPUT_OFFSET_MASK = ((1l << (long)NUM_BITS_OUTPUT_OFFSET) -1);
 	private long[] compInfo;
@@ -70,9 +71,11 @@ public class IntPropNet extends StateMachine {
 	private int numLegals;
 	private int numInputs;
 
-	BitSet baseBits;
-	BitSet inputBits;
+	// All
+	BitSet compBits;
 	BitSet nextBaseBits;
+	BitSet isBase;
+	BitSet isInput;
 
 	// The first three bits of the longs in compInfo define the proposition type
     private final long INPUT_TYPE_MASK = 0;
@@ -88,6 +91,24 @@ public class IntPropNet extends StateMachine {
     private final int TRUE_INT = 0x80000000;
     private final int FALSE_INT = 0x7FFFFFFF;
 
+    private Map<Component, Integer> componentIds; // TODO THIS SHOULD NOT BE A MEMBER VARIABLE DAMNIT. UPDATE MACHINESTATE
+
+    private int numInputs(int compId) {
+    	return (int)((compInfo[compId] & NUM_INPUT_MASK) >> (NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET));
+    }
+
+    private int numOutputs(int compId) {
+    	return (int)((compInfo[compId] & NUM_OUTPUT_MASK) >> NUM_BITS_OUTPUT_OFFSET);
+    }
+
+    private int outputOffset(int compId) {
+    	return (int)(compInfo[compId] & NUM_OUTPUT_OFFSET_MASK);
+    }
+
+    private boolean val(int compId, int thread) {
+    	return (compState[thread][compId] & TRUE_INT) == TRUE_INT;
+    }
+
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
@@ -96,7 +117,13 @@ public class IntPropNet extends StateMachine {
 			roles = (Role[])propNet.getRoles().toArray();
 
 			// initialize all component states to 0
-			int[] initCompState = new int[propNet.getComponents().size()];
+			int nComps = propNet.getComponents().size();
+			int[] initCompState = new int[nComps];
+
+			compBits = new BitSet(nComps);
+		    nextBaseBits = new BitSet(nComps);
+		    isBase = new BitSet(nComps);
+		    isInput = new BitSet(nComps);
 
 			allBaseArr = (Proposition[])propNet.getAllBasePropositions().toArray();
 			baseNames = new GdlSentence[allBaseArr.length];
@@ -110,8 +137,8 @@ public class IntPropNet extends StateMachine {
 			numInputs = allInputArr.length;
 			numLegals = allLegalArr.length;
 
-			Component[] origComps = (Component[])propNet.getComponents().toArray();
-			Map<Component, Integer> componentIds = new HashMap<Component, Integer>();
+			origComps = (Component[])propNet.getComponents().toArray();
+			componentIds = new HashMap<Component, Integer>();
 			for (int i = 0; i < origComps.length; i++) {
 				componentIds.put(origComps[i], i);
 			}
@@ -123,29 +150,34 @@ public class IntPropNet extends StateMachine {
 				Component cur = origComps[i];
 				int numInputs = cur.inputs.size();
 				int numOutputs = cur.outputs.size();
-				initCompState[i] = FALSE_INT;
+				initCompState[i] = FALSE_INT; // by default, regardless of type, init to false
 
 				// Component type
 				long curInfo = 0;
 				if (cur instanceof Proposition) {
-					if (propNet.getAllInputProps().contains(cur))
-						curInfo &= INPUT_TYPE_MASK;
-					else if (propNet.getAllBasePropositions().contains(cur))
-						curInfo &= BASE_TYPE_MASK;
-					else
-						curInfo &= OTHER_PROP_TYPE_MASK;
+					if (propNet.getAllInputProps().contains(cur)) {
+						curInfo |= INPUT_TYPE_MASK;
+						isInput.set(i);
+					}
+					else if (propNet.getAllBasePropositions().contains(cur)) {
+						curInfo |= BASE_TYPE_MASK;
+						isBase.set(i);
+					}
+					else {
+						curInfo |= OTHER_PROP_TYPE_MASK;
+					}
 				} else if (cur instanceof And) {
-					curInfo &= AND_TYPE_MASK;
+					curInfo |= AND_TYPE_MASK;
 					initCompState[i] = TRUE_INT - numInputs;
 				} else if (cur instanceof Or) {
-					curInfo &= OR_TYPE_MASK;
+					curInfo |= OR_TYPE_MASK;
 					initCompState[i] = FALSE_INT;
 				} else if (cur instanceof Not) {
-					curInfo &= NOT_TYPE_MASK;
+					curInfo |= NOT_TYPE_MASK;
 				} else if (cur instanceof Transition) {
-					curInfo &= TRANSITION_TYPE_MASK;
+					curInfo |= TRANSITION_TYPE_MASK;
 				} else if (cur instanceof Constant) {
-					curInfo &= CONSTANT_TYPE_MASK;
+					curInfo |= CONSTANT_TYPE_MASK;
 					initCompState[i] = ((Constant)cur).getValue() ? TRUE_INT : FALSE_INT;
 				} else {
 					assert false; // something is fucked up
@@ -154,17 +186,17 @@ public class IntPropNet extends StateMachine {
 				// Component inputs
 				assert numInputs < (1 << NUM_BITS_INPUT); // if not, wont fit in representation
 				long numInputsMask = numInputs << NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET;
-				curInfo &= numInputsMask;
+				curInfo |= numInputsMask;
 
 				// Component outputs
 				assert numOutputs < (1 << NUM_BITS_OUTPUT); // if not, wont fit in representation
 				long numOutputsMask = numOutputs << NUM_BITS_OUTPUT_OFFSET;
-				curInfo &= numOutputsMask;
+				curInfo |= numOutputsMask;
 
 				// Component offset
 				long offsetMask = curOffset;
 				assert offsetMask < (1 << NUM_BITS_OUTPUT_OFFSET); // if not, won't fit in representation
-				curInfo &= offsetMask;
+				curInfo |= offsetMask;
 
 				compInfo[i] = curInfo;
 
@@ -173,6 +205,8 @@ public class IntPropNet extends StateMachine {
 					compOutputsTemp.add(componentIds.get(output));
 					curOffset++;
 				}
+
+				cur.crystalize(); // necessary for doInitWork and initforwardpropmark
 			}
 
 			compOutputs = new int[compOutputsTemp.size()];
@@ -180,7 +214,17 @@ public class IntPropNet extends StateMachine {
 				compOutputs[i] = compOutputsTemp.get(i);
 			}
 
-			init = doInitWork(initCompState); // TODO doInitWork doesnt work yet
+			terminalCompId = componentIds.get(propNet.getTerminalProposition());
+
+			// forward prop for initialization
+			init = doInitWork(initCompState, componentIds);
+
+			// copy initCompState into each thread's separate state
+			compState = new int[NUM_THREADS][nComps];
+			for (int i = 0; i < NUM_THREADS; i++) {
+				System.arraycopy(initCompState, 0, compState[i], 0, nComps);
+			}
+
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -193,9 +237,10 @@ public class IntPropNet extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
+	// TODO threads
 	public boolean isTerminal(MachineState state) {
 		updatePropnetState(state);
-		return propNet.getTerminalProposition().curVal;
+		return val(terminalCompId, 0);
 	}
 
 	/**
@@ -212,76 +257,62 @@ public class IntPropNet extends StateMachine {
 		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
 
 		for (Proposition p : rewards) {
-			if (p.curVal) {
-				if (p.goal == -1) {
-					p.goal = Integer.parseInt(p.getName().get(1).toString());
-				}
-				return p.goal;
+			boolean val = val(componentIds.get(p), 0);
+			if (val) {
+				return Integer.parseInt(p.getName().get(1).toString());
 			}
 		}
 		return 0;
 	}
 
-	private MachineState doInitWork(int[] initCompState) {
-
-
-
-
-
-
-
-
-
-
-
-
-
+	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				initforwardpropmark(c, c.getValue());
+				Set<Component> visited = new HashSet<Component>();
+				initforwardpropmark(c, c.getValue(), visited, componentIds);
 			}
 		}
 		Set<Proposition> bases = propNet.getAllBasePropositions();
 
-		/* for (int ii = 0; ii < ordering.size(); ii ++) {
-			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
-		}*/
+		System.out.println("There are " + bases.size() + " base propositions.");
 		for (Proposition base : bases) {
-			initforwardpropmark(base, false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(base, false, visited, componentIds);
 		}
+		System.out.println("Done with bases");
 
 		if (propNet.getInitProposition() != null) {
-			initforwardpropmark(propNet.getInitProposition(), true);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), true, visited, componentIds);
 		}
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : bases) {
 			if (base.getSingleInput().getSingleInput().curVal) {
 				sentences.add(base.getName());
-				nextBaseBits.set(base.bitIndex);
+				nextBaseBits.set(componentIds.get(base));
 			}
 			if (base.curVal) {
-				baseBits.set(base.bitIndex);
-			}
-		}
-
-		for (Proposition p : propNet.getAllLegalPropositions()) {
-			if (p.curVal) {
-				legalBits.set(p.bitIndex);
+				compBits.set(componentIds.get(base));
 			}
 		}
 
 		if (propNet.getInitProposition() != null) {
-			initforwardpropmark(propNet.getInitProposition(), false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), false, visited, componentIds);
 		}
+
+		// Now, copy the object propnet state into our representation
 
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof And || c instanceof Or || c instanceof Not) {
 				for (int ii = 0; ii < c.inputs.size(); ii ++) {
 					if (c.input_arr[ii].curVal) {
-						allLongs[c.compIndex] ++;
+						initCompState[componentIds.get(c)]++;
 					}
 				}
+			} else {
+				initCompState[componentIds.get(c)] = FALSE_INT;
 			}
 		}
 
@@ -324,19 +355,8 @@ public class IntPropNet extends StateMachine {
 		updatePropnetState(state);
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
-//		for (int ii = legalBits.nextSetBit(0); ii != -1; ii = legalBits.nextSetBit(ii + 1)) {
-//			Proposition p = allLegalArr[ii];
-//			if (legals.contains(p)) {
-//				Move m = propToMove.get(p);
-//				if (m == null) {
-//					m = new Move(p.getName().get(1));
-//					propToMove.put(p, m);
-//				}
-//				legalMoves.add(m);
-//			}
-//		}
 		for (Proposition p : legals) {
-			if (p.curVal) {
+			if (val(componentIds.get(p), 0)) {
 				Move m = propToMove.get(p);
 				if (m == null) {
 					m = new Move(p.getName().get(1));
@@ -359,266 +379,149 @@ public class IntPropNet extends StateMachine {
 		updatePropnetMoves(moves);
 		Set<GdlSentence> newState = new HashSet<GdlSentence>();
 		for (int ii = nextBaseBits.nextSetBit(0); ii != -1; ii = nextBaseBits.nextSetBit(ii + 1)) {
-			newState.add(allBaseArr[ii].getName());
+			Proposition c = (Proposition) origComps[ii];
+			newState.add(c.getName());
 		}
 		return new MachineState(newState);
 	}
 
-	private int getNumOutputs(int compId){
-		long info = compInfo[compId];
-		long numOutputsSection = info & NUM_OUTPUT_MASK;
-		return (int) (numOutputsSection >> NUM_BITS_OUTPUT_OFFSET);
-	}
-
-	private int getNumInputs(int compId){
-		long info = compInfo[compId];
-		long numInputsSection = info & NUM_INPUT_MASK;
-		return (int) (numInputsSection >> (NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET));
-	}
-
-	private int getOutputOffset(int compId){
-		long info = compInfo[compId];
-		long outputOffsetSection = info & NUM_OUTPUT_OFFSET_MASK;
-		return (int) outputOffsetSection;
-	}
-
-	// not differential
-	public void initforwardpropmark(int compId, int newValue, boolean isRecCall, /*boolean inputChanged,*/ int[] initCompState) {
-//		long type = compInfo[compId] & TYPE_MASK;
-//		if (type == INPUT_TYPE_MASK) {
-//		    assert false; // wtf are you tryna do
-//		} else if (type == AND_TYPE_MASK) {
-//			// if the value changed to true, increment
-//			if (newValue && (initCompState[compId] & TRUE_INT == TRUE_INT))
-//		} else if (type == OR_TYPE_MASK) {
-//		} else if (type == NOT_TYPE_MASK ) {
-//		} else if (type == TRANSITION_TYPE_MASK) {
-//		} else if (type == CONSTANT_TYPE_MASK) {
-//		}
-
-		// heavily WIP
-		long type = compInfo[compId] & TYPE_MASK;
-		boolean valueChanged = newValue == initCompState[compId];
-		initCompState[compId] = newValue;
-		if (isProp){
-			if (valueChanged || !isRecCall){
-				long curInfo = compInfo[compId];
-				int numOutputs = getNumOutputs(compId);
-				int outputOffset = getOutputOffset(compId);
-				for (int i = outputOffset; i < outputOffset + numOutputs; i++){
-					int outputId = compOutputs[i];
-					long outputType = compInfo[outputId] & TYPE_MASK;
-					if ((outputType == AND_TYPE_MASK) || (outputType == OR_TYPE_MASK)){
-						int outputValue = initCompState[outputId];
-						outputValue += ((newValue & TRUE_INT) == TRUE_INT)? 1:-1; // increment counter if true, decrement if false
-						initforwardpropmark(outputId, outputValue, true, initCompState);
-					} else if (outputType == NOT_TYPE_MASK){
-						int outputValue = ((newValue & TRUE_INT) == TRUE_INT) ? FALSE_INT : TRUE_INT;
-						initforwardpropmark(outputId, outputValue, true, initCompState);
-					}
-				}
-					if output is AND or OR:
-
-						outputVal  += ((newValue & TRUE_INT) == TRUE_INT)? 1:-1;
-						initforwardpropmark(compId of output, outputVal, )
-					if NOT:
-						outputVal = !value
-						initforwardpropmark(compId of output, outputVal, )
-			else if !value changed && isRecCall
-				for output is AND or OR:
-					sameValue = output.Value
-					initforwardpropmark(compId, sameValue)
-
-		if transition:
-			update base bits, DO NOT RECURSE
-		}
-
-
-
-
-//		c.curVal = newValue;
-//
-//
-//
-//
-//
-//
-//
-//		if (c.isBase) {
-//			if (newValue) baseBits.set(c.bitIndex);
-//			else baseBits.clear(c.bitIndex);
-//		} else if (c instanceof Transition) { // if c is a transition
-//			// transitions always have exactly one output
-//			if (c.output_arr.length > 0) {
-//				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-//				else nextBaseBits.clear(c.output_arr[0].bitIndex);
-//			}
-//			return;
-//		}
-//		for (int jj = 0; jj < c.output_arr.length; jj ++) {
-//			Component out = c.output_arr[jj];
-//			if (out instanceof And) {
-//				if (!newValue) {
-//					initforwardpropmark(out, false);
-//				} else {
-//					boolean result = true;
-//					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-//						if (!out.input_arr[ii].curVal) {
-//							result = false;
-//							break;
-//						}
-//					}
-//					initforwardpropmark(out, result);
-//				}
-//			} else if (out instanceof Or) {
-//				if (newValue) {
-//					initforwardpropmark(out, true);
-//				} else {
-//					boolean result = false;
-//					for (int ii = 0; ii < out.inputs.size(); ii ++) {
-//						if (out.input_arr[ii].curVal) {
-//							result = true;
-//							break;
-//						}
-//					}
-//					initforwardpropmark(out, result);
-//				}
-//			} else if (out instanceof Not) {
-//				initforwardpropmark(out, !newValue);
-//			} else {
-//				initforwardpropmark(out, newValue);
-//			}
-//		}
-	}
-
-	public void forwardpropmark(Component c, boolean newValue) {
-		if (newValue == c.curVal) {
-			return; // stop forward propagating
-		}
+	public void initforwardpropmark(Component c, boolean newValue, Set<Component> visited, Map<Component, Integer> componentIds) {
+		if (visited.contains(c)) return;
+		visited.add(c);
 		c.curVal = newValue;
 
 		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
-		}
-
-		if (c instanceof Transition) {
-			if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-			else nextBaseBits.clear(c.output_arr[0].bitIndex);
+			if (newValue) compBits.set(componentIds.get(c));
+			else compBits.clear(componentIds.get(c));
+		} else if (c instanceof Transition) {
+			// transitions always have exactly one output, or zero if pruned during factoring
+			if (c.output_arr.length > 0) {
+				if (newValue) nextBaseBits.set(componentIds.get(c.output_arr[0]));
+				else nextBaseBits.clear(componentIds.get(c.output_arr[0]));
+			}
 			return;
 		}
-		for (int jj = 0; jj < c.outputs.size(); jj ++) {
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
 			Component out = c.output_arr[jj];
-			allLongs[out.compIndex] += newValue? 1 : -1;
-			if (out instanceof Proposition || out instanceof Transition) {
-				forwardpropmark(out, newValue);
-			} else {
-				boolean corrected = ((allLongs[out.compIndex] >> 31) & 1) == 1;
-				forwardpropmark(out, corrected);
+			if (out instanceof Transition || out instanceof Proposition) {
+				initforwardpropmark(out, newValue, visited, componentIds);
+			} else if (out instanceof And) {
+				if (!newValue) {
+					initforwardpropmark(out, false, visited, componentIds);
+				} else {
+					boolean result = true;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (!out.input_arr[ii].curVal) {
+							result = false;
+							break;
+						}
+					}
+					initforwardpropmark(out, result, visited, componentIds);
+				}
+			} else if (out instanceof Or) {
+				if (newValue) {
+					initforwardpropmark(out, true, visited, componentIds);
+				} else {
+					boolean result = false;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (out.input_arr[ii].curVal) {
+							result = true;
+							break;
+						}
+					}
+					initforwardpropmark(out, result, visited, componentIds);
+				}
+			} else if (out instanceof Not) {
+				initforwardpropmark(out, !newValue, visited, componentIds);
 			}
 		}
-	}
-
-	public void updatePropnetState(MachineState state) {
-		Set<GdlSentence> stateGdl = state.getContents();
-		BitSet stateBits = new BitSet(allBaseArr.length);
-		for (GdlSentence s : stateGdl) {
-			stateBits.set(propNet.getBasePropositions().get(s).bitIndex);
-		}
-		stateBits.xor(baseBits);
-		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allBaseArr[ii], !baseBits.get(ii));
-		}
-
-		// Input: a bit array `a` = [0 0 0 1 0 1 1...], where a[i] is True iff base i changed
-		// for i in a:
-		//    if a[i]
-		//         forwardpropmark(i, !comps[THREAD][
-
-		//
-	}
-
-	public void updatePropnetMoves(List<Move> moves) {
-		Set<GdlSentence> moveGdl = toDoes(moves);
-		BitSet nowTrue = new BitSet(allInputArr.length);
-		for (GdlSentence s : moveGdl) {
-			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
-		}
-		inputBits.xor(nowTrue);
-		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allInputArr[ii], nowTrue.get(ii));
-		}
-		inputBits = nowTrue;
 	}
 
 	/**
-	 * This should compute the topological ordering of propositions.
-	 * Each component is either a proposition, logical gate, or transition.
-	 * Logical gates and transitions only have propositions as inputs.
-	 *
-	 * The base propositions and input propositions should always be exempt
-	 * from this ordering.
-	 *
-	 * The base propositions values are set from the MachineState that
-	 * operations are performed on and the input propositions are set from
-	 * the Moves that operations are performed on as well (if any).
-	 *
-	 * @return The order in which the truth values of propositions need to be set.
+	 * Precondition to being called: compId's value was changed (and the change was recorded in compState, but not in compBits!)
+	 * in a previous recursive call.
+	 * @param compId
+	 * @param thread
 	 */
-	public List<Proposition> getOrdering() {
-		System.out.println("Sort start");
-		// List to contain the topological ordering.
-		List<Proposition> order = new ArrayList<Proposition>();
+	private void forwardpropmarkRec(int compId, int thread) {
+		int numOutputs = numOutputs(compId);
+		int offset = outputOffset(compId);
+		long type = compInfo[compId] & TYPE_MASK;
+		boolean newValue = val(compId, thread);
+		if (type == BASE_TYPE_MASK) {
+			if (newValue) compBits.set(compId);
+			else compBits.clear(compId);
+		} else if (type == TRANSITION_TYPE_MASK) {
+			if (numOutputs > 0) {
+				if (newValue) nextBaseBits.set(compOutputs[offset]);
+				else nextBaseBits.clear(compOutputs[offset]);
+			}
+		}
 
-		// All of the components in the PropNet
-		 List<Component> components = new ArrayList<Component>(propNet.getComponents());
-
-		// All of the propositions in the PropNet.
-		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
-
-		Queue<Proposition> allSources = new LinkedList<Proposition>();
-		allSources.addAll(propNet.getAllInputProps());
-		allSources.addAll(propNet.getAllBasePropositions());
-		HashSet<Component> visitedNodes = new HashSet<Component>();
-
-		while (!allSources.isEmpty()){
-			Proposition front = allSources.poll();
-			order.add(front);
-			visitedNodes.add(front);
-			for (Component c : front.getOutputs()){
-				if (c instanceof Proposition){
-					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
-					otherInputs.removeAll(visitedNodes);
-					if (otherInputs.isEmpty()){
-						allSources.add((Proposition) c);
-					}
+		if (newValue) {
+			// increment each output's counter
+			for (int i = offset; i < offset + numOutputs; i++) {
+				boolean orig = val(i, thread);
+				compState[thread][compOutputs[i]]++; // TODO: is this right for not gates and propositions??
+				if (val(i, thread) != orig) {
+					forwardpropmarkRec(i, thread);
+				}
+			}
+		} else {
+			// decrement each output's counter
+			for (int i = offset; i < offset + numOutputs; i++) {
+				boolean orig = val(i, thread);
+				compState[thread][compOutputs[i]]--; // TODO: is this right for not gates and propositions??
+				if (val(i, thread) != orig) {
+					forwardpropmarkRec(i, thread);
 				}
 			}
 		}
-		// assert order.size() == propNet.getPropositions().size();
-		order.addAll(allSources);
-		System.out.println("Sort done");
-		return order;
 	}
 
-	// Test if topological ordering worked. Not supposed to be called at runtime
-	/*public void testTopologicalOrdering(List<Proposition> ordering){
-		for(int i=1; i < ordering.size(); i++){
-			System.out.println(i);
-			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
-			Set<Component> inputs_c = ordering.get(i).getInputs();
-			HashSet<Proposition> inputs = new HashSet<Proposition>();
-			for (Component c : inputs_c){
-				if (c instanceof Proposition){
-					inputs.add((Proposition) c);
-				}
-			}
-			inputs.removeAll(prev);
-			if (!inputs.isEmpty()){
-				throw new Error("Ordering is not topological");
-			}
+	/**
+	 * Precondition: only call this on base and input propositions whose truth values are
+	 * different from the previous state.
+	 * @param compId
+	 * @param newValue
+	 * @param thread
+	 */
+	public void forwardpropmark(int compId, boolean newValue, int thread) {
+		compState[thread][compId] = newValue ? TRUE_INT : FALSE_INT;
+		forwardpropmarkRec(compId, thread);
+	}
+
+	// TODO: need to handle multiple threads
+	public void updatePropnetState(MachineState state) {
+		Set<GdlSentence> stateGdl = state.getContents();
+		BitSet newBits = new BitSet(compInfo.length);
+		for (GdlSentence s : stateGdl) {
+			newBits.set(componentIds.get(propNet.getBasePropositions().get(s)));
 		}
-	}*/
+
+		newBits.xor(compBits);
+		newBits.and(isBase);
+
+		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
+			forwardpropmark(ii, !val(ii, 0), 0);
+		}
+	}
+
+	// TODO: need to handle multiple threads
+	public void updatePropnetMoves(List<Move> moves) {
+		Set<GdlSentence> moveGdl = toDoes(moves);
+		BitSet newBits = new BitSet(compInfo.length);
+		for (GdlSentence s : moveGdl) {
+			newBits.set(componentIds.get(propNet.getInputPropositions().get(s)));
+		}
+
+		newBits.xor(compBits);
+		newBits.and(isInput);
+
+		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
+			forwardpropmark(ii, !val(ii, 0), 0);
+		}
+	}
 
 	/* Already implemented for you */
 	@Override
