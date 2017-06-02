@@ -64,6 +64,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		StateMachine machine = getStateMachine();
 		MachineState state = getCurrentState();
 		Role role = getRole();
+		System.out.println("HI");
 		List<Move> moves = machine.getLegalMoves(state, role);
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
