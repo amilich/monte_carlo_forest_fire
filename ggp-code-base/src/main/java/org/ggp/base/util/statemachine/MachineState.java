@@ -22,6 +22,7 @@ public class MachineState {
     }
 
     public BitSet props;
+
     public MachineState(Set<GdlSentence> contents, BitSet bases) {
         this.contents = contents;
         this.props = new BitSet(bases.size());
