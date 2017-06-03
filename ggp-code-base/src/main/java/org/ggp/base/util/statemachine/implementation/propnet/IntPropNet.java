@@ -509,9 +509,20 @@ public class IntPropNet extends StateMachine {
 		while (!isTerminal(start)) {
 			List<List<Move>> jmoves = getLegalJointMoves(start);
 			List<Move> selected = jmoves.get(r.nextInt(jmoves.size()));
+//			List<Move> selected = randomJointMove(start);
 			start = internalNextState(start, selected);
 		}
 		return start;
+	}
+
+	// TODO does not work
+	public List<Move> randomJointMove(MachineState state) throws MoveDefinitionException {
+		List<Move> moves = new ArrayList<Move>();
+		for (Role role : getRoles()) {
+			List<Move> lms = internalLegalMoves(state, role);
+			moves.add(lms.get(r.nextInt(lms.size())));
+        }
+		return moves;
 	}
 
 	// TODO make internal legal joint moves
