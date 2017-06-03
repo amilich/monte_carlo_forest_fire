@@ -11,6 +11,7 @@ import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 import org.ggp.base.util.statemachine.implementation.propnet.ExpFactorPropNet;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
@@ -26,7 +27,9 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			return new CachedStateMachine(new ProverStateMachine());
 		}
 //		return new BitSetPropNet();
-		return new ExpFactorPropNet();
+//		return new ExpPropNet();
+		return new IntPropNet();
+//		return new ExpFactorPropNet();
 // 		return new BitSetNet();
 //		return new BasicFactorPropNet();
 //		return new StateLessPropNet();

@@ -21,7 +21,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 // Graph based MCTS Node
 public class ThreadedGraphNode {
 	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 3;
+	public static final int NUM_THREADS = 1;
 	public static final int NUM_DEPTH_CHARGES = 3; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
 	public static int num = 0;

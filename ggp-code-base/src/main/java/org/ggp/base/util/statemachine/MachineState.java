@@ -1,5 +1,6 @@
 package org.ggp.base.util.statemachine;
 
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,10 +16,22 @@ public class MachineState {
      * want to do more advanced things can subclass this implementation, but for
      * many cases this will do exactly what we want.
      */
-    private final Set<GdlSentence> contents;
-    public MachineState(Set<GdlSentence> contents)
-    {
+    private Set<GdlSentence> contents;
+    public MachineState(Set<GdlSentence> contents) {
         this.contents = contents;
+    }
+
+    public BitSet props;
+
+    public MachineState(Set<GdlSentence> contents, BitSet bases) {
+        this.contents = contents;
+        this.props = new BitSet(bases.size());
+        this.props.or(bases);
+    }
+
+    public MachineState(BitSet bases) {
+        this.props = new BitSet(bases.size());
+        this.props.or(bases);
     }
 
     /**
@@ -26,8 +39,7 @@ public class MachineState {
      * of the game being played. Two given states with identical GDL sentences
      * should be identical states of the game.
      */
-    public Set<GdlSentence> getContents()
-    {
+    public Set<GdlSentence> getContents(){
         return contents;
     }
 
@@ -38,8 +50,8 @@ public class MachineState {
 
     /* Utility methods */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
+    	if (contents == null) return props.hashCode();
         return getContents().hashCode();
     }
 
@@ -59,7 +71,13 @@ public class MachineState {
         if ((o != null) && (o instanceof MachineState))
         {
             MachineState state = (MachineState) o;
-            return state.getContents().equals(getContents());
+            return state.props.equals(this.props);
+//            if (contents == null) {
+//            	return state.props.equals(this.props);
+//            } else {
+//            	return state.getContents().equals(getContents());
+//            }
+            // return state.getContents().equals(getContents());
         }
 
         return false;

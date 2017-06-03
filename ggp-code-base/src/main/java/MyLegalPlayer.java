@@ -11,6 +11,7 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 import org.ggp.base.util.statemachine.implementation.propnet.ExpFactorPropNet;
 
 public class MyLegalPlayer extends StateMachineGamer {
@@ -19,10 +20,12 @@ public class MyLegalPlayer extends StateMachineGamer {
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 		// return new CachedStateMachine(new ProverStateMachine());
+//		return new BasicFactorPropNet();
 		// return new BasicFactorPropNet();
-		return new ExpFactorPropNet();
+//		return new ExpFactorPropNet();
 		// return new BitSetPropNet();
 //		return new BitSetNet();
+		return new IntPropNet();
 	}
 
 	// SamplePropNetStateMachine machineP = null;
@@ -67,20 +70,23 @@ public class MyLegalPlayer extends StateMachineGamer {
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		StateMachine machine = getStateMachine();
+		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
 		MachineState state = getCurrentState();
 		Role role = getRole();
+		System.out.println("HI");
 		List<Move> moves = machine.getLegalMoves(state, role);
 		System.out.println("Move # " + moveNum + " has moves: " + moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
-		for (int ii = 0; ii < 0; ii ++) {
-			MachineState m = customdc(state);
-			total += machine.getGoal(m, role);
-			// System.out.println("DC: " + m);
-		}
-		total /= 3;
-		// System.out.println("AVG: " + total);
-		// System.out.println("IT: " + machine.isTerminal(getCurrentState()));
+		int count = 0;
+		while (!MyHeuristics.checkTime(timeout)) {
+//		while (count < 5000) {
+			MachineState m = machine.internalDC(state); 
+		total /= count;
+		System.out.println("AVG: " + total);
+		System.out.println("COUNT: " + count);
+		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
+    }
 		// System.out.println(machine.getNextStates(getCurrentState()));
 		// System.out.println(machine.getLegalJointMoves(getCurrentState()));
 		// System.out.println(machine.getLegalMoves(getCurrentState(), getRole()));
