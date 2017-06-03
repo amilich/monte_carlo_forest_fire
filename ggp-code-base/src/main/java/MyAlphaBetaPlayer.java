@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.List;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
@@ -33,8 +32,8 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 * Controls printing of debug statements.
 	 */
 	final boolean DEBUG_EN = false;
-	final double MAX_SCORE = 100;
-	final double MIN_SCORE = 0;
+	final static double MAX_SCORE = 100;
+	final static double MIN_SCORE = 0;
 
 	/**
 	 * Function: stateMachineSelectMove
@@ -52,9 +51,9 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 		int maxLevel = 4;
 		try {
 			if (getStateMachine().getRoles().size() == 1) {
-				action = MyBoundedMobilityPlayer.singlePlayerBestMove(getRole(), currState, decisionTime, maxLevel, getStateMachine());
+				action = MyBoundedMobilityPlayer.singlePlayerBestMove(getRole(), currState, getStateMachine());
 			} else {
-				action = bestmove(getRole(), currState, decisionTime, maxLevel);
+				action = bestmove(getRole(), currState, decisionTime);
 			}
 		} catch(Exception e) {
 			System.out.println("*** Failed to get best move ***");
@@ -64,37 +63,61 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 		return action;
 	}
 
+	public static boolean finished = false;
+	static Move bestM = null;
+
+	public static Move staticBest(StateMachine m, MachineState s, Role r)
+			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		List<Move> actions = m.getLegalMoves(s, r);
+		finished = false;
+		double alpha = MIN_SCORE;
+		double beta = MAX_SCORE;
+		Move finalMove = null;
+		// System.out.println("actions: " + actions);
+		for (int ii = 0; ii < actions.size(); ii ++) {
+			// if (MyHeuristics.checkTime(decisionTime)) break;
+			double result = minscore(r, actions.get(ii), s, alpha, beta, m);
+			double oldAlpha = alpha;
+			alpha = Math.max(alpha, result);
+			// System.out.println("result score = " + result);
+			// System.out.println("curr alpha = " + alpha);
+			if (alpha != oldAlpha) {
+				// System.out.println("Updating alpha [" + oldAlpha + "] -> [" + alpha + "]");
+				finalMove = actions.get(ii);
+			}
+		}
+		finished = true;
+		bestM = finalMove;
+		return finalMove;
+	}
+
 	/**
 	 * Function: bestmove
 	 * -------------------
 	 * Return best possible move using minimax strategy.
 	 */
-	private Move bestmove(Role role, MachineState state, long decisionTime, int maxLevel) throws MoveDefinitionException,
+	private Move bestmove(Role role, MachineState state, long decisionTime) throws MoveDefinitionException,
 	GoalDefinitionException, TransitionDefinitionException {
 		List<Move> actions = getStateMachine().getLegalMoves(state, role);
-
+		finished = false;
 		double alpha = MIN_SCORE;
 		double beta = MAX_SCORE;
 		Move finalMove = null;
-		System.out.println("actions: " + actions);
+		// System.out.println("actions: " + actions);
 		for (int ii = 0; ii < actions.size(); ii ++) {
-			if (MyHeuristics.checkTime(decisionTime)) break;
-			int level = 0;
-			ArrayList<MachineState> emptyList = new ArrayList<MachineState>();
-			double result = minscore(role, actions.get(ii), state, alpha, beta, decisionTime, level, emptyList, maxLevel);
+			// if (MyHeuristics.checkTime(decisionTime)) break;
+			double result = minscore(role, actions.get(ii), state, alpha, beta, getStateMachine());
 			double oldAlpha = alpha;
 			alpha = Math.max(alpha, result);
-			System.out.println("result score = " + result);
-			System.out.println("curr alpha = " + alpha);
+			// System.out.println("result score = " + result);
+			// System.out.println("curr alpha = " + alpha);
 			if (alpha != oldAlpha) {
-				System.out.println("Updating alpha [" + oldAlpha + "] -> [" + alpha + "]");
+				// System.out.println("Updating alpha [" + oldAlpha + "] -> [" + alpha + "]");
 				finalMove = actions.get(ii);
 			}
 		}
-		if (finalMove == null) {
-			System.out.println("*** NULL final move selected ***");
-			return actions.get(0);
-		}
+		finished = true;
+		bestM = finalMove;
 		return finalMove;
 	}
 
@@ -104,18 +127,15 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 * Recursively determine minimum score that can be achieved from choosing a given move
 	 * in a given game state (assuming rational opponent).
 	 */
-	private double minscore(Role role, Move move, MachineState state, double alpha, double beta, long decisionTime, double level,
-			List<MachineState> prevStates, int maxLevel)
+	private static double minscore(Role role, Move move, MachineState state, double alpha, double beta,
+			StateMachine m)
 					throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		List<List<Move>> jointActions = getStateMachine().getLegalJointMoves(state, role, move);
+		List<List<Move>> jointActions = m.getLegalJointMoves(state, role, move);
 		for (List<Move> jointAction : jointActions) { // Opponent's move
-			if (MyHeuristics.checkTime(decisionTime)) break;
-
-			MachineState nextState = getStateMachine().getNextState(state, jointAction);
-			prevStates.add(nextState);
-			double result = maxscore(role, nextState, alpha, beta, decisionTime, level + 1, prevStates, maxLevel);
+			// if (MyHeuristics.checkTime(decisionTime)) break;
+			MachineState nextState = m.getNextState(state, jointAction);
+			double result = maxscore(role, nextState, alpha, beta, m);
 			beta = Math.min(beta, result);
-			prevStates.remove(prevStates.size() - 1);
 			if (beta <= alpha) return alpha;
 		}
 		return beta;
@@ -127,23 +147,17 @@ public class MyAlphaBetaPlayer extends StateMachineGamer {
 	 * Determine max score that can be achieved from choosing a given move
 	 * in a given game state by maximizing minimum score (minimax).
 	 */
-	private double maxscore(Role role, MachineState currState, double alpha, double beta, long decisionTime, double level,
-			List<MachineState> prevStates, int maxLevel)
+	private static double maxscore(Role role, MachineState currState, double alpha, double beta,
+			StateMachine m)
 					throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 
-		if (getStateMachine().isTerminal(currState)) {
-			return getStateMachine().getGoal(currState, role);
-		} /* else if (level >= maxLevel) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
-		} else if (level > 2 && MyHeuristics.stateConverges(role, currState, getStateMachine(), decisionTime, prevStates)) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, getStateMachine());
-		}*/
-
-		List<Move> actions = getStateMachine().getLegalMoves(currState, role);
+		if (m.isTerminal(currState)) {
+			return m.getGoal(currState, role);
+		}
+		List<Move> actions = m.getLegalMoves(currState, role);
 		for (Move action : actions) {
-			if (MyHeuristics.checkTime(decisionTime)) break;
-
-			double result = minscore(role, action, currState, alpha, beta, decisionTime, level, prevStates, maxLevel);
+			// if (MyHeuristics.checkTime(decisionTime)) break;
+			double result = minscore(role, action, currState, alpha, beta, m);
 			alpha = Math.max(alpha, result);
 			if (alpha >= beta) return beta;
 		}

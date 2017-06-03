@@ -11,24 +11,31 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.BasicFactorPropNet;
+import org.ggp.base.util.statemachine.implementation.propnet.ExpFactorPropNet;
 
 public class MyLegalPlayer extends StateMachineGamer {
+
 	@Override
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 		// return new CachedStateMachine(new ProverStateMachine());
-		return new BasicFactorPropNet();
+		// return new BasicFactorPropNet();
+		return new ExpFactorPropNet();
 		// return new BitSetPropNet();
 //		return new BitSetNet();
 	}
 
 	// SamplePropNetStateMachine machineP = null;
 
+
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// TODO Auto-generated method stub
+		System.out.println(getMatch().getGame().getDescription());
+		System.out.println(getMatch().getGame().getName());
+		System.out.println(getMatch().getGame().getStylesheet());
+		System.out.println(getMatch().getGame().getRulesheet());
 		moveNum = 0;
 		// machineP = (SamplePropNetStateMachine) getStateMachine();
 		// machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
@@ -46,7 +53,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// System.out.println(state);
 		int num = 0;
 		while(!getStateMachine().isTerminal(state)) {
-			// System.out.println("\t " + state);
+			System.out.println("\t " + state);
 			List<List<Move>> jmoves = getStateMachine().getLegalJointMoves(state);
 			state = getStateMachine().getNextState(state, jmoves.get(r.nextInt(jmoves.size())));
 			num ++;
@@ -59,30 +66,29 @@ public class MyLegalPlayer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		moveNum ++;
 		StateMachine machine = getStateMachine();
 		MachineState state = getCurrentState();
 		Role role = getRole();
 		List<Move> moves = machine.getLegalMoves(state, role);
-		System.out.println(moves);
+		System.out.println("Move # " + moveNum + " has moves: " + moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
-		for (int ii = 0; ii < 10000; ii ++) {
+		for (int ii = 0; ii < 0; ii ++) {
 			MachineState m = customdc(state);
 			total += machine.getGoal(m, role);
 			// System.out.println("DC: " + m);
 		}
-		total /= 10000;
-		System.out.println("AVG: " + total);
-		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
+		total /= 3;
+		// System.out.println("AVG: " + total);
+		// System.out.println("IT: " + machine.isTerminal(getCurrentState()));
 		// System.out.println(machine.getNextStates(getCurrentState()));
-		System.out.println(machine.getLegalJointMoves(getCurrentState()));
-		System.out.println(machine.getLegalMoves(getCurrentState(), getRole()));
+		// System.out.println(machine.getLegalJointMoves(getCurrentState()));
+		// System.out.println(machine.getLegalMoves(getCurrentState(), getRole()));
 		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
 		// getInitialStateMachine().
 		// Random r = new Random();
 		// return moves.get(r.nextInt(moves.size()));
-		System.out.println("Size: " + moves.size());
+		// System.out.println("Size: " + moves.size());
 		return moves.get(0);
 	}
 

@@ -518,6 +518,10 @@ public final class PropNet {
 		if(c instanceof Proposition) {
 			Proposition p = (Proposition) c;
 			GdlSentence name = p.getName();
+			allBaseProps.remove(c);
+			allInputProps.remove(c);
+			allLegalProps.remove(c);
+			allGoalProps.remove(c); // TODO
 			if(basePropositions.containsKey(name)) {
 				basePropositions.remove(name);
 			} else if(inputPropositions.containsKey(name)) {

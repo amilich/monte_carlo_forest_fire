@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -148,13 +149,17 @@ public class ThreadedGraphNode {
 				}
 			}
 			System.out.println("[GRAPH] Utility of best move = " + maxUtility);
+			if (maxUtility == 0) {
+				Random r = new Random();
+				return myMoves.get(r.nextInt(myMoves.size()));
+			}
 			return myMoves.get(maxMove);
 		}
 	}
 
 	// Perform selection and expansion for a MCTS node.
 	public ThreadedGraphNode selectAndExpand(ArrayList<ThreadedGraphNode> path)
-			throws MoveDefinitionException, TransitionDefinitionException {
+			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		ThreadedGraphNode selected = this.select(path);
 		ThreadedGraphNode expanded = selected.expand();
 		if (!expanded.equals(path.get(path.size() - 1))) path.add(expanded); // May have expanded itself (and not added new node)
@@ -163,24 +168,29 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
-	static final int C = 40;
+	static final int Csp = 20000;
+	static final int C = 50;
 	static final double C1 = 0.7;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
 		if (Double.isNaN(stddev)) {
 			stddev = C;
 		}
+		// return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
+		//		Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
-		//return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-		//		Math.sqrt(50 * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+				Math.sqrt(C * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
-	protected double selectfn(int pMove, int oMove) {
+	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
 	}
 
+	protected double singlePSelect(int pMove) throws GoalDefinitionException {
+		return pVals[pMove] / pCounts[pMove] + Math.sqrt(Csp * Math.log(sumArray(pCounts)) / pCounts[pMove]);
+	}
+
 	// MCTS selection
-	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) {
+	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) throws GoalDefinitionException {
 		ThreadedGraphNode currNode = this;
 		while (true) {
 			path.add(currNode);
@@ -191,25 +201,38 @@ public class ThreadedGraphNode {
 				}
 			}
 			// if (currNode.numExpanded < currNode.numChildren) return currNode; // TODO
-			double pMoveScore = Double.NEGATIVE_INFINITY;
-			double oMoveScore = Double.NEGATIVE_INFINITY;
-			int resultP = 0;
-			int resultO = 0;
-			for (int ii = 0; ii < currNode.numMoves; ii ++){
-				double newscore = currNode.selectfn(ii, -1);
-				if (newscore > pMoveScore) {
-					pMoveScore = newscore;
-					resultP = ii;
+			if (machine.findRoles().size() == 1) {
+				double pMoveScore = Double.NEGATIVE_INFINITY;
+				int resultP = 0;
+				for (int ii = 0; ii < currNode.numMoves; ii ++){
+					double newscore = currNode.singlePSelect(ii);
+					if (newscore > pMoveScore) {
+						pMoveScore = newscore;
+						resultP = ii;
+					}
 				}
-			}
-			for (int jj = 0; jj < currNode.numEnemyMoves; jj ++) {
-				double newscore = currNode.opponentSelectFn(resultP, jj, currNode.children[resultP][jj]);
-				if (newscore > oMoveScore) {
-					oMoveScore = newscore;
-					resultO = jj;
+				currNode = currNode.children[resultP][0];
+			} else {
+				double pMoveScore = Double.NEGATIVE_INFINITY;
+				double oMoveScore = Double.NEGATIVE_INFINITY;
+				int resultP = 0;
+				int resultO = 0;
+				for (int ii = 0; ii < currNode.numMoves; ii ++){
+					double newscore = currNode.selectfn(ii, -1);
+					if (newscore > pMoveScore) {
+						pMoveScore = newscore;
+						resultP = ii;
+					}
 				}
+				for (int jj = 0; jj < currNode.numEnemyMoves; jj ++) {
+					double newscore = currNode.opponentSelectFn(resultP, jj, currNode.children[resultP][jj]);
+					if (newscore > oMoveScore) {
+						oMoveScore = newscore;
+						resultO = jj;
+					}
+				}
+				currNode = currNode.children[resultP][resultO];
 			}
-			currNode = currNode.children[resultP][resultO];
 		}
 	}
 

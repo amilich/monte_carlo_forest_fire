@@ -64,7 +64,7 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 			}
 			if (getStateMachine().getRoles().size() == 1) {
 				System.out.println("***** SINGLE PLAYER MODE ****");
-				levelMoves.add(singlePlayerBestMove(getRole(), currState, decisionTime, maxLevel, getStateMachine()));
+				levelMoves.add(singlePlayerBestMove(getRole(), currState, getStateMachine()));
 			} else {
 				levelMoves.add(bestmove(getRole(), currState, decisionTime, maxLevel));
 			}
@@ -79,7 +79,7 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 	}
 
 	// TODO
-	public static Move singlePlayerBestMove(Role role, MachineState state, long decisionTime, int maxLevel, StateMachine machine)
+	public static Move singlePlayerBestMove(Role role, MachineState state, StateMachine machine)
 			throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		List<Move> actions = new ArrayList<Move>();
 		actions.addAll(machine.getLegalMoves(state, role));
@@ -88,41 +88,27 @@ public class MyBoundedMobilityPlayer extends StateMachineGamer {
 		Move finalMove = actions.get(0);
 
 		for (int ii = 0; ii < actions.size(); ii ++) {
-			if (MyHeuristics.checkTime(decisionTime)) break;
-			double level = 0;
-			ArrayList<MachineState> emptyList = new ArrayList<MachineState>();
-			double result = singlePlayerMaxscore(role, state, decisionTime, level, emptyList, maxLevel, machine);
+			double result = singlePlayerMaxscore(role, state, machine);
 			if (result > score) {
 				score = result;
 				finalMove = actions.get(ii);
-				//	System.out.println("Result from min = " + result + " action = " + finalMove);
 			}
 			if (score == MAX_SCORE) return actions.get(ii);
 		}
-		System.out.println("Score = " + score);
 		return finalMove;
 	}
 
-	public static double singlePlayerMaxscore(Role role, MachineState currState, long decisionTime, double level,
-			List<MachineState> prevStates, int maxLevel, StateMachine machine)
+	public static double singlePlayerMaxscore(Role role, MachineState currState, StateMachine machine)
 					throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		if (machine.isTerminal(currState)) {
 			return machine.getGoal(currState, role); // TODO correct value
-		} else if (level >= maxLevel) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, machine);
-		} else if (level > 2 && MyHeuristics.stateConverges(role, currState, machine, decisionTime, prevStates)) {
-			return MyHeuristics.weightedHeuristicFunction(role, currState, machine);
 		}
 		List<Move> actions = machine.getLegalMoves(currState, role);
 		double score = 0.0;
 		for (int ii = 0; ii < actions.size(); ii ++) {
-			if (MyHeuristics.checkTime(decisionTime)) break;
 			List<Move> tempMoves = new ArrayList<Move>(); // TODO add other roles
 			tempMoves.add(actions.get(ii));
-			prevStates.add(currState);
-			double result = singlePlayerMaxscore(role, machine.getNextState(currState, tempMoves), decisionTime, level + 1
-					, prevStates, maxLevel, machine);
-			prevStates.remove(prevStates.size() - 1);
+			double result = singlePlayerMaxscore(role, machine.getNextState(currState, tempMoves), machine);
 			if (result == 100) return result;
 			if (result > score) score = result; // TODO short circuit
 		}
