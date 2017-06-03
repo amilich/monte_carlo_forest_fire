@@ -107,9 +107,6 @@ public class IntPropNet extends StateMachine {
     private void convertAndRender(String filename) {
     	for (Component c : propNet.getComponents()) {
     		c.curVal = val(componentIds.get(c), 0);
-    		if (c.toString().contains("open")) {
-    			System.out.println("ID of open = " + componentIds.get(c));
-    		}
     	}
     	propNet.renderToFile(filename + ++num + ".dot");
     }
@@ -261,7 +258,6 @@ public class IntPropNet extends StateMachine {
 	}
 
 	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
-//		propNet.renderToFile("intpropnet.dot");
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
 				Set<Component> visited = new HashSet<Component>();
@@ -317,7 +313,6 @@ public class IntPropNet extends StateMachine {
 				}
 			}
 		}
-		// initCompState[this.terminalCompId] = FALSE_INT;
 
 		return new MachineState(sentences);
 	}
@@ -389,7 +384,8 @@ public class IntPropNet extends StateMachine {
 			Proposition c = (Proposition) origComps[ii];
 			newState.add(c.getName());
 		}
-		return new MachineState(newState);
+		MachineState m = new MachineState(newState);
+		return m;
 	}
 
 	public void initforwardpropmark(Component c, boolean newValue, Set<Component> visited, Map<Component, Integer> componentIds) {

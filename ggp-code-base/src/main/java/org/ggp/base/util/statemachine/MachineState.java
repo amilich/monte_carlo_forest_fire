@@ -1,5 +1,6 @@
 package org.ggp.base.util.statemachine;
 
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,9 +17,19 @@ public class MachineState {
      * many cases this will do exactly what we want.
      */
     private final Set<GdlSentence> contents;
-    public MachineState(Set<GdlSentence> contents)
-    {
+    public MachineState(Set<GdlSentence> contents) {
         this.contents = contents;
+    }
+
+    public BitSet props;
+    public MachineState(Set<GdlSentence> contents, BitSet bases) {
+        this.contents = contents;
+        this.props = new BitSet(props.size());
+        this.props.or(bases);
+    }
+
+    public void setBasePropositions() {
+
     }
 
     /**
