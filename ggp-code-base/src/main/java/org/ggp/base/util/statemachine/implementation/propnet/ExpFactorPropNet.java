@@ -37,7 +37,7 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBuilder;
 
-public class ExpPropNet extends StateMachine {
+public class ExpFactorPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
@@ -52,16 +52,11 @@ public class ExpPropNet extends StateMachine {
 	MachineState init;
 	BitSet baseBits; // = new BitSet();
 	BitSet inputBits;
-	BitSet legalBits;
 	BitSet nextBaseBits;
-
-	// BitSet propBits;
 	BitSet compBits;
 
 	public Proposition[] allBaseArr = null;
 	public Proposition[] allInputArr = null;
-	public Proposition[] allLegalArr = null;
-	// Map<Integer, Proposition> baseBitMap = new HashMap<Integer, Proposition>();
 	public int allLongs[] = null;
 	public Component[] allCompArr = null;
 
@@ -112,25 +107,65 @@ public class ExpPropNet extends StateMachine {
 	    return out;
 	}
 
+
+	public Set<Component> dfs(Proposition p) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+		}
+		return visited;
+	}
+
+	public void doOnePlayerOptimization() {
+		Set<Component> important = new HashSet<Component>();
+		important.addAll(dfs(propNet.getTerminalProposition()));
+		for (Proposition p : propNet.getAllGoalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Proposition p : propNet.getAllLegalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Proposition p : propNet.getAllInputProps()) {
+			important.addAll(dfs(p));
+		}
+		Set<Component> toRemove = new HashSet<Component>();
+		for (Component c : propNet.getComponents()) {
+			if (!important.contains(c)) {
+				toRemove.add(c);
+			}
+		}
+		for (Component c : toRemove) {
+			propNet.removeComponent(c);
+		}
+		// System.out.println("Removed " + toRemove.size() + " components.");
+		// propNet.renderToFile("optimized.dot");
+	}
+
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
 		description = sanitizeDistinct(description);
+		System.out.println("Sanitized.");
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
+			System.out.println("propNet built.");
+			// propNet.renderToFile("start.dot");
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
+			if (roles.length == 1 && propNet.getComponents().size() < 10000) { // TODO
+				System.out.println("Trying to optimize");
+				doOnePlayerOptimization();
+			}
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
-			allLegalArr = propNet.getAllLegalPropositions().toArray(
-					new Proposition[propNet.getAllLegalPropositions().size()]);
 			for (int ii = 0; ii < allBaseArr.length; ii ++) {
 				allBaseArr[ii].bitIndex = ii;
 				allBaseArr[ii].isBase = true;
-			}
-			for (int ii = 0; ii < allLegalArr.length; ii ++) {
-				allLegalArr[ii].bitIndex = ii;
-				allLegalArr[ii].isLegal = true;
 			}
 			for (int ii = 0; ii < allInputArr.length; ii ++) {
 				allInputArr[ii].bitIndex = ii;
@@ -139,7 +174,6 @@ public class ExpPropNet extends StateMachine {
 			baseBits = new BitSet(allBaseArr.length);
 			nextBaseBits = new BitSet(allBaseArr.length);
 			inputBits = new BitSet(allInputArr.length);
-			legalBits = new BitSet(allLegalArr.length);
 
 			for (Component c : propNet.getComponents()) {
 				c.crystalize();
@@ -160,7 +194,7 @@ public class ExpPropNet extends StateMachine {
 					// empty - no counter needed
 				}
 			}
-
+			System.out.println("Going to init work.");
 			init = doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -206,7 +240,8 @@ public class ExpPropNet extends StateMachine {
 	private MachineState doInitWork() {
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				initforwardpropmark(c, c.getValue());
+				Set<Component> visited = new HashSet<Component>();
+				initforwardpropmark(c, c.getValue(), visited);
 			}
 		}
 		Set<Proposition> bases = propNet.getAllBasePropositions();
@@ -214,12 +249,21 @@ public class ExpPropNet extends StateMachine {
 		/* for (int ii = 0; ii < ordering.size(); ii ++) {
 			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
 		}*/
+		System.out.println("There are " + bases.size() + " base propositions.");
 		for (Proposition base : bases) {
-			initforwardpropmark(base, false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(base, false, visited);
 		}
+		System.out.println("Done with bases");
+		/*for (Component c : propNet.getComponents()) {
+			if (c instanceof Not) {
+				initforwardpropmark(c, !c.input_arr[0].curVal);
+			}
+		}*/
 
 		if (propNet.getInitProposition() != null) {
-			initforwardpropmark(propNet.getInitProposition(), true);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), true, visited);
 		}
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
@@ -233,14 +277,9 @@ public class ExpPropNet extends StateMachine {
 			}
 		}
 
-		for (Proposition p : propNet.getAllLegalPropositions()) {
-			if (p.curVal) {
-				legalBits.set(p.bitIndex);
-			}
-		}
-
 		if (propNet.getInitProposition() != null) {
-			initforwardpropmark(propNet.getInitProposition(), false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), false, visited);
 		}
 
 		for (Component c : propNet.getComponents()) {
@@ -332,7 +371,9 @@ public class ExpPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void initforwardpropmark(Component c, boolean newValue) {
+	public void initforwardpropmark(Component c, boolean newValue, Set<Component> visited) {
+		if (visited.contains(c)) return;
+		visited.add(c);
 		c.curVal = newValue;
 
 		if (c.isBase) {
@@ -348,9 +389,11 @@ public class ExpPropNet extends StateMachine {
 		}
 		for (int jj = 0; jj < c.output_arr.length; jj ++) {
 			Component out = c.output_arr[jj];
-			if (out instanceof And) {
+			if (out instanceof Transition || out instanceof Proposition) {
+				initforwardpropmark(out, newValue, visited);
+			} else if (out instanceof And) {
 				if (!newValue) {
-					initforwardpropmark(out, false);
+					initforwardpropmark(out, false, visited);
 				} else {
 					boolean result = true;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
@@ -359,11 +402,11 @@ public class ExpPropNet extends StateMachine {
 							break;
 						}
 					}
-					initforwardpropmark(out, result);
+					initforwardpropmark(out, result, visited);
 				}
 			} else if (out instanceof Or) {
 				if (newValue) {
-					initforwardpropmark(out, true);
+					initforwardpropmark(out, true, visited);
 				} else {
 					boolean result = false;
 					for (int ii = 0; ii < out.inputs.size(); ii ++) {
@@ -372,12 +415,10 @@ public class ExpPropNet extends StateMachine {
 							break;
 						}
 					}
-					initforwardpropmark(out, result);
+					initforwardpropmark(out, result, visited);
 				}
 			} else if (out instanceof Not) {
-				initforwardpropmark(out, !newValue);
-			} else {
-				initforwardpropmark(out, newValue);
+				initforwardpropmark(out, !newValue, visited);
 			}
 		}
 	}
@@ -387,15 +428,12 @@ public class ExpPropNet extends StateMachine {
 			return; // stop forward propagating
 		}
 		c.curVal = newValue;
-
 		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
+			baseBits.flip(c.bitIndex);
 		}
 
 		if (c instanceof Transition) {
-			if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-			else nextBaseBits.clear(c.output_arr[0].bitIndex);
+			nextBaseBits.flip(c.output_arr[0].bitIndex);
 			return;
 		}
 		for (int jj = 0; jj < c.outputs.size(); jj ++) {
@@ -426,7 +464,8 @@ public class ExpPropNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet nowTrue = new BitSet(allInputArr.length);
 		for (GdlSentence s : moveGdl) {
-			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
+			Proposition p = propNet.getInputPropositions().get(s);
+			if (p != null) nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {
