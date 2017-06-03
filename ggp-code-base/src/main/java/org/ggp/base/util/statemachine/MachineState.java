@@ -16,7 +16,7 @@ public class MachineState {
      * want to do more advanced things can subclass this implementation, but for
      * many cases this will do exactly what we want.
      */
-    private final Set<GdlSentence> contents;
+    private Set<GdlSentence> contents;
     public MachineState(Set<GdlSentence> contents) {
         this.contents = contents;
     }
@@ -24,12 +24,13 @@ public class MachineState {
     public BitSet props;
     public MachineState(Set<GdlSentence> contents, BitSet bases) {
         this.contents = contents;
-        this.props = new BitSet(props.size());
+        this.props = new BitSet(bases.size());
         this.props.or(bases);
     }
 
-    public void setBasePropositions() {
-
+    public MachineState(BitSet bases) {
+        this.props = new BitSet(bases.size());
+        this.props.or(bases);
     }
 
     /**
@@ -37,8 +38,7 @@ public class MachineState {
      * of the game being played. Two given states with identical GDL sentences
      * should be identical states of the game.
      */
-    public Set<GdlSentence> getContents()
-    {
+    public Set<GdlSentence> getContents(){
         return contents;
     }
 

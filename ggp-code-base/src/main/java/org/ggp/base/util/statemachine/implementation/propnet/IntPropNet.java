@@ -290,6 +290,8 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 
+		BitSet initBits = (BitSet) nextBaseBits.clone();
+
 		if (propNet.getInitProposition() != null) {
 			Set<Component> visited = new HashSet<Component>();
 			initforwardpropmark(propNet.getInitProposition(), false, visited, componentIds);
@@ -314,7 +316,7 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 
-		return new MachineState(sentences);
+		return new MachineState(initBits);
 	}
 
 	Set<Proposition> trueLegals = new HashSet<Proposition>();
@@ -380,11 +382,11 @@ public class IntPropNet extends StateMachine {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
 		Set<GdlSentence> newState = new HashSet<GdlSentence>();
-		for (int ii = nextBaseBits.nextSetBit(0); ii != -1; ii = nextBaseBits.nextSetBit(ii + 1)) {
+		/*for (int ii = nextBaseBits.nextSetBit(0); ii != -1; ii = nextBaseBits.nextSetBit(ii + 1)) {
 			Proposition c = (Proposition) origComps[ii];
 			newState.add(c.getName());
-		}
-		MachineState m = new MachineState(newState);
+		}*/
+		MachineState m = new MachineState(nextBaseBits);
 		return m;
 	}
 
@@ -502,12 +504,7 @@ public class IntPropNet extends StateMachine {
 
 	// TODO: need to handle multiple threads
 	public void updatePropnetState(MachineState state) {
-		Set<GdlSentence> stateGdl = state.getContents();
-		BitSet newBits = new BitSet(compInfo.length);
-		for (GdlSentence s : stateGdl) {
-			newBits.set(componentIds.get(propNet.getBasePropositions().get(s)));
-		}
-
+		BitSet newBits = (BitSet) state.props.clone();
 		newBits.xor(compBits);
 		newBits.and(isBase);
 
