@@ -107,6 +107,9 @@ public class IntPropNet extends StateMachine {
     private void convertAndRender(String filename) {
     	for (Component c : propNet.getComponents()) {
     		c.curVal = val(componentIds.get(c), 0);
+    		if (c.toString().contains("open")) {
+    			System.out.println("ID of open = " + componentIds.get(c));
+    		}
     	}
     	propNet.renderToFile(filename + ++num + ".dot");
     }
@@ -167,13 +170,12 @@ public class IntPropNet extends StateMachine {
 					initCompState[i] = FALSE_INT;
 				} else if (cur instanceof Not) {
 					curInfo |= NOT_TYPE_MASK;
+					initCompState[i] = -numInputs;
 				} else if (cur instanceof Transition) {
 					curInfo |= TRANSITION_TYPE_MASK;
 				} else if (cur instanceof Constant) {
 					curInfo |= CONSTANT_TYPE_MASK;
 					initCompState[i] = ((Constant)cur).getValue() ? TRUE_INT : FALSE_INT;
-				} else {
-					assert false; // something is fucked up
 				}
 
 				// Component inputs
@@ -198,9 +200,7 @@ public class IntPropNet extends StateMachine {
 					compOutputsTemp.add(componentIds.get(output));
 					curOffset++;
 				}
-
-				System.out.println("After component " + i + ", compInfo=" + curInfo);
-
+				// System.out.println("After component " + i + ", compInfo=" + curInfo);
 				cur.crystalize(); // necessary for doInitWork and initforwardpropmark
 			}
 
@@ -317,6 +317,7 @@ public class IntPropNet extends StateMachine {
 				}
 			}
 		}
+		// initCompState[this.terminalCompId] = FALSE_INT;
 
 		return new MachineState(sentences);
 	}
@@ -465,25 +466,30 @@ public class IntPropNet extends StateMachine {
 			return;
 		}
 
-		if (newValue) {
-			// increment each output's counter
-			for (int i = offset; i < offset + numOutputs; i++) {
-				boolean orig = val(compOutputs[i], thread);
-				compState[thread][compOutputs[i]]++; // TODO: is this right for not gates and propositions??
-				if (val(compOutputs[i], thread) != orig) {
-					forwardpropmarkRec(compOutputs[i], thread);
-				}
-			}
-		} else {
-			// decrement each output's counter
-			for (int i = offset; i < offset + numOutputs; i++) {
-				boolean orig = val(compOutputs[i], thread);
-				compState[thread][compOutputs[i]]--; // TODO: is this right for not gates and propositions??
-				if (val(compOutputs[i], thread) != orig) {
-					forwardpropmarkRec(compOutputs[i], thread);
-				}
+		for (int i = offset; i < offset + numOutputs; i++) {
+			int comp = compOutputs[i];
+			boolean orig = val(comp, thread);
+			compState[thread][comp] += newValue ? 1 : -1;
+			if (val(compOutputs[i], thread) != orig) {
+				forwardpropmarkRec(comp, thread);
 			}
 		}
+
+//		if (newValue) {
+//			// increment each output's counter
+//			for (int i = offset; i < offset + numOutputs; i++) {
+//				int comp = compOutputs[i];
+//				boolean orig = val(comp, thread);
+//				compState[thread][comp] ++; // TODO: is this right for not gates and propositions??
+//				boolean newVal = val(comp, thread);
+//				if (newVal != orig) {
+//					forwardpropmarkRec(comp, thread);
+//				}
+//			}
+//		} else {
+//			// decrement each output's counter
+//
+//		}
 	}
 
 	/**

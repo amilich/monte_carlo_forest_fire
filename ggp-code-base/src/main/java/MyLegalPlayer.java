@@ -62,6 +62,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		moveNum ++;
 		StateMachine machine = getStateMachine();
+		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
 		MachineState state = getCurrentState();
 		Role role = getRole();
 		System.out.println("HI");
@@ -71,6 +72,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		double total = 0;
 		int count = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
+//		while (count < 5000) {
 			MachineState m = customdc(state);
 			total += machine.getGoal(m, role);
 			count ++;
