@@ -27,7 +27,10 @@ public abstract class StateMachine
 	// ============================================
     // These methods (through findterminalp) layer over other methods
 	// in order to align with notation in the notes for Stanford's CS227B course
-
+	public MachineState internalDC(MachineState start)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		return null;
+	}
 
 	/**
 	 * Returns the list of roles for the game.

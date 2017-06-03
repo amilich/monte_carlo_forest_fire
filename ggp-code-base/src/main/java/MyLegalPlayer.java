@@ -73,7 +73,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 		int count = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
 //		while (count < 5000) {
-			MachineState m = customdc(state);
+			MachineState m = machine.internalDC(state); //customdc(state);
 			total += machine.getGoal(m, role);
 			count ++;
 		}

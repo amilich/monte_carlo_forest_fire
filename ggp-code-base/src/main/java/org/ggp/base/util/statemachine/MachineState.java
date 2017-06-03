@@ -49,8 +49,8 @@ public class MachineState {
 
     /* Utility methods */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
+    	if (contents == null) return props.hashCode();
         return getContents().hashCode();
     }
 
@@ -70,7 +70,13 @@ public class MachineState {
         if ((o != null) && (o instanceof MachineState))
         {
             MachineState state = (MachineState) o;
-            return state.getContents().equals(getContents());
+            return state.props.equals(this.props);
+//            if (contents == null) {
+//            	return state.props.equals(this.props);
+//            } else {
+//            	return state.getContents().equals(getContents());
+//            }
+            // return state.getContents().equals(getContents());
         }
 
         return false;

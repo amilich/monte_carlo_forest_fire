@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -257,6 +258,8 @@ public class IntPropNet extends StateMachine {
 		return 0;
 	}
 
+
+
 	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
@@ -340,7 +343,7 @@ public class IntPropNet extends StateMachine {
 		List<Move> allMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
-			allMoves.add(new Move(p.getName().get(1)));
+			allMoves.add(new Move(p.getName().get(1), componentIds.get(propNet.getLegalInputMap().get(p))));
 		}
 		return allMoves;
 	}
@@ -360,10 +363,11 @@ public class IntPropNet extends StateMachine {
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
-			if (val(componentIds.get(p), 0)) {
+			int id = componentIds.get(p);
+			if (val(id, 0)) {
 				Move m = propToMove.get(p);
 				if (m == null) {
-					m = new Move(p.getName().get(1));
+					m = new Move(p.getName().get(1), componentIds.get(propNet.getLegalInputMap().get(p)));
 					propToMove.put(p, m);
 				}
 				legalMoves.add(m);
@@ -381,11 +385,6 @@ public class IntPropNet extends StateMachine {
 			throws TransitionDefinitionException {
 		updatePropnetState(state);
 		updatePropnetMoves(moves);
-		Set<GdlSentence> newState = new HashSet<GdlSentence>();
-		/*for (int ii = nextBaseBits.nextSetBit(0); ii != -1; ii = nextBaseBits.nextSetBit(ii + 1)) {
-			Proposition c = (Proposition) origComps[ii];
-			newState.add(c.getName());
-		}*/
 		MachineState m = new MachineState(nextBaseBits);
 		return m;
 	}
@@ -454,12 +453,10 @@ public class IntPropNet extends StateMachine {
 		long type = compInfo[compId] & TYPE_MASK;
 		boolean newValue = val(compId, thread);
 		if (type == BASE_TYPE_MASK) {
-			if (newValue) compBits.set(compId);
-			else compBits.clear(compId);
+			compBits.flip(compId);
 		} else if (type == TRANSITION_TYPE_MASK) {
 			if (numOutputs > 0) {
-				if (newValue) nextBaseBits.set(compOutputs[offset]);
-				else nextBaseBits.clear(compOutputs[offset]);
+				nextBaseBits.flip(compOutputs[offset]);
 			}
 			return;
 		}
@@ -472,22 +469,6 @@ public class IntPropNet extends StateMachine {
 				forwardpropmarkRec(comp, thread);
 			}
 		}
-
-//		if (newValue) {
-//			// increment each output's counter
-//			for (int i = offset; i < offset + numOutputs; i++) {
-//				int comp = compOutputs[i];
-//				boolean orig = val(comp, thread);
-//				compState[thread][comp] ++; // TODO: is this right for not gates and propositions??
-//				boolean newVal = val(comp, thread);
-//				if (newVal != orig) {
-//					forwardpropmarkRec(comp, thread);
-//				}
-//			}
-//		} else {
-//			// decrement each output's counter
-//
-//		}
 	}
 
 	/**
@@ -513,6 +494,42 @@ public class IntPropNet extends StateMachine {
 		}
 	}
 
+	@Override
+	public MachineState internalDC(MachineState start)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		Random r = new Random();
+		while (!isTerminal(start)) {
+			List<List<Move>> jmoves = getLegalJointMoves(start);
+			List<Move> selected = jmoves.get(r.nextInt(jmoves.size()));
+			start = internalNextState(start, selected);
+		}
+		return start;
+	}
+
+	public MachineState internalNextState(MachineState state, List<Move> moves)
+			throws TransitionDefinitionException {
+		updatePropnetState(state);
+		internalMoveUpdate(moves);
+		MachineState m = new MachineState(nextBaseBits);
+		return m;
+	}
+
+	public void internalMoveUpdate(List<Move> moves) {
+		BitSet newBits = new BitSet(compInfo.length);
+		for (Move m : moves) {
+			newBits.set(m.compId);
+		}
+		newBits.xor(compBits);
+		newBits.and(isInput);
+
+		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
+			forwardpropmark(ii, !val(ii, 0), 0);
+		}
+		for (int ii = isInput.nextSetBit(0); ii != -1; ii = isInput.nextSetBit(ii + 1)) {
+			if (newBits.get(ii)) compBits.flip(ii);
+		}
+	}
+
 	// TODO: need to handle multiple threads
 	public void updatePropnetMoves(List<Move> moves) {
 		Set<GdlSentence> moveGdl = toDoes(moves);
@@ -520,7 +537,6 @@ public class IntPropNet extends StateMachine {
 		for (GdlSentence s : moveGdl) {
 			newBits.set(componentIds.get(propNet.getInputPropositions().get(s)));
 		}
-
 		newBits.xor(compBits);
 		newBits.and(isInput);
 
@@ -570,14 +586,5 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 		return doeses;
-	}
-
-	/**
-	 * Takes in a Legal Proposition and returns the appropriate corresponding Move
-	 * @param p
-	 * @return a PropNetMove
-	 */
-	public static Move getMoveFromProposition(Proposition p) {
-		return new Move(p.getName().get(1));
 	}
 }
