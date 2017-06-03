@@ -4,14 +4,22 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.gdl.grammar.GdlDistinct;
+import org.ggp.base.util.gdl.grammar.GdlFunction;
+import org.ggp.base.util.gdl.grammar.GdlLiteral;
+import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlRelation;
+import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
+import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.propnet.architecture.Component;
 import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.propnet.architecture.components.And;
@@ -115,9 +123,14 @@ public class IntPropNet extends StateMachine {
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
+		description = sanitizeDistinct(description);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
+			if (roles.length == 1 && propNet.getComponents().size() < 10000) { // TODO
+				System.out.println("Trying to optimize");
+				doOnePlayerOptimization();
+			}
 
 			// initialize all component states to 0
 			int nComps = propNet.getComponents().size();
@@ -301,7 +314,6 @@ public class IntPropNet extends StateMachine {
 		}
 
 		// Now, copy the object propnet state into our representation
-
 		for (Component c : propNet.getComponents()) {
 			if (c.equals(propNet.getInitProposition())) continue;
 			if (c instanceof And || c instanceof Or || c instanceof Not) {
@@ -355,11 +367,7 @@ public class IntPropNet extends StateMachine {
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
-
-//		convertAndRender("before");
 		updatePropnetState(state);
-//		convertAndRender("after");
-
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
@@ -494,16 +502,31 @@ public class IntPropNet extends StateMachine {
 		}
 	}
 
+	Random r = new Random();
 	@Override
 	public MachineState internalDC(MachineState start)
 			throws MoveDefinitionException, TransitionDefinitionException {
-		Random r = new Random();
 		while (!isTerminal(start)) {
 			List<List<Move>> jmoves = getLegalJointMoves(start);
 			List<Move> selected = jmoves.get(r.nextInt(jmoves.size()));
 			start = internalNextState(start, selected);
 		}
 		return start;
+	}
+
+	// TODO make internal legal joint moves
+	public List<Move> internalLegalMoves(MachineState state, Role role)
+			throws MoveDefinitionException {
+		updatePropnetState(state);
+		List<Move> legalMoves = new ArrayList<Move>();
+		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
+		for (Proposition p : legals) {
+			int id = componentIds.get(p);
+			if (val(id, 0)) {
+				legalMoves.add(new Move(id));
+			}
+		}
+		return legalMoves;
 	}
 
 	public MachineState internalNextState(MachineState state, List<Move> moves)
@@ -555,6 +578,93 @@ public class IntPropNet extends StateMachine {
 	}
 
 	/* Helper methods */
+
+
+	private void sanitizeDistinctHelper(Gdl gdl, List<Gdl> in, List<Gdl> out) {
+	    if (!(gdl instanceof GdlRule)) {
+	        out.add(gdl);
+	        return;
+	    }
+	    GdlRule rule = (GdlRule) gdl;
+	    for (GdlLiteral lit : rule.getBody()) {
+	        if (lit instanceof GdlDistinct) {
+	            GdlDistinct d = (GdlDistinct) lit;
+	            GdlTerm a = d.getArg1();
+	            GdlTerm b = d.getArg2();
+	            if (!(a instanceof GdlFunction) && !(b instanceof GdlFunction)) continue;
+	            if (!(a instanceof GdlFunction && b instanceof GdlFunction)) return;
+	            GdlSentence af = ((GdlFunction) a).toSentence();
+	            GdlSentence bf = ((GdlFunction) b).toSentence();
+	            if (!af.getName().equals(bf.getName())) return;
+	            if (af.arity() != bf.arity()) return;
+	            for (int i = 0; i < af.arity(); i++) {
+	                List<GdlLiteral> ruleBody = new ArrayList<>();
+	                for (GdlLiteral newLit : rule.getBody()) {
+	                    if (newLit != lit) ruleBody.add(newLit);
+	                    else ruleBody.add(GdlPool.getDistinct(af.get(i), bf.get(i)));
+	                }
+	                GdlRule newRule = GdlPool.getRule(rule.getHead(), ruleBody);
+	                // Log.println("new rule: " + newRule);
+	                in.add(newRule);
+	            }
+	            return;
+	        }
+	    }
+	    for (GdlLiteral lit : rule.getBody()) {
+	        if (lit instanceof GdlDistinct) {
+	            System.out.println("distinct rule added: " + rule);
+	            break;
+	        }
+	    }
+	    out.add(rule);
+	}
+
+	private List<Gdl> sanitizeDistinct(List<Gdl> description) {
+	    List<Gdl> out = new ArrayList<>();
+	    for (int i = 0; i < description.size(); i++) {
+	        sanitizeDistinctHelper(description.get(i), description, out);
+	    }
+	    return out;
+	}
+
+
+	public Set<Component> dfs(Proposition p) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+		}
+		return visited;
+	}
+
+	public void doOnePlayerOptimization() {
+		Set<Component> important = new HashSet<Component>();
+		important.addAll(dfs(propNet.getTerminalProposition()));
+		for (Proposition p : propNet.getAllGoalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Proposition p : propNet.getAllLegalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Proposition p : propNet.getAllInputProps()) {
+			important.addAll(dfs(p));
+		}
+		Set<Component> toRemove = new HashSet<Component>();
+		for (Component c : propNet.getComponents()) {
+			if (!important.contains(c)) {
+				toRemove.add(c);
+			}
+		}
+		for (Component c : toRemove) {
+			propNet.removeComponent(c);
+		}
+		// System.out.println("Removed " + toRemove.size() + " components.");
+		// propNet.renderToFile("optimized.dot");
+	}
 
 	/**
 	 * The Input propositions are indexed by (does ?player ?action).

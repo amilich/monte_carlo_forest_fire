@@ -12,7 +12,6 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
-import org.ggp.base.util.statemachine.implementation.propnet.ExpFactorPropNet;
 
 public class MyLegalPlayer extends StateMachineGamer {
 
@@ -20,11 +19,11 @@ public class MyLegalPlayer extends StateMachineGamer {
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
 		// return new CachedStateMachine(new ProverStateMachine());
-//		return new BasicFactorPropNet();
+		//		return new BasicFactorPropNet();
 		// return new BasicFactorPropNet();
-//		return new ExpFactorPropNet();
+		//		return new ExpFactorPropNet();
 		// return new BitSetPropNet();
-//		return new BitSetNet();
+		//		return new BitSetNet();
 		return new IntPropNet();
 	}
 
@@ -43,10 +42,10 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// machineP = (SamplePropNetStateMachine) getStateMachine();
 		// machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
 
-//		StateMachine m = new CachedStateMachine(new ProverStateMachine());
-//		m.initialize(getMatch().getGame().getRules());
-//		System.out.println("INIT STATE: " + m.getInitialState());
-//		System.out.println("INIT STATE: " + getStateMachine().getInitialState());
+		//		StateMachine m = new CachedStateMachine(new ProverStateMachine());
+		//		m.initialize(getMatch().getGame().getRules());
+		//		System.out.println("INIT STATE: " + m.getInitialState());
+		//		System.out.println("INIT STATE: " + getStateMachine().getInitialState());
 	}
 
 	int moveNum = 0;
@@ -80,13 +79,14 @@ public class MyLegalPlayer extends StateMachineGamer {
 		double total = 0;
 		int count = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
-//		while (count < 5000) {
-			MachineState m = machine.internalDC(state); 
+			MachineState m = machine.internalDC(state);
+			total += machine.getGoal(m, getRole());
+			count ++;
+		}
 		total /= count;
 		System.out.println("AVG: " + total);
 		System.out.println("COUNT: " + count);
 		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
-    }
 		// System.out.println(machine.getNextStates(getCurrentState()));
 		// System.out.println(machine.getLegalJointMoves(getCurrentState()));
 		// System.out.println(machine.getLegalMoves(getCurrentState(), getRole()));
