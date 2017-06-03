@@ -69,13 +69,15 @@ public class MyLegalPlayer extends StateMachineGamer {
 		System.out.println(moves);
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
-		for (int ii = 0; ii < 0; ii ++) {
+		int count = 0;
+		while (!MyHeuristics.checkTime(timeout)) {
 			MachineState m = customdc(state);
 			total += machine.getGoal(m, role);
-			// System.out.println("DC: " + m);
+			count ++;
 		}
-		total /= 10000;
+		total /= count;
 		System.out.println("AVG: " + total);
+		System.out.println("COUNT: " + count);
 		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
 		// System.out.println(machine.getNextStates(getCurrentState()));
 		System.out.println(machine.getLegalJointMoves(getCurrentState()));

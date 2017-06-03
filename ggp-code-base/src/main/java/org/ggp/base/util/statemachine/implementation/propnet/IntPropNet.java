@@ -355,9 +355,10 @@ public class IntPropNet extends StateMachine {
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
 
-		convertAndRender("ttt");
-
+//		convertAndRender("before");
 		updatePropnetState(state);
+//		convertAndRender("after");
+
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
@@ -461,6 +462,7 @@ public class IntPropNet extends StateMachine {
 				if (newValue) nextBaseBits.set(compOutputs[offset]);
 				else nextBaseBits.clear(compOutputs[offset]);
 			}
+			return;
 		}
 
 		if (newValue) {
