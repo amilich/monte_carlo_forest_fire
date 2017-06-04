@@ -356,11 +356,18 @@ public class IntPropNet extends StateMachine {
 		// Now, copy the object propnet state into our representation
 		for (Component c : propNet.getComponents()) {
 			if (c.equals(propNet.getInitProposition())) continue;
-			if (c instanceof And || c instanceof Or || c instanceof Not) {
+			if (c instanceof And || c instanceof Or) {
 				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (c.input_arr[ii].curVal) {
+					if (c.input_arr[ii].curVal || (!c.input_arr[ii].curVal && (c.input_arr[ii] instanceof Not))) {
 						initCompState[componentIds.get(c)]++;
 					}
+				}
+			} else if (c instanceof Not) {
+				boolean inputVal = c.input_arr[0].curVal;
+				if (!inputVal) {
+					initCompState[componentIds.get(c)] = TRUE_INT;
+				} else {
+					initCompState[componentIds.get(c)] = FALSE_INT;
 				}
 			} else {
 				if (c.curVal) {
