@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -17,6 +18,8 @@ import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 
 public class MyLegalPlayer extends StateMachineGamer {
 
+
+	// IntPropNet i = new IntPropNet();
 	@Override
 	public StateMachine getInitialStateMachine() {
 		//return new SamplePropNetStateMachine(); //new CachedStateMachine(new ProverStateMachine());
@@ -27,8 +30,8 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// return new BitSetPropNet();
 		//		return new BitSetNet();
 		return new IntPropNet();
+		// return new ProverStateMachine();
 	}
-
 	// SamplePropNetStateMachine machineP = null;
 
 
@@ -41,6 +44,10 @@ public class MyLegalPlayer extends StateMachineGamer {
 		System.out.println(getMatch().getGame().getStylesheet());
 		System.out.println(getMatch().getGame().getRulesheet());
 		moveNum = 0;
+
+		// StateMachine m = new ProverStateMachine();
+		// m.initialize(getMatch().getGame().getRules(), getRole());
+		// StateMachineVerifier.checkMachineConsistency(m, getStateMachine(), 5000);
 		// machineP = (SamplePropNetStateMachine) getStateMachine();
 		// machineP.getPropnet().renderToFile("propnetfile0" + ".dot");
 
@@ -73,7 +80,7 @@ public class MyLegalPlayer extends StateMachineGamer {
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		StateMachine machine = getStateMachine();
-		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
+		// System.out.println("IT: " + machine.isTerminal(getCurrentState()));
 		MachineState state = getCurrentState();
 		Role role = getRole();
 		System.out.println("HI");
@@ -82,11 +89,11 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
 		int count = 0;
-		while (!MyHeuristics.checkTime(timeout) || count < 10) {
-			MachineState m = machine.internalDC(state, 1);
-			total += machine.getGoal(m, getRole());
-			count ++;
-		}
+//		while (!MyHeuristics.checkTime(timeout) || count < 10) {
+//			MachineState m = machine.internalDC(state, 1);
+//			total += machine.getGoal(m, getRole());
+//			count ++;
+//		}
 		/* int numT = 3;
 		int numD = 3;
 		double avgScore = 0;
@@ -111,8 +118,32 @@ public class MyLegalPlayer extends StateMachineGamer {
 		System.out.println("AVG: " + total);
 		System.out.println("COUNT: " + count);
 		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
+		if (moveNum == 3) {
+			System.out.println();
+		}
+		for (Move m : moves) {
+			if (m.toString().contains(theMoves[moveNum])) {
+				System.out.println(m);
+				moveNum ++;
+				machine.convertAndRender("machinestate");
+				List<Move> temp = new ArrayList<Move>();
+				temp.add(m);
+				if (m.toString().contains("a") && moveNum > 1) {
+					System.out.println();
+				}
+				MachineState next = machine.getNextState(getCurrentState(), temp);
+				machine.convertAndRender("machinestate");
+//				System.out.println("Curr goal = " + machine.getGoal(getCurrentState(), getRole()) + "; next goal = "
+//						+ machine.getGoal(next, getRole()));
+				System.out.println(getCurrentState());
+				System.out.println(next);
+				return m;
+			}
+		}
+
 		return moves.get(0);
 	}
+	public String theMoves[] = { "a 13", "b 13", "c 13", "a 13", "b 13", "a 13" };
 
 	@Override
 	public void stateMachineStop() {
