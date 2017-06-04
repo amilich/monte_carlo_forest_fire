@@ -529,6 +529,7 @@ public class IntPropNet extends StateMachine {
 		for (Role role : getRoles()) {
 			List<Move> ms = getLegalMoves(state, role, tid);
 			legals.add(ms.get(ThreadLocalRandom.current().nextInt(0, ms.size())));
+//			legals.add(ms.get(r.nextInt(ms.size())));
 		}
 		// List<List<Move>> crossProduct = new ArrayList<List<Move>>();
 		return legals;
