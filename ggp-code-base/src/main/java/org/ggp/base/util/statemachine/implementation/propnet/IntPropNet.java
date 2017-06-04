@@ -122,6 +122,10 @@ public class IntPropNet extends StateMachine {
 				Not a = (Not) c;
 				a.num = compState[0][componentIds.get(c)];
 				a.bitIndex = componentIds.get(c);
+			} else if (c instanceof Or) {
+				Or a = (Or) c;
+				a.num = compState[0][componentIds.get(c)];
+				a.bitIndex = componentIds.get(c);
 			}
 		}
 		propNet.renderToFile(filename + ++num + ".dot");
@@ -365,9 +369,9 @@ public class IntPropNet extends StateMachine {
 			} else if (c instanceof Not) {
 				boolean inputVal = c.input_arr[0].curVal;
 				if (!inputVal) {
-					initCompState[componentIds.get(c)] = TRUE_INT;
+					initCompState[componentIds.get(c)] = -1;
 				} else {
-					initCompState[componentIds.get(c)] = FALSE_INT;
+					initCompState[componentIds.get(c)] = 0;
 				}
 			} else {
 				if (c.curVal) {
@@ -378,7 +382,12 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 
-		return new MachineState(initBits);
+		Set<GdlSentence> initSet = new HashSet<GdlSentence>();
+		for (int ii = initBits.nextSetBit(0); ii != -1; ii = initBits.nextSetBit(ii + 1)) {
+			Proposition p = (Proposition) origComps[ii];
+			initSet.add(p.getName());
+		}
+		return new MachineState(initSet, initBits);
 	}
 
 	Set<Proposition> trueLegals = new HashSet<Proposition>();

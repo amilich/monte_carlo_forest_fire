@@ -26,9 +26,15 @@ public final class Or extends Component
 	/**
 	 * @see org.ggp.base.util.propnet.architecture.Component#toString()
 	 */
+
+	public int num = 0;
 	@Override
 	public String toString()
 	{
-		return toDot("ellipse", "grey", "OR");
+		if (num < 0) {
+			return toDot("ellipse", "red", "OR=" + num +".id="+bitIndex);
+		} else {
+			return toDot("ellipse", "grey", "OR=" + num +".id="+bitIndex);
+		}
 	}
 }

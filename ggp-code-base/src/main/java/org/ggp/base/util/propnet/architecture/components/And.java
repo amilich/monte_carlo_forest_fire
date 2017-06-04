@@ -30,7 +30,11 @@ public final class And extends Component {
 	@Override
 	public String toString()
 	{
-		return toDot("invhouse", "grey", "AND=" + num +".id="+bitIndex);
+		if (num < 0) {
+			return toDot("invhouse", "red", "AND=" + num +".id="+bitIndex);
+		} else {
+			return toDot("invhouse", "grey", "AND=" + num +".id="+bitIndex);
+		}
 	}
 
 }
