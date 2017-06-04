@@ -107,6 +107,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 		int numLoops = 0;
 		ArrayList<ThreadedGraphNode> path = new ArrayList<ThreadedGraphNode>();
+		int temp_max = 10; //
 		while (!MyHeuristics.checkTime(timeout)) {
 			path.clear();
 			numLoops ++;
@@ -117,6 +118,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
+			// if (numLoops > temp_max) break; // TODO
 			if (numLoops > MAX_ITERATIONS) break; // TODO
 		}
 		System.out.println(numLoops + ", " + moveNum);

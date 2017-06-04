@@ -43,6 +43,67 @@ public class BitSetPropNet extends StateMachine {
 		return propNet;
 	}
 
+	public Set<Component> dfs(Component p) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+		}
+		return visited;
+	}
+
+	Map<Proposition, Proposition> inputLegalMap = new HashMap<Proposition, Proposition>();
+	public void doOnePlayerOptimization() {
+		for (Proposition p : propNet.getLegalInputMap().keySet()) {
+			inputLegalMap.put(propNet.getLegalInputMap().get(p), p);
+		}
+
+		Set<Component> important = new HashSet<Component>();
+		Set<Component> toRemove = new HashSet<Component>();
+		important.addAll(dfs(propNet.getTerminalProposition()));
+		important.addAll(dfs(propNet.getInitProposition()));
+		for (Proposition p : propNet.getAllGoalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Proposition p : propNet.getAllLegalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Component c : propNet.getComponents()) {
+			if (!important.contains(c)) {
+				toRemove.add(c);
+			}
+		}
+		propNet.renderToFile("opBefore.dot");
+		System.out.println("Removing " + toRemove.size() + " components - " + toRemove);
+		for (Component c : toRemove) {
+			propNet.removeComponent(c);
+			if (inputLegalMap.containsKey(c)) {
+				propNet.removeComponent(inputLegalMap.get(c));
+			}
+		}
+		propNet.renderToFile("opDone.dot");
+//		for (Component c : propNet.getComponents()) {
+//			Proposition input = (Proposition) propNet.getLegalInputMap().get(c);
+//			if (input == null) {
+//				propNet.removeComponent(c);
+//			}
+//		}
+		// System.out.println("Removed " + toRemove.size() + " components.");
+		// propNet.renderToFile("optimized.dot");
+	}
+
+
+	int num = 0;
+	@Override
+	public void convertAndRender(String string) {
+		// TODO Auto-generated method stub
+		propNet.renderToFile(string + "bs" + ++num + ".dot");
+	}
+
 	MachineState init;
 	BitSet baseBits; // = new BitSet();
 	BitSet inputBits;
@@ -62,6 +123,11 @@ public class BitSetPropNet extends StateMachine {
 		System.out.println("[PropNet] Initializing for role " + r);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
+
+
+			doOnePlayerOptimization();
+
+
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);

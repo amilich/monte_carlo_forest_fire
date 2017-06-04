@@ -163,7 +163,7 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
-	static final int Csp = 20000;
+	static final int Csp = 10000;
 	static final int C = 50;
 	static final double C1 = 0.7;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
@@ -236,15 +236,16 @@ public class ThreadedGraphNode {
 		if (machine.isTerminal(state)) return this;
 		for (int ii = 0; ii < numMoves; ii ++) {
 			Move myMove = myMoves.get(ii);
-			List<List<Move>> jMoves = machine.getLegalJointMoves(state, player, myMove);
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] == null) {
+					List<List<Move>> jMoves = machine.getLegalJointMoves(state, player, myMove);
 					List<Move> jointMove = jMoves.get(jj);
 					try {
 						MachineState nextState = machine.getNextState(state, jointMove);
-						if (stateMap.containsKey(nextState)) children[ii][jj] = stateMap.get(nextState);
-						else {
-							children[ii][jj] = new ThreadedGraphNode(nextState, jointMove.toString());
+						if (stateMap.containsKey(nextState)) {
+							children[ii][jj] = stateMap.get(nextState);
+						} else {
+							children[ii][jj] = new ThreadedGraphNode(nextState, nextState.toString());
 							this.numExpanded ++;
 							stateMap.put(nextState, children[ii][jj]);
 						}

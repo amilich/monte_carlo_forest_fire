@@ -22,13 +22,15 @@ public final class And extends Component {
 		return true;
 	}
 
+	public int num = 0;
+
 	/**
 	 * @see org.ggp.base.util.propnet.architecture.Component#toString()
 	 */
 	@Override
 	public String toString()
 	{
-		return toDot("invhouse", "grey", "AND");
+		return toDot("invhouse", "grey", "AND=" + num +".id="+bitIndex);
 	}
 
 }

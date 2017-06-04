@@ -504,4 +504,9 @@ public abstract class StateMachine
             avgScores[j] /= repetitions;
         }
     }
+
+	public void convertAndRender(String string) {
+		// TODO Auto-generated method stub
+
+	}
 }

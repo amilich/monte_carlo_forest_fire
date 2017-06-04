@@ -19,12 +19,14 @@ public final class Not extends Component
 		return !getSingleInput().getValue();
 	}
 
+	public int num = 0;
+
 	/**
 	 * @see org.ggp.base.util.propnet.architecture.Component#toString()
 	 */
 	@Override
 	public String toString()
 	{
-		return toDot("invtriangle", "grey", "NOT");
+		return toDot("invtriangle", "grey", "NOT=" + num +".id="+bitIndex);
 	}
 }
