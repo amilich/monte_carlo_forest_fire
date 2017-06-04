@@ -9,8 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlDistinct;
@@ -46,7 +46,7 @@ public class IntPropNet extends StateMachine {
 	private Role roles[];
 
 	MachineState init;
-	public static final int NUM_THREADS = 4;
+	public static final int NUM_THREADS = 8;
 
 	public Proposition[] allInputArr; // TODO we should get rid of this eventually
 	Component[] origComps;
@@ -280,7 +280,7 @@ public class IntPropNet extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	// TODO threads
+	// Don't use this method, just implemented to satisfy abstract parent class.
 	public boolean isTerminal(MachineState state) {
 		return isTerminal(state, 0);
 	}
@@ -585,7 +585,6 @@ public class IntPropNet extends StateMachine {
 		forwardpropmarkRec(compId, thread);
 	}
 
-	// TODO: need to handle multiple threads
 	public void updatePropnetState(MachineState state, int tid) {
 		BitSet newBits = (BitSet) state.props.clone();
 		newBits.xor(compBits[tid]);
@@ -601,17 +600,22 @@ public class IntPropNet extends StateMachine {
 		List<Move> legals = new ArrayList<Move>();
 		for (Role role : getRoles()) {
 			List<Move> ms = getLegalMoves(state, role, tid);
-			legals.add(ms.get(r.nextInt(ms.size())));
+			legals.add(ms.get(ThreadLocalRandom.current().nextInt(0, ms.size())));
+//			legals.add(ms.get(r.nextInt(ms.size())));
 		}
 		return legals;
 	}
 
-	Random r = new Random();
+//	Random r = new Random();
 	@Override
 	public MachineState internalDC(MachineState start, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		// this.convertAndRender("btns25.dot");
 		while (!isTerminal(start, tid)) {
+//			List<List<Move>> jmoves = getLegalJointMovesInternal(start, tid);
+//			List<Move> selected = jmoves.get(ThreadLocalRandom.current().nextInt(0, jmoves.size()));
+//			List<Move> selected = jmoves.get(r.nextInt(jmoves.size()));
+//			List<Move> selected = randomJointMove(start, tid);
 			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
 			start = internalNextState(start, selected, tid);
 		}
@@ -623,7 +627,8 @@ public class IntPropNet extends StateMachine {
 		List<Move> moves = new ArrayList<Move>();
 		for (Role role : getRoles()) {
 			List<Move> lms = internalLegalMoves(state, role, tid);
-			moves.add(lms.get(r.nextInt(lms.size())));
+			moves.add(lms.get(ThreadLocalRandom.current().nextInt(0, lms.size())));
+//			moves.add(lms.get(r.nextInt(lms.size())));
 		}
 		return moves;
 	}
