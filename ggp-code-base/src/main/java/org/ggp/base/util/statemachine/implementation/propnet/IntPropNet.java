@@ -525,14 +525,14 @@ public class IntPropNet extends StateMachine {
 		}
 	}
 
-	public List<List<Move>> getLegalJointMovesInternal(MachineState state, int tid) throws MoveDefinitionException {
-		List<List<Move>> legals = new ArrayList<List<Move>>();
+	public List<Move> getInternalMoves(MachineState state, int tid) throws MoveDefinitionException {
+		List<Move> legals = new ArrayList<Move>();
 		for (Role role : getRoles()) {
-			legals.add(getLegalMoves(state, role, tid));
+			List<Move> ms = getLegalMoves(state, role, tid);
+			legals.add(ms.get(r.nextInt(ms.size())));
 		}
-		List<List<Move>> crossProduct = new ArrayList<List<Move>>();
-		crossProductLegalMoves(legals, crossProduct, new LinkedList<Move>());
-		return crossProduct;
+		// List<List<Move>> crossProduct = new ArrayList<List<Move>>();
+		return legals;
 	}
 
 	Random r = new Random();
@@ -540,9 +540,7 @@ public class IntPropNet extends StateMachine {
 	public MachineState internalDC(MachineState start, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		while (!isTerminal(start, tid)) {
-			List<List<Move>> jmoves = getLegalJointMovesInternal(start, tid);
-			List<Move> selected = jmoves.get(r.nextInt(jmoves.size()));
-			//			List<Move> selected = randomJointMove(start);
+			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
 			start = internalNextState(start, selected, tid);
 		}
 		return start;
