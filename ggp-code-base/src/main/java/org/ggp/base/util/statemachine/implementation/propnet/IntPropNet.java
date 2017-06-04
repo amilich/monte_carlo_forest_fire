@@ -9,8 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlDistinct;
@@ -46,7 +46,7 @@ public class IntPropNet extends StateMachine {
 	private Role roles[];
 
 	MachineState init;
-	public static final int NUM_THREADS = 4;
+	public static final int NUM_THREADS = 8;
 
 	public Proposition[] allInputArr; // TODO we should get rid of this eventually
 	Component[] origComps;
@@ -251,7 +251,7 @@ public class IntPropNet extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	// TODO threads
+	// Don't use this method, just implemented to satisfy abstract parent class.
 	public boolean isTerminal(MachineState state) {
 		return isTerminal(state, 0);
 	}
@@ -514,7 +514,6 @@ public class IntPropNet extends StateMachine {
 		forwardpropmarkRec(compId, thread);
 	}
 
-	// TODO: need to handle multiple threads
 	public void updatePropnetState(MachineState state, int tid) {
 		BitSet newBits = (BitSet) state.props.clone();
 		newBits.xor(compBits[tid]);
