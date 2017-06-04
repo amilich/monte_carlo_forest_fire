@@ -207,9 +207,9 @@ public class IntPropNet extends StateMachine {
 				} else if (cur instanceof And) {
 					curInfo |= AND_TYPE_MASK;
 					initCompState[i] = TRUE_INT - numInputs;
-					if (cur.inputs.toString().contains("r 13") && cur.outputs.toString().contains("OR")) {
-						System.out.println(); // TODO debug
-					}
+//					if (cur.inputs.toString().contains("r 13") && cur.outputs.toString().contains("OR")) {
+//						System.out.println(); // TODO debug
+//					}
 				} else if (cur instanceof Or) {
 					curInfo |= OR_TYPE_MASK;
 					initCompState[i] = FALSE_INT;
@@ -267,7 +267,7 @@ public class IntPropNet extends StateMachine {
 				nextBaseBits[i] = (BitSet) nextBaseBitsT.clone();
 				compBits[i] = (BitSet) compBitsT.clone();
 			}
-			this.convertAndRender("theInitial");
+//			this.convertAndRender("theInitial");
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -362,8 +362,14 @@ public class IntPropNet extends StateMachine {
 			if (c.equals(propNet.getInitProposition())) continue;
 			if (c instanceof And || c instanceof Or) {
 				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (c.input_arr[ii].curVal || (!c.input_arr[ii].curVal && (c.input_arr[ii] instanceof Not))) {
+					Component in = c.input_arr[ii];
+					if (in.curVal && !(in instanceof Not)) {
 						initCompState[componentIds.get(c)]++;
+					} else if (in instanceof Not) {
+						boolean notVal = !in.input_arr[0].curVal;
+						if (notVal) {
+							initCompState[componentIds.get(c)]++;
+						}
 					}
 				}
 			} else if (c instanceof Not) {
@@ -427,9 +433,9 @@ public class IntPropNet extends StateMachine {
 
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role, int tid) throws MoveDefinitionException {
-		convertAndRender("unsure");
+//		convertAndRender("unsure");
 		updatePropnetState(state, tid);
-		convertAndRender("unsure");
+//		convertAndRender("unsure");
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
@@ -458,9 +464,9 @@ public class IntPropNet extends StateMachine {
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves, int tid) throws TransitionDefinitionException {
 
-		this.convertAndRender("important.dot");
+//		this.convertAndRender("important.dot");
 		updatePropnetMoves(moves, tid);
-		this.convertAndRender("important.dot");
+//		this.convertAndRender("important.dot");
 
 		updatePropnetState(state, tid);
 		Set<GdlSentence> newState = new HashSet<GdlSentence>();
@@ -530,12 +536,12 @@ public class IntPropNet extends StateMachine {
 	 * @param thread
 	 */
 	private void forwardpropmarkRec(int compId, int thread) {
-		Component ci = origComps[compId];
-		if (ci.toString().contains("r 13")) {
-			System.out.println();
-		} else if (ci.toString().contains("c 13")) {
-			System.out.println();
-		}
+//		Component ci = origComps[compId];
+//		if (ci.toString().contains("r 13")) {
+//			System.out.println();
+//		} else if (ci.toString().contains("c 13")) {
+//			System.out.println();
+//		}
 
 		int numOutputs = numOutputs(compId);
 		int offset = outputOffset(compId);
@@ -552,16 +558,15 @@ public class IntPropNet extends StateMachine {
 
 		for (int i = offset; i < offset + numOutputs; i ++) {
 			int comp = compOutputs[i];
-			Component c = origComps[comp];// TODO rem
-			c.bitIndex--; // TODO for debug
-
-			long outType = compInfo[comp] & TYPE_MASK;
+//			Component c = origComps[comp];// TODO rem
+//			c.bitIndex--; // TODO for debug
+//			long outType = compInfo[comp] & TYPE_MASK;
 			boolean orig = val(comp, thread);
 			compState[thread][comp] += newValue ? 1 : -1;
-			if (c instanceof And && compState[thread][comp] < TRUE_INT - c.input_arr.length && compState[thread][comp] > 0) {
-				System.out.println(compState[thread][comp]);
-				this.convertAndRender("ALERT");
-			}
+//			if (c instanceof And && compState[thread][comp] < TRUE_INT - c.input_arr.length && compState[thread][comp] > 0) {
+//				System.out.println(compState[thread][comp]);
+//				this.convertAndRender("ALERT");
+//			}
 			if (val(compOutputs[i], thread) != orig) {
 				forwardpropmarkRec(comp, thread);
 			}
@@ -587,7 +592,7 @@ public class IntPropNet extends StateMachine {
 		newBits.and(isBase);
 
 		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
-			Component c = origComps[ii];
+//			Component c = origComps[ii];
 			forwardpropmark(ii, state.props.get(ii), tid);
 		}
 	}
@@ -667,13 +672,16 @@ public class IntPropNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet newBits = new BitSet(compInfo.length);
 		for (GdlSentence s : moveGdl) {
-			newBits.set(componentIds.get(propNet.getInputPropositions().get(s)));
+			Component c = propNet.getInputPropositions().get(s);
+			if (c != null) {
+				newBits.set(componentIds.get(c));
+			}
 		}
 		newBits.xor(compBits[tid]);
 		newBits.and(isInput);
 
 		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
-			Component c = origComps[ii];
+//			Component c = origComps[ii];
 			forwardpropmark(ii, !val(ii, tid), tid);
 		}
 		for (int ii = isInput.nextSetBit(0); ii != -1; ii = isInput.nextSetBit(ii + 1)) {
