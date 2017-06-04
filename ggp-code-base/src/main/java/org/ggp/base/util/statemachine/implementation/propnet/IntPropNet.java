@@ -46,7 +46,7 @@ public class IntPropNet extends StateMachine {
 	private Role roles[];
 
 	MachineState init;
-	public static final int NUM_THREADS = 8;
+	public static final int NUM_THREADS = 4;
 
 	public Proposition[] allInputArr; // TODO we should get rid of this eventually
 	Component[] origComps;

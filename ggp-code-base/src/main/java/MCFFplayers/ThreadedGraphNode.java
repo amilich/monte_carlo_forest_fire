@@ -163,7 +163,7 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
-	static final int Csp = 10000;
+	static final int Csp = 300000;
 	static final int C = 50;
 	static final double C1 = 0.7;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
@@ -173,8 +173,6 @@ public class ThreadedGraphNode {
 		}
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
 				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
-//		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-//				Math.sqrt(C * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
 	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
