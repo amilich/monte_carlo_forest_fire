@@ -5,6 +5,7 @@ import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
@@ -12,7 +13,6 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
-import org.ggp.base.util.statemachine.implementation.propnet.ExpFactorPropNet;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 import MCFFplayers.ThreadedGraphNode;
@@ -35,13 +35,55 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 //		return new StateLessPropNet();
 	}
 
+	// http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
+	public double Correlation(List<Integer> xs, List<Integer> ys) {
+		double sx = 0.0;
+		double sy = 0.0;
+		double sxx = 0.0;
+		double syy = 0.0;
+		double sxy = 0.0;
+		int n = xs.size();
+		for (int i = 0; i < n; i ++) {
+			double x = xs.get(i).doubleValue();
+			double y = ys.get(i).doubleValue();
+			sx += x;
+			sy += y;
+			sxx += x * x;
+			syy += y * y;
+			sxy += x * y;
+		}
+		double numerator = n * sxy - sx * sy;
+		if (Math.abs(numerator) < 0.001) {
+			return 0;
+		}
+		double denominator = Math.sqrt(n * sxx - sx * sx) * Math.sqrt(n * syy - sy * sy);
+		return numerator / denominator;
+	}
+
+	static final double corr_threshold = 0.5;
+	public void mobilityHeuristic(long timeout)
+			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		List<Integer> ourScore = new ArrayList<Integer>();
+		List<Integer> heuristic = new ArrayList<Integer>();
+		long newTimeout = System.currentTimeMillis() + 15000;
+		System.out.println("Starting correlation");
+		while (!MyHeuristics.checkTime(timeout - 15000) && !MyHeuristics.checkTime(newTimeout)) {
+			MachineState next = getStateMachine().internalDC(getCurrentState(), 0); // customdc(getCurrentState(), getStateMachine());
+			ourScore.add(getStateMachine().getGoal(next, getRole()));
+			heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
+		}
+		double corr = Correlation(ourScore, heuristic);
+		System.out.println("Corr = " + corr);
+		System.out.println("Num charges = " + heuristic.size());
+	}
+
 	// List of machines used for depth charges
-	List<StateMachine> machines = new ArrayList<StateMachine>();
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		resetGraphNode();
 		moveNum = 0;
+		// mobilityHeuristic(timeout);
 		expandTree(timeout);
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 		moveNum = 0;
@@ -54,7 +96,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		ThreadedGraphNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
 		ThreadedGraphNode.stateMap.clear();
 		ThreadedGraphNode.numCharges = 0;
-		createMachines(); // Clears and adds new machines
 		initRoot();
 	}
 
@@ -82,20 +123,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		System.out.println("[GRAPH] Charges/sec = " + (ThreadedGraphNode.numCharges / timeDiff));
 	}
 
-
-	private void createMachines() {
-		machines.clear();
-		machines.add(getStateMachine());
-		for (int ii = 1; ii < ThreadedGraphNode.NUM_THREADS; ii ++) {
-			StateMachine m = getInitialStateMachine();
-			m.initialize(getMatch().getGame().getRules(), getRole());
-			machines.add(m);
-		}
-		System.out.println("[GRAPH] Created machines.");
-	}
-
 	private void initRoot() throws MoveDefinitionException, GoalDefinitionException {
-		ThreadedGraphNode.setStateMachines(machines);
 		root = new ThreadedGraphNode(getCurrentState());
 	}
 
@@ -105,7 +133,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		try {
-			/* if (root == null) {
+			if (root == null) {
 				initRoot();
 			} else if (moveNum != 0){
 				ThreadedGraphNode matchingChild = root.findMatchingState(getCurrentState());
@@ -118,11 +146,11 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 				}
 			} else {
 				System.out.println("[GRAPH] First move: advanced tree.");
-			}*/
-
-			if (moveNum != 0) {
-				root = new ThreadedGraphNode(getCurrentState());
 			}
+
+//			if (moveNum != 0) {
+//				root = new ThreadedGraphNode(getCurrentState());
+//			}
 
 			expandTree(timeout);
 			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);

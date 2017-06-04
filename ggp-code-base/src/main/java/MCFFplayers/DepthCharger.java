@@ -19,13 +19,15 @@ public class DepthCharger implements Callable<Double>, Charger {
 	private Role role;
 	int roleIndex;
     private Random r = new Random();
+    int tid;
 
 	// Initialize depth charger with given state machine and state
-	public DepthCharger(StateMachine machine, MachineState state, Role role, int numCharges, int roleIndex) {
+	public DepthCharger(StateMachine machine, MachineState state, Role role, int numCharges, int tid) {
 		this.machine = machine;
 		this.role = role;
 		this.state = state;
 		this.numCharges = numCharges;
+		this.tid = tid;
 	}
 
     public MachineState customdc(MachineState state) throws TransitionDefinitionException, MoveDefinitionException {
@@ -42,8 +44,8 @@ public class DepthCharger implements Callable<Double>, Charger {
 		value = 0;
 		for (int ii = 0; ii < numCharges; ii ++) {
 			try {
-				MachineState depthCharge = customdc(state); // new
-				value += machine.getGoal(depthCharge, role);
+				MachineState depthCharge =  machine.internalDC(state, tid); // customdc(state); // new
+				value += machine.getGoal(depthCharge, role, tid);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -17,12 +17,13 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 
 // Graph based MCTS Node
 public class ThreadedGraphNode {
 	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 1;
-	public static final int NUM_DEPTH_CHARGES = 3; // TODO
+	public static final int NUM_THREADS = IntPropNet.NUM_THREADS;
+	public static final int NUM_DEPTH_CHARGES = 4; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
 	public static int num = 0;
 
@@ -57,18 +58,12 @@ public class ThreadedGraphNode {
 	static Role player;
 	public static int roleIndex = -1;
 	static StateMachine machine;
-	static List<StateMachine> machines;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 	// .newCachedThreadPool();
 
 	// Set the static, single state machine used for move determination (not for depth charges)
 	public static void setStateMachine(StateMachine machine) {
 		ThreadedGraphNode.machine = machine;
-	}
-
-	// Populate the state machine list with state machines (for depth charges)
-	public static void setStateMachines(List<StateMachine> machines) {
-		ThreadedGraphNode.machines = machines;
 	}
 
 	// Set the static role information for the graph
@@ -176,10 +171,10 @@ public class ThreadedGraphNode {
 		if (Double.isNaN(stddev)) {
 			stddev = C;
 		}
-		// return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-		//		Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-				Math.sqrt(C * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+//		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
+//				Math.sqrt(C * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
 	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
@@ -369,8 +364,7 @@ public class ThreadedGraphNode {
 		} else {
 			Set<Future<Double>> futures = new HashSet<Future<Double>>();
 			for (int ii = 0; ii < NUM_THREADS; ii ++) {
-				Future<Double> future =
-						executor.submit(new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, roleIndex));
+				Future<Double> future = executor.submit(new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, ii));
 				futures.add(future);
 			}
 			double avgScore = 0;

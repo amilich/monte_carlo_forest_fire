@@ -384,25 +384,6 @@ public class BitSetPropNet extends StateMachine {
 		return order;
 	}
 
-	// Test if topological ordering worked. Not supposed to be called at runtime
-	/*public void testTopologicalOrdering(List<Proposition> ordering){
-		for(int i=1; i < ordering.size(); i++){
-			System.out.println(i);
-			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
-			Set<Component> inputs_c = ordering.get(i).getInputs();
-			HashSet<Proposition> inputs = new HashSet<Proposition>();
-			for (Component c : inputs_c){
-				if (c instanceof Proposition){
-					inputs.add((Proposition) c);
-				}
-			}
-			inputs.removeAll(prev);
-			if (!inputs.isEmpty()){
-				throw new Error("Ordering is not topological");
-			}
-		}
-	}*/
-
 	/* Already implemented for you */
 	@Override
 	public List<Role> getRoles() {

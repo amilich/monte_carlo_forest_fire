@@ -1,5 +1,7 @@
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
@@ -65,6 +67,8 @@ public class MyLegalPlayer extends StateMachineGamer {
 		return state;
 	}
 
+	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
@@ -78,23 +82,35 @@ public class MyLegalPlayer extends StateMachineGamer {
 		// machineP.getPropnet().renderToFile("propnetfile0" + moveNum + ".dot");
 		double total = 0;
 		int count = 0;
-		while (!MyHeuristics.checkTime(timeout)) {
-			MachineState m = machine.internalDC(state);
+		while (!MyHeuristics.checkTime(timeout) || count < 10) {
+			MachineState m = machine.internalDC(state, 1);
 			total += machine.getGoal(m, getRole());
 			count ++;
 		}
+		/* int numT = 3;
+		int numD = 3;
+		double avgScore = 0;
+		while (!MyHeuristics.checkTime(timeout)) {
+			Set<Future<Double>> futures = new HashSet<Future<Double>>();
+			for (int ii = 0; ii < numT; ii ++) {
+				Future<Double> future = executor.submit(new DepthCharger(machine, state, getRole(), numD, ii));
+				futures.add(future);
+			}
+			for (Future<Double> future : futures) {
+				try {
+					double val = future.get().doubleValue();
+					avgScore += val;
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			count += numT * numD;
+		}
+		avgScore /= count;*/
 		total /= count;
 		System.out.println("AVG: " + total);
 		System.out.println("COUNT: " + count);
 		System.out.println("IT: " + machine.isTerminal(getCurrentState()));
-		// System.out.println(machine.getNextStates(getCurrentState()));
-		// System.out.println(machine.getLegalJointMoves(getCurrentState()));
-		// System.out.println(machine.getLegalMoves(getCurrentState(), getRole()));
-		// StateMachine m = new CachedStateMachine(new ProverStateMachine());
-		// getInitialStateMachine().
-		// Random r = new Random();
-		// return moves.get(r.nextInt(moves.size()));
-		// System.out.println("Size: " + moves.size());
 		return moves.get(0);
 	}
 

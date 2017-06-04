@@ -27,9 +27,13 @@ public abstract class StateMachine
 	// ============================================
     // These methods (through findterminalp) layer over other methods
 	// in order to align with notation in the notes for Stanford's CS227B course
-	public MachineState internalDC(MachineState start)
+	public MachineState internalDC(MachineState start, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		return null;
+	}
+
+	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+		return 0;
 	}
 
 	/**
@@ -48,6 +52,9 @@ public abstract class StateMachine
      * an error in either the game description or the StateMachine implementation.
 	 */
 	public abstract List<Move> findActions(Role role) throws MoveDefinitionException;
+	public List<Move> findActions(Role role, int tid) throws MoveDefinitionException {
+		return null;
+	}
 
 	/**
 	 * Returns the initial state of the game.
@@ -134,11 +141,18 @@ public abstract class StateMachine
      * description or the StateMachine implementation.
      */
     public abstract int getGoal(MachineState state, Role role) throws GoalDefinitionException;
+    public int getGoal(MachineState state, Role role, int tid) throws GoalDefinitionException {
+    	return 0;
+    }
+
     /**
      * Returns true if and only if the given state is a terminal state (i.e. the
      * game is over).
      */
     public abstract boolean isTerminal(MachineState state);
+    public boolean isTerminal(MachineState state, int tid) {
+    	return false;
+    }
 
     /**
      * Returns a list of the roles in the game, in the same order as they
@@ -162,6 +176,9 @@ public abstract class StateMachine
      */
     // TODO: There are philosophical reasons for this to return Set<Move> rather than List<Move>.
     public abstract List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException;
+    public List<Move> getLegalMoves(MachineState state, Role role, int tid) throws MoveDefinitionException {
+    	return null;
+    }
 
     /**
      * Returns the next state of the game given the current state and a joint move
@@ -173,6 +190,9 @@ public abstract class StateMachine
      * game description or the StateMachine implementation.
      */
     public abstract MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException;
+    public MachineState getNextState(MachineState state, List<Move> moves, int tid) throws TransitionDefinitionException {
+    	return null;
+    }
 
     // The following methods are included in the abstract StateMachine base so
     // implementations which use alternative Role/Move/State representations

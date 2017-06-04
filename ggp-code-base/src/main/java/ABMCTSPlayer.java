@@ -97,7 +97,7 @@ public class ABMCTSPlayer extends StateMachineGamer {
 	}
 
 	private void initRoot() throws MoveDefinitionException, GoalDefinitionException {
-		ThreadedGraphNode.setStateMachines(machines);
+		// ThreadedGraphNode.setStateMachines(machines);
 		root = new ThreadedGraphNode(getCurrentState());
 	}
 
