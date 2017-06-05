@@ -165,6 +165,7 @@ public class ThreadedGraphNode {
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
 	public static double Csp = 300000;
+	public static boolean heuristicEnable = false;
 	static final int C = 50;
 	static final double C1 = 0.7;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) throws MoveDefinitionException {
@@ -172,9 +173,14 @@ public class ThreadedGraphNode {
 		if (Double.isNaN(stddev)) {
 			stddev = C;
 		}
-		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
-				+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
-				//+ machine.cheapMobility(n.state, player, 0) - machine.cheapMobility(n.state, enemy, 0);
+		if (heuristicEnable) {
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
+					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]))
+					+ machine.cheapMobility(n.state, player, 0);
+		} else {
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
+					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+		}
 	}
 	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);

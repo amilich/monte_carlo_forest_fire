@@ -69,14 +69,19 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		List<Integer> heuristic = new ArrayList<Integer>();
 		long newTimeout = System.currentTimeMillis() + 15000;
 		System.out.println("Starting correlation");
+		StateMachine m = ip;
 		while (!MyHeuristics.checkTime(timeout - 15000) && !MyHeuristics.checkTime(newTimeout)) {
-			MachineState next = getStateMachine().internalDC(getCurrentState(), 0); // customdc(getCurrentState(), getStateMachine());
-			ourScore.add(getStateMachine().getGoal(next, getRole()));
-			heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
+			MachineState next = m.preInternalDC(m.getInitialState(), 0); // customdc(getCurrentState(), getStateMachine());
+			ourScore.add(m.getGoal(next, getRole()));
+			heuristic.add(m.cheapMobility(next, getRole(), 0));
 		}
 		double corr = Correlation(ourScore, heuristic);
 		System.out.println("Corr = " + corr);
 		System.out.println("Num charges = " + heuristic.size());
+		if (corr > 0.25) {
+			System.out.println("ENABLING MOBILITY HEURISTIC");
+			ThreadedGraphNode.heuristicEnable = true;
+		}
 	}
 
 	// List of machines used for depth charges
@@ -88,7 +93,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		ip.initialize(getMatch().getGame().getRules(), getRole());
 		resetGraphNode();
 		moveNum = 0;
-		// mobilityHeuristic(timeout);
+		mobilityHeuristic(timeout);
 		expandTree(timeout);
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 		moveNum = 0;
