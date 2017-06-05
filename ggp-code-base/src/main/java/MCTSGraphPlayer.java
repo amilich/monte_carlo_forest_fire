@@ -7,7 +7,6 @@ import org.ggp.base.util.game.Game;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
-import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
@@ -24,13 +23,12 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-//		if (failed) {
-//			return new CachedStateMachine(new ProverStateMachine());
-//		}
-		return new CachedStateMachine(new ProverStateMachine());
+		if (failed) {
+			return new CachedStateMachine(new ProverStateMachine());
+		}
 //		return new BitSetPropNet();
 //		return new ExpPropNet();
-		// return new IntPropNet();
+		return new IntPropNet();
 //		return new ExpFactorPropNet();
 // 		return new BitSetNet();
 //		return new BasicFactorPropNet();
@@ -69,31 +67,27 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		List<Integer> heuristic = new ArrayList<Integer>();
 		long newTimeout = System.currentTimeMillis() + 15000;
 		System.out.println("Starting correlation");
-		StateMachine m = ip;
 		while (!MyHeuristics.checkTime(timeout - 15000) && !MyHeuristics.checkTime(newTimeout)) {
-			MachineState next = m.preInternalDC(m.getInitialState(), 0); // customdc(getCurrentState(), getStateMachine());
-			ourScore.add(m.getGoal(next, getRole()));
-			heuristic.add(m.cheapMobility(next, getRole(), 0));
+			MachineState next = getStateMachine().preInternalDC(getCurrentState(), 0); // customdc(getCurrentState(), getStateMachine());
+			ourScore.add(getStateMachine().getGoal(next, getRole()));
+			heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
 		}
 		double corr = Correlation(ourScore, heuristic);
 		System.out.println("Corr = " + corr);
 		System.out.println("Num charges = " + heuristic.size());
-		if (corr > 0.25) {
-			System.out.println("ENABLING MOBILITY HEURISTIC [corr=" + corr + "]");
-			ThreadedGraphNode.heuristicEnable = true;
-		}
 	}
 
 	// List of machines used for depth charges
-	IntPropNet ip = new IntPropNet();
-
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		ip.initialize(getMatch().getGame().getRules(), getRole());
 		resetGraphNode();
 		moveNum = 0;
-		mobilityHeuristic(timeout);
+		try {
+			mobilityHeuristic(timeout);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		expandTree(timeout);
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 		moveNum = 0;
@@ -102,22 +96,14 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	// Must be called in order to reset static information regarding the game.
 	private void resetGraphNode() throws MoveDefinitionException, GoalDefinitionException {
 		ThreadedGraphNode.setRole(getRole());
-		ThreadedGraphNode.setStateMachine(ip);
+		ThreadedGraphNode.setStateMachine(getStateMachine());
 		ThreadedGraphNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
 		ThreadedGraphNode.stateMap.clear();
 		ThreadedGraphNode.numCharges = 0;
-		if (getStateMachine().getRoles().size() != 1) {
-			for (Role r : getStateMachine().getRoles()) {
-				if (!r.equals(getRole())) {
-					ThreadedGraphNode.enemy = r;
-					break;
-				}
-			}
-		}
 		initRoot();
 	}
 
-	private double CSP_UPDATE_COEFF = 3;
+	private double CSP_UPDATE_COEFF = 3.0;
 	private final int MAX_ITERATIONS = 3000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
 		long startT = System.currentTimeMillis();
