@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -177,6 +178,11 @@ public class IntPropNet extends StateMachine {
 			isInput = new BitSet(nComps);
 
 			origComps = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
+//			boolean result = topsortComponents(origComps);
+//			testTopologicalOrdering(Arrays.asList(origComps));
+//			System.out.println("Result: ");
+//			System.out.println(result);
+
 			componentIds = new HashMap<Component, Integer>();
 			for (int i = 0; i < origComps.length; i++) {
 				componentIds.put(origComps[i], i);
@@ -282,6 +288,7 @@ public class IntPropNet extends StateMachine {
 	@Override
 	// Don't use this method, just implemented to satisfy abstract parent class.
 	public boolean isTerminal(MachineState state) {
+//		System.out.println("[IntPropNet] WARNING: isTerminal(MachineState state) should never be called.");
 		return isTerminal(state, 0);
 	}
 
@@ -317,54 +324,64 @@ public class IntPropNet extends StateMachine {
 		return 0;
 	}
 
+	private static boolean topsortHelper(Component comp, Set<Component> visited, Set<Component> tempMarks, Stack<Component> order) {
+		if (tempMarks.contains(comp))
+			return false; // Graph has a cycle
+
+		if (!visited.contains(comp)) {
+			if (!(comp instanceof Transition)) { // pretend that transitions don't have outputs for the topsort
+				tempMarks.add(comp);
+				for (Component next : comp.getOutputs()) {
+					if (!topsortHelper(next, visited, tempMarks, order))
+						return false;
+				}
+				tempMarks.remove(comp);
+			}
+			visited.add(comp);
+			order.push(comp);
+		}
+		return true;
+	}
+
 	/**
 	 * This should compute the topological ordering of all components.
-	 * Each component is either a proposition, logical gate, or transition.
-	 * Logical gates and transitions only have propositions as inputs.
+	 * Given an array of all components in the graph, modifies the array
+	 * in-place to be topologically sorted. If the graph contains a cycle
+	 * the ordering of the input array is unmodified.
 	 *
-	 * The base propositions and input propositions should always be exempt
-	 * from this ordering.
-	 *
-	 * The base propositions values are set from the MachineState that
-	 * operations are performed on and the input propositions are set from
-	 * the Moves that operations are performed on as well (if any).
-	 *
-	 * @return The order in which components need to be assigned.
+	 * @return true iff the graph does not contain a cycle (ignoring transition outputs).
 	 */
-	public List<Proposition> getOrdering() {
-		System.out.println("Sort start");
-		// List to contain the topological ordering.
-		List<Proposition> order = new ArrayList<Proposition>();
-
-		// All of the components in the PropNet
-		 List<Component> components = new ArrayList<Component>(propNet.getComponents());
-
-		// All of the propositions in the PropNet.
-		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
-
-		Queue<Proposition> allSources = new LinkedList<Proposition>();
-		allSources.addAll(propNet.getAllInputProps());
-		allSources.addAll(propNet.getAllBasePropositions());
-		HashSet<Component> visitedNodes = new HashSet<Component>();
-
-		while (!allSources.isEmpty()){
-			Proposition front = allSources.poll();
-			order.add(front);
-			visitedNodes.add(front);
-			for (Component c : front.getOutputs()){
-				if (c instanceof Proposition){
-					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
-					otherInputs.removeAll(visitedNodes);
-					if (otherInputs.isEmpty()){
-						allSources.add((Proposition) c);
-					}
-				}
+	public static boolean topsortComponents(Component[] comps) {
+		Stack<Component> order = new Stack<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		Set<Component> tempMarks = new HashSet<Component>();
+		for (Component comp : comps) {
+			if (!visited.contains(comp)) {
+				if (!topsortHelper(comp, visited, tempMarks, order))
+					return false;
 			}
 		}
-		// assert order.size() == propNet.getPropositions().size();
-		order.addAll(allSources);
-		System.out.println("Sort done");
-		return order;
+		for (int i = 0; i < comps.length; i++) {
+			comps[i] = order.pop();
+		}
+		return true;
+	}
+
+	public void testTopologicalOrdering(List<Component> ordering){
+		for (int i=1; i < ordering.size(); i++){
+			HashSet<Component> prev = new HashSet<Component>(ordering.subList(0, i));
+			Set<Component> inputs_c = ordering.get(i).getInputs();
+			HashSet<Component> inputs = new HashSet<Component>();
+			for (Component c : inputs_c){
+				if (!(c instanceof Transition)){
+					inputs.add(c);
+				}
+			}
+			inputs.removeAll(prev);
+			if (!inputs.isEmpty()){
+				throw new Error("Ordering is not topological");
+			}
+		}
 	}
 
 	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {

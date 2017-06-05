@@ -27,10 +27,10 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 //		if (failed) {
 //			return new CachedStateMachine(new ProverStateMachine());
 //		}
-		return new CachedStateMachine(new ProverStateMachine());
+//		return new CachedStateMachine(new ProverStateMachine());
 //		return new BitSetPropNet();
 //		return new ExpPropNet();
-		// return new IntPropNet();
+		return new IntPropNet();
 //		return new ExpFactorPropNet();
 // 		return new BitSetNet();
 //		return new BasicFactorPropNet();
