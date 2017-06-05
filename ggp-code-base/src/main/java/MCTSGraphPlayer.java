@@ -112,7 +112,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		initRoot();
 	}
 
-	private double CSP_UPDATE_COEFF = 1.5;
+	private double CSP_UPDATE_COEFF = 3;
 	private final int MAX_ITERATIONS = 3000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
 		long startT = System.currentTimeMillis();

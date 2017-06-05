@@ -589,7 +589,8 @@ public class IntPropNet extends StateMachine {
 		if (state.props == null) {
 			BitSet stateB = new BitSet(origComps.length);
 			for (GdlSentence s : state.getContents()) {
-				stateB.set(componentIds.get(propNet.getBasePropositions().get(s)));
+				Component sc = propNet.getBasePropositions().get(s);
+				if (sc != null) stateB.set(componentIds.get(sc));
 			}
 			state.props = stateB;
 		}
