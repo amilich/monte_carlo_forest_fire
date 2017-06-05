@@ -166,12 +166,12 @@ public class ThreadedGraphNode {
 	public static double Csp = 300000;
 	static final int C = 50;
 	static final double C1 = 0.7;
-	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
+	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) throws MoveDefinitionException {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
 		if (Double.isNaN(stddev)) {
 			stddev = C;
 		}
-		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
+		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + machine.cheapMobility(n.state, player, 0) +
 				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 	}
 	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
@@ -183,7 +183,7 @@ public class ThreadedGraphNode {
 	}
 
 	// MCTS selection
-	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) throws GoalDefinitionException {
+	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) throws GoalDefinitionException, MoveDefinitionException {
 		ThreadedGraphNode currNode = this;
 		while (true) {
 			path.add(currNode);
