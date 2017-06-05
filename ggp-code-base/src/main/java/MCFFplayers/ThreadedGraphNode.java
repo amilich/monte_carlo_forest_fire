@@ -163,7 +163,7 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
-	static final int Csp = 300000;
+	public static double Csp = 300000;
 	static final int C = 50;
 	static final double C1 = 0.7;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
