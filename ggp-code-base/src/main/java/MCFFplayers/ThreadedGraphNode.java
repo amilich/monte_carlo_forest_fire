@@ -175,11 +175,11 @@ public class ThreadedGraphNode {
 			stddev = C;
 		}
 		if (heuristicEnable) {
-			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove]
 					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]))
 					+ C2 * machine.cheapMobility(n.state, player, 0);
 		} else {
-			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove]
 					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		}
 	}
