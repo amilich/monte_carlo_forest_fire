@@ -66,11 +66,12 @@ public class MachineState {
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if ((o != null) && (o instanceof MachineState))
-        {
-            MachineState state = (MachineState) o;
+    public boolean equals(Object o) {
+        if ((o != null) && (o instanceof MachineState)) {
+        	MachineState state = (MachineState) o;
+        	if (contents != null) {
+        		return state.getContents().equals(getContents());
+        	}
             return state.props.equals(this.props);
 //            if (contents == null) {
 //            	return state.props.equals(this.props);

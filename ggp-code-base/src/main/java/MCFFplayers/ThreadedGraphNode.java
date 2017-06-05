@@ -30,6 +30,7 @@ public class ThreadedGraphNode {
 	public static HashMap<MachineState, ThreadedGraphNode> stateMap = new HashMap<MachineState, ThreadedGraphNode>();
 	public static int numCharges = 0;
 	public double utility = -1;
+	public static Role enemy;
 
 	// Variables used to calculate standard deviation
 	// http://stackoverflow.com/questions/5543651/computing-standard-deviation-in-a-stream
@@ -172,7 +173,8 @@ public class ThreadedGraphNode {
 			stddev = C;
 		}
 		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
-				+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+				+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]))
+				+ machine.cheapMobility(n.state, player, 0) - machine.cheapMobility(n.state, enemy, 0);
 	}
 	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
