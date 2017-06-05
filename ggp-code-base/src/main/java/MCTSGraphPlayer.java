@@ -80,12 +80,12 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	}
 
 	// List of machines used for depth charges
-	IntPropNet ip = new IntPropNet();
+//	IntPropNet ip = new IntPropNet();
 
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		ip.initialize(getMatch().getGame().getRules(), getRole());
+		getStateMachine().initialize(getMatch().getGame().getRules(), getRole());
 		resetGraphNode();
 		moveNum = 0;
 		// mobilityHeuristic(timeout);
@@ -97,7 +97,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	// Must be called in order to reset static information regarding the game.
 	private void resetGraphNode() throws MoveDefinitionException, GoalDefinitionException {
 		ThreadedGraphNode.setRole(getRole());
-		ThreadedGraphNode.setStateMachine(ip);
+		ThreadedGraphNode.setStateMachine(getStateMachine());
 		ThreadedGraphNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
 		ThreadedGraphNode.stateMap.clear();
 		ThreadedGraphNode.numCharges = 0;
