@@ -79,7 +79,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		System.out.println("Corr = " + corr);
 		System.out.println("Num charges = " + heuristic.size());
 		if (corr > 0.25) {
-			System.out.println("ENABLING MOBILITY HEURISTIC");
+			System.out.println("ENABLING MOBILITY HEURISTIC [corr=" + corr + "]");
 			ThreadedGraphNode.heuristicEnable = true;
 		}
 	}

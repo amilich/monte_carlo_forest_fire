@@ -168,6 +168,7 @@ public class ThreadedGraphNode {
 	public static boolean heuristicEnable = false;
 	static final int C = 50;
 	static final double C1 = 0.7;
+	static final double C2 = 0.4;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) throws MoveDefinitionException {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
 		if (Double.isNaN(stddev)) {
@@ -176,7 +177,7 @@ public class ThreadedGraphNode {
 		if (heuristicEnable) {
 			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
 					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]))
-					+ machine.cheapMobility(n.state, player, 0);
+					+ C2 * machine.cheapMobility(n.state, player, 0);
 		} else {
 			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
 					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
