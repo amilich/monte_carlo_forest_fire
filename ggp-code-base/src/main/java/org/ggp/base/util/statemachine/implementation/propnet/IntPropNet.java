@@ -656,7 +656,8 @@ public class IntPropNet extends StateMachine {
 		if (state.props == null) {
 			BitSet stateB = new BitSet(origComps.length);
 			for (GdlSentence s : state.getContents()) {
-				stateB.set(componentIds.get(propNet.getBasePropositions().get(s)));
+				Component sc = propNet.getBasePropositions().get(s);
+				if (sc != null) stateB.set(componentIds.get(sc));
 			}
 			state.props = stateB;
 		}
@@ -684,12 +685,26 @@ public class IntPropNet extends StateMachine {
 	@Override
 	public MachineState internalDC(MachineState start, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
-		// this.convertAndRender("btns25.dot");
 		while (!isTerminal(start, tid)) {
 			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
 			start = internalNextState(start, selected, tid);
 		}
+		return start;
+	}
 
+	@Override
+	public MachineState preInternalDC(MachineState start, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		MachineState next = null;
+		while (true) {
+			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
+			next = internalNextState(start, selected, tid);
+			if (!isTerminal(next, tid)) {
+				start = next;
+			} else {
+				break;
+			}
+		}
 		return start;
 	}
 
