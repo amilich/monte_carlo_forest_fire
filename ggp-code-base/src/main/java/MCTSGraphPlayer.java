@@ -7,6 +7,7 @@ import org.ggp.base.util.game.Game;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
+import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
@@ -23,12 +24,13 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		if (failed) {
-			return new CachedStateMachine(new ProverStateMachine());
-		}
+//		if (failed) {
+//			return new CachedStateMachine(new ProverStateMachine());
+//		}
+		return new CachedStateMachine(new ProverStateMachine());
 //		return new BitSetPropNet();
 //		return new ExpPropNet();
-		return new IntPropNet();
+		// return new IntPropNet();
 //		return new ExpFactorPropNet();
 // 		return new BitSetNet();
 //		return new BasicFactorPropNet();
@@ -78,9 +80,12 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	}
 
 	// List of machines used for depth charges
+	IntPropNet ip = new IntPropNet();
+
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		ip.initialize(getMatch().getGame().getRules(), getRole());
 		resetGraphNode();
 		moveNum = 0;
 		// mobilityHeuristic(timeout);
@@ -92,14 +97,23 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	// Must be called in order to reset static information regarding the game.
 	private void resetGraphNode() throws MoveDefinitionException, GoalDefinitionException {
 		ThreadedGraphNode.setRole(getRole());
-		ThreadedGraphNode.setStateMachine(getStateMachine());
+		ThreadedGraphNode.setStateMachine(ip);
 		ThreadedGraphNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
 		ThreadedGraphNode.stateMap.clear();
 		ThreadedGraphNode.numCharges = 0;
+		if (getStateMachine().getRoles().size() != 1) {
+			for (Role r : getStateMachine().getRoles()) {
+				if (!r.equals(getRole())) {
+					ThreadedGraphNode.enemy = r;
+					break;
+				}
+			}
+		}
 		initRoot();
 	}
 
-	private final int MAX_ITERATIONS = 5000000; // Unnecessary to explore
+	private double CSP_UPDATE_COEFF = 1.5;
+	private final int MAX_ITERATIONS = 3000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
 		long startT = System.currentTimeMillis();
 		double timeDiff = (timeout - startT) / 1000.0 - MyHeuristics.MAX_DELIB_THRESHOLD / 1000.0;
@@ -107,7 +121,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 		int numLoops = 0;
 		ArrayList<ThreadedGraphNode> path = new ArrayList<ThreadedGraphNode>();
-		int temp_max = 10; //
 		while (!MyHeuristics.checkTime(timeout)) {
 			path.clear();
 			numLoops ++;
@@ -119,7 +132,13 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 				e.printStackTrace();
 			}
 			// if (numLoops > temp_max) break; // TODO
-			if (numLoops > MAX_ITERATIONS) break; // TODO
+			if (numLoops > MAX_ITERATIONS) {
+				if (getStateMachine().getRoles().size() == 1) {
+					System.out.println("Updating Csp");
+					ThreadedGraphNode.Csp *= CSP_UPDATE_COEFF;
+				}
+				break; // TODO
+			}
 		}
 		System.out.println(numLoops + ", " + moveNum);
 		System.out.println("[GRAPH] Charges/sec = " + (ThreadedGraphNode.numCharges / timeDiff));

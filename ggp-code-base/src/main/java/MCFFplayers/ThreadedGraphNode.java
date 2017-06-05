@@ -30,6 +30,7 @@ public class ThreadedGraphNode {
 	public static HashMap<MachineState, ThreadedGraphNode> stateMap = new HashMap<MachineState, ThreadedGraphNode>();
 	public static int numCharges = 0;
 	public double utility = -1;
+	public static Role enemy;
 
 	// Variables used to calculate standard deviation
 	// http://stackoverflow.com/questions/5543651/computing-standard-deviation-in-a-stream
@@ -163,18 +164,17 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
-	static final int Csp = 10000;
+	public static double Csp = 300000;
 	static final int C = 50;
 	static final double C1 = 0.7;
-	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
+	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) throws MoveDefinitionException {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
 		if (Double.isNaN(stddev)) {
 			stddev = C;
 		}
-		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
-//		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-//				Math.sqrt(C * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] + /* 0.5 * machine.cheapMobility(n.state, player, 0)*/
+				+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]))
+				+ machine.cheapMobility(n.state, player, 0) - machine.cheapMobility(n.state, enemy, 0);
 	}
 	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
@@ -185,7 +185,7 @@ public class ThreadedGraphNode {
 	}
 
 	// MCTS selection
-	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) throws GoalDefinitionException {
+	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) throws GoalDefinitionException, MoveDefinitionException {
 		ThreadedGraphNode currNode = this;
 		while (true) {
 			path.add(currNode);
