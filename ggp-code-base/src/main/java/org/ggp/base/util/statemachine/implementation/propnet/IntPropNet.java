@@ -317,6 +317,56 @@ public class IntPropNet extends StateMachine {
 		return 0;
 	}
 
+	/**
+	 * This should compute the topological ordering of all components.
+	 * Each component is either a proposition, logical gate, or transition.
+	 * Logical gates and transitions only have propositions as inputs.
+	 *
+	 * The base propositions and input propositions should always be exempt
+	 * from this ordering.
+	 *
+	 * The base propositions values are set from the MachineState that
+	 * operations are performed on and the input propositions are set from
+	 * the Moves that operations are performed on as well (if any).
+	 *
+	 * @return The order in which components need to be assigned.
+	 */
+	public List<Proposition> getOrdering() {
+		System.out.println("Sort start");
+		// List to contain the topological ordering.
+		List<Proposition> order = new ArrayList<Proposition>();
+
+		// All of the components in the PropNet
+		 List<Component> components = new ArrayList<Component>(propNet.getComponents());
+
+		// All of the propositions in the PropNet.
+		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
+
+		Queue<Proposition> allSources = new LinkedList<Proposition>();
+		allSources.addAll(propNet.getAllInputProps());
+		allSources.addAll(propNet.getAllBasePropositions());
+		HashSet<Component> visitedNodes = new HashSet<Component>();
+
+		while (!allSources.isEmpty()){
+			Proposition front = allSources.poll();
+			order.add(front);
+			visitedNodes.add(front);
+			for (Component c : front.getOutputs()){
+				if (c instanceof Proposition){
+					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
+					otherInputs.removeAll(visitedNodes);
+					if (otherInputs.isEmpty()){
+						allSources.add((Proposition) c);
+					}
+				}
+			}
+		}
+		// assert order.size() == propNet.getPropositions().size();
+		order.addAll(allSources);
+		System.out.println("Sort done");
+		return order;
+	}
+
 	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
