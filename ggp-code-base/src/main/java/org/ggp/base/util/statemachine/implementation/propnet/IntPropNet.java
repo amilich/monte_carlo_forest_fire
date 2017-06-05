@@ -433,9 +433,7 @@ public class IntPropNet extends StateMachine {
 
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role, int tid) throws MoveDefinitionException {
-		//		convertAndRender("unsure");
 		updatePropnetState(state, tid);
-		//		convertAndRender("unsure");
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
@@ -626,7 +624,7 @@ public class IntPropNet extends StateMachine {
 	}
 
 	@Override
-	public MachineState preInternalDC(MachineState start, int tid)
+	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		MachineState next = null;
 		while (true) {
@@ -638,6 +636,7 @@ public class IntPropNet extends StateMachine {
 				break;
 			}
 		}
+		finalS.props = (BitSet) next.props.clone();
 		return start;
 	}
 
@@ -667,9 +666,17 @@ public class IntPropNet extends StateMachine {
 		return legalMoves;
 	}
 
+	public void internalStateUpdate(BitSet state, int tid) {
+		state.xor(compBits[tid]);
+		state.and(isBase);
+		for (int ii = state.nextSetBit(0); ii != -1; ii = state.nextSetBit(ii + 1)) {
+			forwardpropmark(ii, state.get(ii), tid);
+		}
+	}
+
 	public MachineState internalNextState(MachineState state, List<Move> moves, int tid)
 			throws TransitionDefinitionException {
-		updatePropnetState(state, tid);
+		internalStateUpdate((BitSet) state.props.clone(), tid);
 		internalMoveUpdate(moves, tid);
 		MachineState m = new MachineState(nextBaseBits[tid]);
 		return m;

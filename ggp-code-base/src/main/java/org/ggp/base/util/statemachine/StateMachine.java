@@ -32,7 +32,7 @@ public abstract class StateMachine
 		return null;
 	}
 
-	public MachineState preInternalDC(MachineState start, int tid)
+	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		return null;
 	}

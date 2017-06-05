@@ -61,21 +61,29 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	}
 
 	static final double corr_threshold = 0.5;
+	static final int TIME_REM = 15000;
+	static final int TIME_CORR = 15000;
 	public void mobilityHeuristic(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		List<Integer> ourScore = new ArrayList<Integer>();
 		List<Integer> heuristic = new ArrayList<Integer>();
-		long newTimeout = System.currentTimeMillis() + 15000;
+		long newTimeout = System.currentTimeMillis() + TIME_CORR;
 		System.out.println("Starting correlation");
-		while (!MyHeuristics.checkTime(timeout - 15000) && !MyHeuristics.checkTime(newTimeout)) {
-			MachineState next = getStateMachine().preInternalDC(getCurrentState(), 0); // customdc(getCurrentState(), getStateMachine());
-			ourScore.add(getStateMachine().getGoal(next, getRole()));
+		while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
+			MachineState finalState = new MachineState();
+			MachineState next = getStateMachine().preInternalDC(getCurrentState(), finalState, 0);
+			ourScore.add(getStateMachine().getGoal(finalState, getRole()));
 			heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
 		}
 		double corr = Correlation(ourScore, heuristic);
 		System.out.println("Corr = " + corr);
 		System.out.println("Num charges = " + heuristic.size());
+		if (corr > CORR_THRESHOLD) {
+			System.out.println("ENABLING MOBILITY HEURISTIC [corr=" + corr + "]");
+			ThreadedGraphNode.heuristicEnable = true;
+		}
 	}
+	private double CORR_THRESHOLD = 0.25;
 
 	// List of machines used for depth charges
 	@Override
