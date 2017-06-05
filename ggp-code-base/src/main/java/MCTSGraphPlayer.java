@@ -23,9 +23,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		if (failed) {
-			return new CachedStateMachine(new ProverStateMachine());
-		}
 //		return new BitSetPropNet();
 //		return new ExpPropNet();
 		return new IntPropNet();
@@ -89,6 +86,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		// getStateMachine().initialize(getMatch().getGame().getRules(), getRole());
 		resetGraphNode();
 		moveNum = 0;
 		try {

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -177,6 +178,11 @@ public class IntPropNet extends StateMachine {
 			isInput = new BitSet(nComps);
 
 			origComps = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
+//			boolean result = topsortComponents(origComps);
+//			testTopologicalOrdering(Arrays.asList(origComps));
+//			System.out.println("Result: ");
+//			System.out.println(result);
+
 			componentIds = new HashMap<Component, Integer>();
 			for (int i = 0; i < origComps.length; i++) {
 				componentIds.put(origComps[i], i);
@@ -282,6 +288,7 @@ public class IntPropNet extends StateMachine {
 	@Override
 	// Don't use this method, just implemented to satisfy abstract parent class.
 	public boolean isTerminal(MachineState state) {
+//		System.out.println("[IntPropNet] WARNING: isTerminal(MachineState state) should never be called.");
 		return isTerminal(state, 0);
 	}
 
@@ -315,6 +322,66 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 		return 0;
+	}
+
+	private static boolean topsortHelper(Component comp, Set<Component> visited, Set<Component> tempMarks, Stack<Component> order) {
+		if (tempMarks.contains(comp))
+			return false; // Graph has a cycle
+
+		if (!visited.contains(comp)) {
+			if (!(comp instanceof Transition)) { // pretend that transitions don't have outputs for the topsort
+				tempMarks.add(comp);
+				for (Component next : comp.getOutputs()) {
+					if (!topsortHelper(next, visited, tempMarks, order))
+						return false;
+				}
+				tempMarks.remove(comp);
+			}
+			visited.add(comp);
+			order.push(comp);
+		}
+		return true;
+	}
+
+	/**
+	 * This should compute the topological ordering of all components.
+	 * Given an array of all components in the graph, modifies the array
+	 * in-place to be topologically sorted. If the graph contains a cycle
+	 * the ordering of the input array is unmodified.
+	 *
+	 * @return true iff the graph does not contain a cycle (ignoring transition outputs).
+	 */
+	public static boolean topsortComponents(Component[] comps) {
+		Stack<Component> order = new Stack<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		Set<Component> tempMarks = new HashSet<Component>();
+		for (Component comp : comps) {
+			if (!visited.contains(comp)) {
+				if (!topsortHelper(comp, visited, tempMarks, order))
+					return false;
+			}
+		}
+		for (int i = 0; i < comps.length; i++) {
+			comps[i] = order.pop();
+		}
+		return true;
+	}
+
+	public void testTopologicalOrdering(List<Component> ordering){
+		for (int i=1; i < ordering.size(); i++){
+			HashSet<Component> prev = new HashSet<Component>(ordering.subList(0, i));
+			Set<Component> inputs_c = ordering.get(i).getInputs();
+			HashSet<Component> inputs = new HashSet<Component>();
+			for (Component c : inputs_c){
+				if (!(c instanceof Transition)){
+					inputs.add(c);
+				}
+			}
+			inputs.removeAll(prev);
+			if (!inputs.isEmpty()){
+				throw new Error("Ordering is not topological");
+			}
+		}
 	}
 
 	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
