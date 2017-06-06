@@ -1,6 +1,8 @@
 package org.ggp.base.util.statemachine.implementation.propnet;
 
+import java.util.BitSet;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,6 +42,57 @@ public class AsyncPropNet extends StateMachine {
 	// -
 
 	// You need to make sure that CachedStateMachine implements these methods also if you want AsyncPropNet to work.
+	@Override
+	public MachineState internalDC(MachineState start, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		if (ip == null) {
+			Random r = new Random();
+			while (!isTerminal(start, tid)) {
+				List<List<Move>> jmoves = csm.getLegalJointMoves(start);
+				List<Move> selected =jmoves.get(r.nextInt(jmoves.size()));
+				start = csm.getNextState(start, selected);
+			}
+			return start;
+		} else {
+			return ip.internalDC(start, tid);
+		}
+	}
+
+	@Override
+	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		if (ip == null) {
+			Random r = new Random();
+			MachineState next = null;
+			while (true) {
+				List<List<Move>> jmoves = csm.getLegalJointMoves(start);
+				List<Move> selected = jmoves.get(r.nextInt(jmoves.size()));
+				next = csm.getNextState(start, selected);
+				if (!isTerminal(next, tid)) {
+					start = next;
+				} else {
+					break;
+				}
+			}
+			if (next.props != null) {
+				finalS.props = (BitSet) next.props.clone();
+			}
+			return start;
+		} else {
+			return ip.preInternalDC(start, finalS, tid);
+		}
+	}
+
+	@Override
+	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+		if (ip == null) {
+			double numActions = csm.findActions(r).size();
+			double numMoves = csm.getLegalMoves(s, r).size();
+			return (int) (100.0 * numMoves / numActions);
+		} else {
+			return ip.cheapMobility(s, r, tid);
+		}
+	}
 
 	@Override
 	public List<Move> findActions(Role role) throws MoveDefinitionException {
@@ -58,17 +111,17 @@ public class AsyncPropNet extends StateMachine {
 
 		ip = null;
 		executor.submit(new Runnable() {
-	        @Override
-	        public void run() {
-	        	try {
-				    IntPropNet propnet = new IntPropNet();
-				    propnet.initialize(finalDesc, finalRole);
-				    ip = propnet;
-				    System.out.println("[AsyncPropnet] Done initializing IntPropNet.");
-	        	} catch(Exception e) {
-	        		System.out.println("[AsyncPropNet] Error while initializing IntPropNet.");
-	        	}
-	        }
+			@Override
+			public void run() {
+				try {
+					IntPropNet propnet = new IntPropNet();
+					propnet.initialize(finalDesc, finalRole);
+					ip = propnet;
+					System.out.println("[AsyncPropnet] Done initializing IntPropNet.");
+				} catch(Exception e) {
+					System.out.println("[AsyncPropNet] Error while initializing IntPropNet.");
+				}
+			}
 		});
 
 		csm = new CachedStateMachine(new ProverStateMachine());
