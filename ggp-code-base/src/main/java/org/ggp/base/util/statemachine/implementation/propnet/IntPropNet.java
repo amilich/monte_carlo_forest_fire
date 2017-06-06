@@ -161,11 +161,16 @@ public class IntPropNet extends StateMachine {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			System.out.println("Built propnet");
-			if (propNet.getRoles().size() == 1 && propNet.getComponents().size() < MAX_FACTOR_SIZE) { // TODO
-				System.out.println("Trying to optimize");
-				doOnePlayerOptimization();
-			} else if (propNet.getComponents().size() < MAX_FACTOR_SIZE) {
-				factorSubgamesWCC(r);
+			try {
+				if (propNet.getRoles().size() == 1 && propNet.getComponents().size() < MAX_FACTOR_SIZE) { // TODO
+					System.out.println("Trying to optimize");
+					doOnePlayerOptimization();
+				} else if (propNet.getComponents().size() < MAX_FACTOR_SIZE) {
+					factorSubgamesWCC(r);
+				}
+			} catch (Exception e) {
+				System.out.println("Factoring failed: ");
+				System.out.println(e);
 			}
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 
@@ -291,7 +296,7 @@ public class IntPropNet extends StateMachine {
 	@Override
 	// Don't use this method, just implemented to satisfy abstract parent class.
 	public boolean isTerminal(MachineState state) {
-//		System.out.println("[IntPropNet] WARNING: isTerminal(MachineState state) should never be called.");
+		//		System.out.println("[IntPropNet] WARNING: isTerminal(MachineState state) should never be called.");
 		return isTerminal(state, 0);
 	}
 
@@ -633,26 +638,26 @@ public class IntPropNet extends StateMachine {
 	 * @param thread
 	 */
 	private void forwardpropmarkRec(int compId, int thread) {int numOutputs = numOutputs(compId);
-		int offset = outputOffset(compId);
-		long type = compInfo[compId] & TYPE_MASK;
-		boolean newValue = val(compId, thread);
-		if (type == BASE_TYPE_MASK) {
-			compBits[thread].flip(compId);
-		} else if (type == TRANSITION_TYPE_MASK) {
-			if (numOutputs > 0) {
-				nextBaseBits[thread].flip(compOutputs[offset]);
-			}
-			return;
+	int offset = outputOffset(compId);
+	long type = compInfo[compId] & TYPE_MASK;
+	boolean newValue = val(compId, thread);
+	if (type == BASE_TYPE_MASK) {
+		compBits[thread].flip(compId);
+	} else if (type == TRANSITION_TYPE_MASK) {
+		if (numOutputs > 0) {
+			nextBaseBits[thread].flip(compOutputs[offset]);
 		}
+		return;
+	}
 
-		for (int i = offset; i < offset + numOutputs; i ++) {
-			int comp = compOutputs[i];
-			boolean orig = val(comp, thread);
-			compState[thread][comp] += newValue ? 1 : -1;
-			if (val(compOutputs[i], thread) != orig) {
-				forwardpropmarkRec(comp, thread);
-			}
+	for (int i = offset; i < offset + numOutputs; i ++) {
+		int comp = compOutputs[i];
+		boolean orig = val(comp, thread);
+		compState[thread][comp] += newValue ? 1 : -1;
+		if (val(compOutputs[i], thread) != orig) {
+			forwardpropmarkRec(comp, thread);
 		}
+	}
 	}
 
 	/**
