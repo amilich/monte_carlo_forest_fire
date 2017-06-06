@@ -160,6 +160,7 @@ public class IntPropNet extends StateMachine {
 		description = sanitizeDistinct(description);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
+			System.out.println("Built propnet");
 			if (propNet.getRoles().size() == 1 && propNet.getComponents().size() < MAX_FACTOR_SIZE) { // TODO
 				System.out.println("Trying to optimize");
 				doOnePlayerOptimization();
@@ -178,10 +179,11 @@ public class IntPropNet extends StateMachine {
 			isInput = new BitSet(nComps);
 
 			origComps = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
-//			boolean result = topsortComponents(origComps);
-//			testTopologicalOrdering(Arrays.asList(origComps));
-//			System.out.println("Result: ");
-//			System.out.println(result);
+			boolean result = topsortComponents(origComps);
+			System.out.println("Sorted");
+			// testTopologicalOrdering(Arrays.asList(origComps));
+			System.out.println("Result: " + result);
+			System.out.println(result);
 
 			componentIds = new HashMap<Component, Integer>();
 			for (int i = 0; i < origComps.length; i++) {
@@ -274,6 +276,7 @@ public class IntPropNet extends StateMachine {
 				compBits[i] = (BitSet) compBitsT.clone();
 			}
 			//			this.convertAndRender("theInitial");
+			// this.convertAndRender("newinit");
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -355,10 +358,16 @@ public class IntPropNet extends StateMachine {
 		Stack<Component> order = new Stack<Component>();
 		Set<Component> visited = new HashSet<Component>();
 		Set<Component> tempMarks = new HashSet<Component>();
+		System.out.println("Starting topsort");
+		int count = 0;
 		for (Component comp : comps) {
+			count ++;
 			if (!visited.contains(comp)) {
 				if (!topsortHelper(comp, visited, tempMarks, order))
 					return false;
+			}
+			if (count % 100 == 0) {
+				System.out.println(count);
 			}
 		}
 		for (int i = 0; i < comps.length; i++) {
@@ -385,25 +394,47 @@ public class IntPropNet extends StateMachine {
 	}
 
 	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
-		for (Component c : propNet.getComponents()) {
-			if (c instanceof Constant) {
-				Set<Component> visited = new HashSet<Component>();
-				initforwardpropmark(c, c.getValue(), visited, componentIds);
-			}
-		}
 		Set<Proposition> bases = propNet.getAllBasePropositions();
-
 		System.out.println("There are " + bases.size() + " base propositions.");
 		System.out.println("There are " + propNet.getComponents().size() + " components.");
-		for (Proposition base : bases) {
-			Set<Component> visited = new HashSet<Component>();
-			initforwardpropmark(base, false, visited, componentIds);
-		}
-		System.out.println("Done with bases");
-
 		if (propNet.getInitProposition() != null) {
-			Set<Component> visited = new HashSet<Component>();
-			initforwardpropmark(propNet.getInitProposition(), true, visited, componentIds);
+			propNet.getInitProposition().curVal = true;
+		}
+		for (Component c : origComps) {
+			if (c instanceof Constant) continue;
+			else if (bases.contains(c)) continue;
+			else if (propNet.getAllInputProps().contains(c)) continue;
+			else if (c.equals(propNet.getInitProposition())) continue;
+			else if (c instanceof And) {
+				boolean result = true;
+				for (int ii = 0; ii < c.inputs.size(); ii ++) {
+					if (!c.input_arr[ii].curVal) {
+						result = false;
+						break;
+					}
+				}
+				c.curVal = result;
+			} else if (c instanceof Or) {
+				boolean result = false;
+				for (int ii = 0; ii < c.inputs.size(); ii ++) {
+					if (c.input_arr[ii].curVal) {
+						result = true;
+						break;
+					}
+				}
+				c.curVal = result;
+			} else if (c instanceof Not) {
+				c.curVal = !c.input_arr[0].curVal;
+			} else if (c instanceof Transition) {
+				c.curVal = c.input_arr[0].curVal;
+			} else if (c instanceof Proposition) {
+				if (c.input_arr.length == 0) {
+					System.out.println(c);
+				}
+				c.curVal = c.input_arr[0].curVal;
+			} else {
+				System.out.println("[IntPropNet] Unknown type: " + c);
+			}
 		}
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
@@ -545,6 +576,7 @@ public class IntPropNet extends StateMachine {
 	public void initforwardpropmark(Component c, boolean newValue, Set<Component> visited, Map<Component, Integer> componentIds) {
 		if (visited.contains(c)) return;
 		visited.add(c);
+		// if (c.curVal == newValue) return;
 		c.curVal = newValue;
 
 		if (c.isBase) {
@@ -600,15 +632,7 @@ public class IntPropNet extends StateMachine {
 	 * @param compId
 	 * @param thread
 	 */
-	private void forwardpropmarkRec(int compId, int thread) {
-		//		Component ci = origComps[compId];
-		//		if (ci.toString().contains("r 13")) {
-		//			System.out.println();
-		//		} else if (ci.toString().contains("c 13")) {
-		//			System.out.println();
-		//		}
-
-		int numOutputs = numOutputs(compId);
+	private void forwardpropmarkRec(int compId, int thread) {int numOutputs = numOutputs(compId);
 		int offset = outputOffset(compId);
 		long type = compInfo[compId] & TYPE_MASK;
 		boolean newValue = val(compId, thread);
@@ -623,15 +647,8 @@ public class IntPropNet extends StateMachine {
 
 		for (int i = offset; i < offset + numOutputs; i ++) {
 			int comp = compOutputs[i];
-			//			Component c = origComps[comp];// TODO rem
-			//			c.bitIndex--; // TODO for debug
-			//			long outType = compInfo[comp] & TYPE_MASK;
 			boolean orig = val(comp, thread);
 			compState[thread][comp] += newValue ? 1 : -1;
-			//			if (c instanceof And && compState[thread][comp] < TRUE_INT - c.input_arr.length && compState[thread][comp] > 0) {
-			//				System.out.println(compState[thread][comp]);
-			//				this.convertAndRender("ALERT");
-			//			}
 			if (val(compOutputs[i], thread) != orig) {
 				forwardpropmarkRec(comp, thread);
 			}
@@ -879,7 +896,7 @@ public class IntPropNet extends StateMachine {
 				toRemove.add(c);
 			}
 		}
-		propNet.renderToFile("opBefore.dot");
+		// propNet.renderToFile("opBefore.dot");
 		System.out.println("Removing " + toRemove.size() + " components - " + toRemove);
 		for (Component c : toRemove) {
 			propNet.removeComponent(c);
@@ -887,7 +904,7 @@ public class IntPropNet extends StateMachine {
 				propNet.removeComponent(inputLegalMap.get(c));
 			}
 		}
-		propNet.renderToFile("opDone.dot");
+		// propNet.renderToFile("opDone.dot");
 		//		for (Component c : propNet.getComponents()) {
 		//			Proposition input = (Proposition) propNet.getLegalInputMap().get(c);
 		//			if (input == null) {
