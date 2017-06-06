@@ -115,7 +115,8 @@ private void resetGraphNode() throws MoveDefinitionException, GoalDefinitionExce
 	initRoot();
 }
 
-private double CSP_UPDATE_COEFF = 3.0;
+private double CSP_UPDATE_COEFF = 1.8;
+int num_update = 0;
 private final int MAX_ITERATIONS = 3000000; // Unnecessary to explore
 public void expandTree(long timeout) {
 	long startT = System.currentTimeMillis();
@@ -136,9 +137,10 @@ public void expandTree(long timeout) {
 		}
 		// if (numLoops > temp_max) break; // TODO
 		if (numLoops > MAX_ITERATIONS) {
-			if (getStateMachine().getRoles().size() == 1) {
+			if (getStateMachine().getRoles().size() == 1 && num_update < 2) {
 				System.out.println("Updating Csp");
 				ThreadedGraphNode.Csp *= CSP_UPDATE_COEFF;
+				num_update ++;
 			}
 			break; // TODO
 		}
