@@ -36,6 +36,7 @@ public StateMachine getInitialStateMachine() {
 	// 		return new BitSetNet();
 	//		return new BasicFactorPropNet();
 	//		return new StateLessPropNet();
+//	return new AsyncPropNet();
 }
 
 // http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
@@ -73,6 +74,13 @@ public void mobilityHeuristic(long timeout)
 	long newTimeout = System.currentTimeMillis() + TIME_CORR;
 	System.out.println("Starting correlation");
 	while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
+		// TODO(andrew): This code needs to be updated to be compatible with AsyncPropNet
+		// You either need to write an implementation of preInternalDC for cachedstatemachine
+		// and a wrapper preInternalDC method in AsyncPropNet, give up do async initialization,
+		// or not call getStateMachine().preInternalDC here.
+
+		// You also need to update AsyncPropNet for cheapMobility support. I would have but this
+		// code below is unclear to me -- why does it assume tid=0??
 		MachineState finalState = new MachineState();
 		MachineState next = getStateMachine().preInternalDC(getCurrentState(), finalState, 0);
 		ourScore.add(getStateMachine().getGoal(finalState, getRole()));
@@ -98,6 +106,7 @@ public void stateMachineMetaGame(long timeout)
 	try {
 		mobilityHeuristic(timeout);
 	} catch (Exception e) {
+		System.out.println("[GRAPH] Error while computing mobility heuristic:");
 		e.printStackTrace();
 	}
 	expandTree(timeout);
@@ -184,6 +193,7 @@ public Move stateMachineSelectMove(long timeout)
 		Move m = root.getBestMove();
 		return m;
 	} catch (Exception e) {
+		System.out.println("[GRAPH] Exception in stateMachineSelectMove. Falling back to any legal move.");
 		failed = true;
 		this.stateMachine = new CachedStateMachine(new ProverStateMachine());
 		this.stateMachine.initialize(getMatch().getGame().getRules(), getRole());
