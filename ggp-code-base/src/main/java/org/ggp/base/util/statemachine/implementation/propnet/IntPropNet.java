@@ -905,14 +905,6 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 		// propNet.renderToFile("opDone.dot");
-		//		for (Component c : propNet.getComponents()) {
-		//			Proposition input = (Proposition) propNet.getLegalInputMap().get(c);
-		//			if (input == null) {
-		//				propNet.removeComponent(c);
-		//			}
-		//		}
-		// System.out.println("Removed " + toRemove.size() + " components.");
-		// propNet.renderToFile("optimized.dot");
 	}
 
 	/**
