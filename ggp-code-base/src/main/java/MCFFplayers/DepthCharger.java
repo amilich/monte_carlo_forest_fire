@@ -44,7 +44,8 @@ public class DepthCharger implements Callable<Double>, Charger {
 		value = 0;
 		for (int ii = 0; ii < numCharges; ii ++) {
 			try {
-				MachineState depthCharge =  machine.internalDC(state, tid); // customdc(state); // new
+				// TODO(andrew): Update for compatibility with AsyncPropNet
+				MachineState depthCharge = machine.internalDC(state, tid); // customdc(state); // new
 				value += machine.getGoal(depthCharge, role, tid);
 			} catch (Exception e) {
 				e.printStackTrace();
