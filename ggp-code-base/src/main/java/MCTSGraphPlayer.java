@@ -12,7 +12,7 @@ import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
+import org.ggp.base.util.statemachine.implementation.propnet.AsyncPropNet;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 import MCFFplayers.ThreadedGraphNode;
@@ -31,11 +31,12 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 public StateMachine getInitialStateMachine() {
 	//		return new BitSetPropNet();
 	//		return new ExpPropNet();
-	return new IntPropNet();
+//	return new IntPropNet();
 	//		return new ExpFactorPropNet();
 	// 		return new BitSetNet();
 	//		return new BasicFactorPropNet();
 	//		return new StateLessPropNet();
+	return new AsyncPropNet();
 }
 
 // http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
