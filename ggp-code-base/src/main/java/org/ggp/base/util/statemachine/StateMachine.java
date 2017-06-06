@@ -32,6 +32,11 @@ public abstract class StateMachine
 		return null;
 	}
 
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, int[] avgMobility)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		return null;
+	}
+
 	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		return null;

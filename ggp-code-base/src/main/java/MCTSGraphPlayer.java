@@ -74,19 +74,25 @@ public void mobilityHeuristic(long timeout)
 	System.out.println("Starting correlation");
 	while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
 		MachineState finalState = new MachineState();
-		MachineState next = getStateMachine().preInternalDC(getCurrentState(), finalState, 0);
+//		MachineState next = getStateMachine().preInternalDC(getCurrentState(), finalState, 0);
+		int[] avgMobility = new int[1]; // for returning the value only
+		MachineState next = getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, avgMobility);
+
 		ourScore.add(getStateMachine().getGoal(finalState, getRole()));
-		heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
+//		heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
+		heuristic.add(avgMobility[0]);
 	}
 	double corr = Correlation(ourScore, heuristic);
 	System.out.println("Corr = " + corr);
 	System.out.println("Num charges = " + heuristic.size());
-	if (corr > CORR_THRESHOLD) {
+	if (Math.abs(corr) > CORR_THRESHOLD) { // we want the abs value of corr because in some games, it might be beneficial to restrict our own moves
 		System.out.println("ENABLING MOBILITY HEURISTIC [corr=" + corr + "]");
 		ThreadedGraphNode.heuristicEnable = true;
+		ThreadedGraphNode.mobilityCorr = corr;
+		// we want to store corr because a higher correlation should entail a higher c value in the select fn
 	}
 }
-private double CORR_THRESHOLD = 0.25;
+private double CORR_THRESHOLD = 0.3;
 
 // List of machines used for depth charges
 @Override

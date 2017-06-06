@@ -52,6 +52,7 @@ public class ThreadedGraphNode {
 	private int numMoves;
 	private int numEnemyMoves;
 	private MachineState state;
+	private int pMobility;
 
 	private boolean isTerminal = false;
 
@@ -109,6 +110,7 @@ public class ThreadedGraphNode {
 		oCounts = new double[numMoves][numEnemyMoves];
 		oVals = new double[numMoves][numEnemyMoves];
 		children = new ThreadedGraphNode[numMoves][numEnemyMoves];
+		pMobility = (int) (100.0 * numMoves / machine.findActions(player).size());
 		numChildren = numMoves * numEnemyMoves;
 	}
 
@@ -166,6 +168,7 @@ public class ThreadedGraphNode {
 	// of the depth charges from a particular node.
 	public static double Csp = 300000;
 	public static boolean heuristicEnable = false;
+	public static double mobilityCorr = 0.0;
 	static final int C = 50;
 	static final double C1 = 0.7;
 	static final double C2 = 0.4;
@@ -177,14 +180,20 @@ public class ThreadedGraphNode {
 		if (heuristicEnable) {
 			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove]
 					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]))
-					+ C2 * machine.cheapMobility(n.state, player, 0);
+//					+ C2 * machine.cheapMobility(n.state, player, 0);
+					+ C2 * mobilityCorr * pMobility;
 		} else {
 			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove]
 					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
 		}
 	}
 	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
-		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
+		if (heuristicEnable){
+			return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove])
+			+ C2 * mobilityCorr * pMobility;
+		} else {
+			return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
+		}
 	}
 
 	protected double singlePSelect(int pMove) throws GoalDefinitionException {

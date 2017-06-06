@@ -707,6 +707,38 @@ public class IntPropNet extends StateMachine {
 		return start;
 	}
 
+	/**
+	 * We use this method to return an average of the mobility throughout the entire game, not just at
+	 * the end. This way, we get a sense of how good mobility is as a whole, not just at the end when
+	 * the game is pretty much determined
+	 */
+
+	@Override
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, int[] avgMobility)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		MachineState next = null;
+		int mobilitySum = 0;
+		int numMovesToTerminal = 0;
+		while (true) {
+			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
+			next = internalNextState(start, selected, tid);
+			if (!isTerminal(next, tid)) {
+				start = next;
+				mobilitySum += cheapMobility(start, roles[0], tid);
+				numMovesToTerminal++;
+			} else {
+				break;
+			}
+		}
+		if (numMovesToTerminal > 0) {
+			avgMobility[0] = mobilitySum/numMovesToTerminal;
+		} else {
+			avgMobility[0] = 0;
+		}
+		finalS.props = (BitSet) next.props.clone();
+		return start;
+	}
+
 	@Override
 	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
