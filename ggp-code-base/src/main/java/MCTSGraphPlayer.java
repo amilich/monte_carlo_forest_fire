@@ -35,16 +35,18 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	}
 
 	// http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
-	public double Correlation(List<Integer> xs, List<Integer> ys) {
+	public double Correlation(List<Double> xs, List<Double> ys) {
 		double sx = 0.0;
 		double sy = 0.0;
 		double sxx = 0.0;
 		double syy = 0.0;
 		double sxy = 0.0;
 		int n = xs.size();
+	//	double maxX = Collections.max(xs);
+	//	double maxY = Collections.max(ys);
 		for (int i = 0; i < n; i ++) {
-			double x = xs.get(i).doubleValue();
-			double y = ys.get(i).doubleValue();
+			double x = xs.get(i);///maxX;
+			double y = ys.get(i);///maxY;
 			sx += x;
 			sy += y;
 			sxx += x * x;
@@ -59,37 +61,32 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		return numerator / denominator;
 	}
 
-	static final double corr_threshold = 0.5;
+	private double CORR_THRESHOLD = 0.2;
 	static final int TIME_REM = 15000;
 	static final int TIME_CORR = 15000;
 	public void mobilityHeuristic(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		List<Integer> ourScore = new ArrayList<Integer>();
-		List<Integer> heuristic = new ArrayList<Integer>();
+		List<Double> ourScore = new ArrayList<Double>();
+		List<Double> heuristic = new ArrayList<Double>();
 		long newTimeout = System.currentTimeMillis() + TIME_CORR;
 		System.out.println("Starting correlation");
 		while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
-			// TODO(andrew): This code needs to be updated to be compatible with AsyncPropNet
-			// You either need to write an implementation of preInternalDC for cachedstatemachine
-			// and a wrapper preInternalDC method in AsyncPropNet, give up do async initialization,
-			// or not call getStateMachine().preInternalDC here.
-
-			// You also need to update AsyncPropNet for cheapMobility support. I would have but this
-			// code below is unclear to me -- why does it assume tid=0??
 			MachineState finalState = new MachineState();
-			MachineState next = getStateMachine().preInternalDC(getCurrentState(), finalState, 0);
-			ourScore.add(getStateMachine().getGoal(finalState, getRole()));
-			heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
+			double[] weightedMobility = new double[1]; // for returning the value only
+			MachineState next = getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, weightedMobility, getRole());
+			ourScore.add((double)getStateMachine().getGoal(finalState, getRole()));
+			heuristic.add(weightedMobility[0]);
 		}
 		double corr = Correlation(ourScore, heuristic);
 		System.out.println("Corr = " + corr);
 		System.out.println("Num charges = " + heuristic.size());
-		if (corr > CORR_THRESHOLD) {
+		if (Math.abs(corr) > CORR_THRESHOLD) { // we want the abs value of corr because in some games, it might be beneficial to restrict our own moves
 			System.out.println("ENABLING MOBILITY HEURISTIC [corr=" + corr + "]");
 			ThreadedGraphNode.heuristicEnable = true;
+			ThreadedGraphNode.mobilityCorr = corr;
+			// we want to store corr because a higher correlation should entail a higher c value in the select fn
 		}
 	}
-	private double CORR_THRESHOLD = 0.25;
 
 	// List of machines used for depth charges
 	@Override

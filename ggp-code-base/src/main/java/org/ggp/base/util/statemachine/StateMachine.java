@@ -33,15 +33,20 @@ public abstract class StateMachine
 		return null;
 	}
 
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] avgMobility, Role player)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		return null;
+	}
+
 	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		System.out.println("[StateMachine] WARNING: StateMachine.preInternalDC should never be called!");
 		return null;
 	}
 
-	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+	public double cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
 		System.out.println("[StateMachine] WARNING: StateMachine.cheapMobility should never be called!");
-		return 0;
+		return 0.0;
 	}
 
 	/**
