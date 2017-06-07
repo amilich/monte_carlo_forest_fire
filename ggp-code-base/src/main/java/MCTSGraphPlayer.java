@@ -45,7 +45,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 					return propnet;
 				} catch (Exception e) {
 					System.out.println("[GRAPH] Error in thread building IntPropNet.");
-					System.out.println(e); 
+					System.out.println(e);
 				}
 				return null;
 			}
@@ -190,7 +190,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	private double CSP_UPDATE_COEFF = 1.3;
 	int num_update = 0;
 	private int MAX_ITERATIONS = 3000000; // Unnecessary to explore
-	public void expandTree(long timeout) {
+	public void expandTree(long timeout) throws MoveDefinitionException {
 		long startT = System.currentTimeMillis();
 		double timeDiff = (timeout - startT) / 1000.0 - MyHeuristics.MAX_DELIB_THRESHOLD / 1000.0;
 		ThreadedGraphNode.numCharges = 0;
@@ -207,14 +207,17 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
-			// if (numLoops > temp_max) break; // TODO
 			if (numLoops > MAX_ITERATIONS) {
-				if (getStateMachine().getRoles().size() == 1 && num_update < 1) {
+				break; // TODO
+			}
+		}
+		if (numLoops > MAX_ITERATIONS || ThreadedGraphNode.numCharges < 10) {
+			if (moveNum > 1 && root.getBestUtility() < 97.0) { // TODO threshold
+				if (getStateMachine().getRoles().size() == 1 && num_update < 2) {
 					System.out.println("Updating Csp");
 					ThreadedGraphNode.Csp *= CSP_UPDATE_COEFF;
 					num_update ++;
 				}
-				break; // TODO
 			}
 		}
 		System.out.println(numLoops + ", " + moveNum);
