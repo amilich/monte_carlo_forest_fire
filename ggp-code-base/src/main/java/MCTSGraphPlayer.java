@@ -74,9 +74,10 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 					return initializedNet;
 				}
 			} catch (Exception ex) {
-				System.out.println("[GRAPH]: Exception calling fut.get().");
+				System.out.println("[GRAPH] Exception calling fut.get().");
 			}
 		}
+		System.out.println("[GRAPH] Using prover :|");
 		ThreadedGraphNode.usingProver = true;
 		List<StateMachine> machines = new ArrayList<StateMachine>();
 		for (int ii = 0; ii < IntPropNet.NUM_THREADS; ii ++) {
@@ -85,11 +86,13 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			machines.add(m);
 		}
 		ThreadedGraphNode.machines = machines;
+		System.out.println("[GRAPH] Built provers");
 		return csm;
 	}
 
 	@Override
 	public StateMachine getInitialStateMachine() {
+		System.out.println("[GRAPH] getInitialStateMachine SHOULD NEVER BE CALLED");
 		return new IntPropNet();
 	}
 

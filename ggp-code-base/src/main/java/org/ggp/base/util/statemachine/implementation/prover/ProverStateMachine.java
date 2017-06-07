@@ -25,8 +25,7 @@ import org.ggp.base.util.statemachine.implementation.prover.result.ProverResultP
 import com.google.common.collect.ImmutableList;
 
 
-public class ProverStateMachine extends StateMachine
-{
+public class ProverStateMachine extends StateMachine {
     private MachineState initialState;
     private Prover prover;
     private ImmutableList<Role> roles;
@@ -41,7 +40,6 @@ public class ProverStateMachine extends StateMachine
         }
         return start;
 	}
-
 
     /**
      * Initialize must be called before using the StateMachine
