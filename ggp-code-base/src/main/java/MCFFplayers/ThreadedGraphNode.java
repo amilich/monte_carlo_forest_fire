@@ -31,6 +31,7 @@ public class ThreadedGraphNode {
 	public static int numCharges = 0;
 	public double utility = -1;
 	public static Role enemy;
+	public static boolean usingProver = false;
 
 	// Variables used to calculate standard deviation
 	// http://stackoverflow.com/questions/5543651/computing-standard-deviation-in-a-stream
@@ -60,6 +61,7 @@ public class ThreadedGraphNode {
 	static Role player;
 	public static int roleIndex = -1;
 	static StateMachine machine;
+	public static List<StateMachine> machines = null;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 	// .newCachedThreadPool();
 
@@ -103,6 +105,7 @@ public class ThreadedGraphNode {
 		} else {
 			myMoves = machine.getLegalMoves(state, player);
 			this.numMoves = myMoves.size();
+//			List<List<Move>> lgm = machine.getLegalJointMoves(state);
 			this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
 		}
 		pCounts = new double[numMoves];
@@ -340,14 +343,6 @@ public class ThreadedGraphNode {
 			System.out.println("GraphNode backprop error: path length < 2");
 			return;
 		}
-		/*for (int ii = path.size() - 1; ii >= 0; ii --) {
-			if (!updateSolved(path.get(ii))) {
-				break;
-			}
-			if (ii == 0) {
-				System.out.println("Root solved");
-			}
-		}*/
 		for (int ii = path.size() - 2; ii >= 0; ii --) {
 			Pair pair = getMoveIndex(path.get(ii), path.get(ii + 1));
 			if (onePlayer) {
@@ -375,21 +370,23 @@ public class ThreadedGraphNode {
 		if (roleIndex < 0) roleIndex = getRoleIndex();
 		if (SIMPLE) {
 			double avgScore = 0;
-			// long t1 = System.nanoTime();
 			for (int ii = 0; ii < NUM_SIMP; ii ++) {
 				MachineState m = machine.performDepthCharge(state, null);
 				avgScore += machine.getGoal(m, player);
 			}
-			// long t2 = System.nanoTime();
-			// System.out.println("Dc took " + (t2 - t1) + " nanoseconds");
 			numCharges += NUM_SIMP;
 			avgScore /= NUM_SIMP;
 			return avgScore;
 		} else {
 			Set<Future<Double>> futures = new HashSet<Future<Double>>();
 			for (int ii = 0; ii < NUM_THREADS; ii ++) {
-				Future<Double> future = executor.submit(new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, ii));
-				futures.add(future);
+				if (usingProver) {
+					Future<Double> future = executor.submit(new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, ii));
+					futures.add(future);
+				} else {
+					Future<Double> future = executor.submit(new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, ii));
+					futures.add(future);
+				}
 			}
 			double avgScore = 0;
 			for (Future<Double> future : futures) {

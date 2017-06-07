@@ -35,6 +35,7 @@ public abstract class StateMachine
 
 	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] avgMobility, Role player)
 			throws MoveDefinitionException, TransitionDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.preInternalDCMobility should never be called!");
 		return null;
 	}
 
@@ -155,8 +156,8 @@ public abstract class StateMachine
      */
     public abstract int getGoal(MachineState state, Role role) throws GoalDefinitionException;
     public int getGoal(MachineState state, Role role, int tid) throws GoalDefinitionException {
-    	System.out.println("[StateMachine] WARNING: StateMachine.getGoal(state, role) should never be called!");
-    	return 0;
+    	// System.out.println("[StateMachine] WARNING: StateMachine.getGoal(state, role) should never be called!");
+    	return getGoal(state, role);
     }
 
     /**
@@ -165,8 +166,8 @@ public abstract class StateMachine
      */
     public abstract boolean isTerminal(MachineState state);
     public boolean isTerminal(MachineState state, int tid) {
-    	System.out.println("[StateMachine] WARNING: StateMachine.isTerminal(state, tid) should never be called!");
-    	return false;
+    	// System.out.println("[StateMachine] WARNING: StateMachine.isTerminal(state, tid) should never be called!");
+    	return isTerminal(state);
     }
 
     /**

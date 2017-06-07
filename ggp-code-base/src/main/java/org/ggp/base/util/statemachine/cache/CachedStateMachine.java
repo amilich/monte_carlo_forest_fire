@@ -3,6 +3,7 @@ package org.ggp.base.util.statemachine.cache;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.statemachine.MachineState;
@@ -19,6 +20,17 @@ public final class CachedStateMachine extends StateMachine
 {
     private final StateMachine backingStateMachine;
     private final TtlCache<MachineState, Entry> ttlCache;
+
+    @Override
+  	public MachineState internalDC(MachineState start, int tid)
+  			throws MoveDefinitionException, TransitionDefinitionException {
+      	Random r = new Random();
+      	while (!backingStateMachine.isTerminal(start)) {
+          	List<List<Move>> jmoves = backingStateMachine.getLegalJointMoves(start);
+          	start = backingStateMachine.getNextState(start, jmoves.get(r.nextInt(jmoves.size())));
+          }
+          return start;
+  	}
 
     private final class Entry
     {

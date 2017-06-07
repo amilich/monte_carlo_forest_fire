@@ -1,5 +1,10 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
@@ -7,6 +12,7 @@ import org.ggp.base.util.game.Game;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
+import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
@@ -21,17 +27,73 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	ThreadedGraphNode root = null;
 	List<Gdl> prevRules = null;
 
+	final static long PROPNET_MIN_BUFFER_TIME_AFTER_INIT_MS = 7000;
+
+	@Override
+	public StateMachine getAndInitializeStateMachine(long timeout, Role role) {
+		ExecutorService executor = Executors.newFixedThreadPool(1); // Threadpool cause we might want to async init more stuff later
+		final List<Gdl> finalDesc = getMatch().getGame().getRules();
+		final Role finalRole = role;
+
+		Future<IntPropNet> fut = executor.submit(new Callable<IntPropNet>() {
+			@Override
+			public IntPropNet call() {
+				try {
+					IntPropNet propnet = new IntPropNet();
+					propnet.initialize(finalDesc, finalRole);
+					System.out.println("Callable returning");
+					return propnet;
+				} catch (Exception e) {
+					System.out.println("[GRAPH] Error in thread building IntPropNet.");
+				}
+				return null;
+			}
+		});
+
+		StateMachine csm = new CachedStateMachine(new ProverStateMachine());
+		csm.initialize(getMatch().getGame().getRules(), role);
+		long nowMs = System.currentTimeMillis();
+		long timeRem = timeout - nowMs;
+		long timeToBuild = timeRem - PROPNET_MIN_BUFFER_TIME_AFTER_INIT_MS;
+
+		IntPropNet initializedNet;
+		boolean propnetFinished = false;
+		try {
+			System.out.println("[GRAPH] Awaiting propNet termination");
+			executor.shutdown();
+			propnetFinished = executor.awaitTermination(timeToBuild, TimeUnit.MILLISECONDS);
+		} catch (Exception e) {
+			System.out.println("[GRAPH] Executor threw an exception calling awaitTermination");
+		}
+
+		if (propnetFinished) {
+			System.out.println("[GRAPH] PropNet finished in time :)");
+			try {
+				initializedNet = fut.get();
+				if (initializedNet != null) {
+					return initializedNet;
+				}
+			} catch (Exception ex) {
+				System.out.println("[GRAPH] Exception calling fut.get().");
+			}
+		}
+		System.out.println("[GRAPH] Using prover :|");
+		ThreadedGraphNode.usingProver = true;
+		List<StateMachine> machines = new ArrayList<StateMachine>();
+		for (int ii = 0; ii < IntPropNet.NUM_THREADS; ii ++) {
+			StateMachine m = new CachedStateMachine(new ProverStateMachine());
+			m.initialize(this.getMatch().getGame().getRules(), role);
+			machines.add(m);
+		}
+		ThreadedGraphNode.machines = machines;
+		System.out.println("[GRAPH] Built provers");
+		return csm;
+	}
+
 	@Override
 	public StateMachine getInitialStateMachine() {
-		//		return new BitSetPropNet();
-		//		return new ExpPropNet();
+		System.out.println("[GRAPH] getInitialStateMachine SHOULD NEVER BE CALLED");
 		return new IntPropNet();
-		//		return new ExpFactorPropNet();
-		// 		return new BitSetNet();
-		//		return new BasicFactorPropNet();
-		//		return new StateLessPropNet();
-		//		return new AsyncPropNet();
-		//		return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	// http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
@@ -66,6 +128,10 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	static final int TIME_CORR = 15000;
 	public void mobilityHeuristic(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		if (!(getStateMachine() instanceof IntPropNet)) {
+			System.out.println("Skipping mobility heuristic because not using propNet.");
+			return;
+		}
 		List<Double> ourScore = new ArrayList<Double>();
 		List<Double> heuristic = new ArrayList<Double>();
 		long newTimeout = System.currentTimeMillis() + TIME_CORR;
@@ -93,11 +159,12 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// getStateMachine().initialize(getMatch().getGame().getRules(), getRole());
+		ThreadedGraphNode.stateMap.clear();
 		resetGraphNode();
 		moveNum = 0;
 		try {
 			if (getStateMachine().getRoles().size() > 1) {
-				mobilityHeuristic(timeout);
+				// mobilityHeuristic(timeout);
 			}
 		} catch (Exception e) {
 			System.out.println("[GRAPH] Error while computing mobility heuristic:");
