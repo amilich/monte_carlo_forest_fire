@@ -161,6 +161,7 @@ public class IntPropNet extends StateMachine {
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
 			System.out.println("Built propnet");
+
 			try {
 				if (propNet.getRoles().size() == 1 && propNet.getComponents().size() < MAX_FACTOR_SIZE) { // TODO
 					System.out.println("Trying to optimize");
@@ -741,14 +742,14 @@ public class IntPropNet extends StateMachine {
 			next = internalNextState(start, selected, tid);
 			if (!isTerminal(next, tid)) {
 				start = next;
-//				List<Move> moves = getLegalMoves(start, roles[playerIndex], tid);
-//				if (moves.size() == 1 && moves[0]){
-//				}
-//				if (getLegalMoves(s, roles[playerIndex], tid).size() > 1) { //disregard mobililty when
-					double cm = cheapMobility(start, roles[playerIndex], tid);
-					mobilityVals.add(cm);
-					numMovesToTerminal++;
-//				}
+				//				List<Move> moves = getLegalMoves(start, roles[playerIndex], tid);
+				//				if (moves.size() == 1 && moves[0]){
+				//				}
+				//				if (getLegalMoves(s, roles[playerIndex], tid).size() > 1) { //disregard mobililty when
+				double cm = cheapMobility(start, roles[playerIndex], tid);
+				mobilityVals.add(cm);
+				numMovesToTerminal++;
+				//				}
 			} else {
 				break;
 			}
@@ -759,16 +760,16 @@ public class IntPropNet extends StateMachine {
 			weights.add((double) i);
 			weightsSum += (double) i;
 		}
-//		System.out.println("weights: " + weights);
-//		System.out.println("weightsSum: " + weightsSum);
+		//		System.out.println("weights: " + weights);
+		//		System.out.println("weightsSum: " + weightsSum);
 
 		double weightedMobilitySum = 0.0;
 		for(int i = 0; i < weights.size(); i++){
 			weightedMobilitySum += mobilityVals.get(i) * weights.get(i) / weightsSum;
 		}
 
-//		System.out.println("mobility sum: " + weightedMobilitySum);
-//		System.out.println("No. moves to Terminal: " + numMovesToTerminal);
+		//		System.out.println("mobility sum: " + weightedMobilitySum);
+		//		System.out.println("No. moves to Terminal: " + numMovesToTerminal);
 
 		if (numMovesToTerminal > 0) {
 			weightedMobility[0] = weightedMobilitySum;
@@ -939,9 +940,17 @@ public class IntPropNet extends StateMachine {
 		nodesToVisit.add(p);
 		while (!nodesToVisit.isEmpty()) {
 			Component currNode = nodesToVisit.poll();
+			if (currNode == null) {
+				System.out.println("[dfs] Null node found in dfs");
+				continue;
+			}
 			if (visited.contains(currNode)) continue;
 			else visited.add(currNode);
-			nodesToVisit.addAll(currNode.inputs);
+			if (currNode.inputs == null) {
+				System.out.println("[dfs] Null inputs: " + currNode);
+			} else {
+				nodesToVisit.addAll(currNode.inputs);
+			}
 		}
 		return visited;
 	}
