@@ -2,6 +2,7 @@ package org.ggp.base.util.statemachine.implementation.prover;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -30,24 +31,33 @@ public class ProverStateMachine extends StateMachine
     private Prover prover;
     private ImmutableList<Role> roles;
 
+    @Override
+	public MachineState internalDC(MachineState start, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+    	Random r = new Random();
+    	while (!isTerminal(start)) {
+        	List<List<Move>> jmoves = getLegalJointMoves(start);
+        	start = getNextState(start, jmoves.get(r.nextInt(jmoves.size())));
+        }
+        return start;
+	}
+
+
     /**
      * Initialize must be called before using the StateMachine
      */
-    public ProverStateMachine()
-    {
+    public ProverStateMachine() {
 
     }
 
     @Override
-    public void initialize(List<Gdl> description, Role r)
-    {
+    public void initialize(List<Gdl> description, Role r) {
         prover = new AimaProver(description);
         roles = ImmutableList.copyOf(Role.computeRoles(description));
         initialState = computeInitialState();
     }
 
-    private MachineState computeInitialState()
-    {
+    private MachineState computeInitialState() {
         Set<GdlSentence> results = prover.askAll(ProverQueryBuilder.getInitQuery(), new HashSet<GdlSentence>());
         return new ProverResultParser().toState(results);
     }

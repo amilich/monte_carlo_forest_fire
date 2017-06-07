@@ -30,8 +30,8 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		// 		return new BitSetNet();
 		//		return new BasicFactorPropNet();
 		//		return new StateLessPropNet();
-//			return new AsyncPropNet();
-//		return new CachedStateMachine(new ProverStateMachine());
+		//		return new AsyncPropNet();
+		//		return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	// http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
@@ -42,11 +42,11 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		double syy = 0.0;
 		double sxy = 0.0;
 		int n = xs.size();
-	//	double maxX = Collections.max(xs);
-	//	double maxY = Collections.max(ys);
+		//	double maxX = Collections.max(xs);
+		//	double maxY = Collections.max(ys);
 		for (int i = 0; i < n; i ++) {
-			double x = xs.get(i);///maxX;
-			double y = ys.get(i);///maxY;
+			double x = xs.get(i); ///maxX;
+			double y = ys.get(i); ///maxY;
 			sx += x;
 			sy += y;
 			sxx += x * x;
@@ -96,7 +96,9 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		resetGraphNode();
 		moveNum = 0;
 		try {
-			mobilityHeuristic(timeout);
+			if (getStateMachine().getRoles().size() > 1) {
+				mobilityHeuristic(timeout);
+			}
 		} catch (Exception e) {
 			System.out.println("[GRAPH] Error while computing mobility heuristic:");
 			e.printStackTrace();
@@ -116,9 +118,9 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		initRoot();
 	}
 
-	private double CSP_UPDATE_COEFF = 1.8;
+	private double CSP_UPDATE_COEFF = 1.3;
 	int num_update = 0;
-	private final int MAX_ITERATIONS = 3000000; // Unnecessary to explore
+	private int MAX_ITERATIONS = 3000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
 		long startT = System.currentTimeMillis();
 		double timeDiff = (timeout - startT) / 1000.0 - MyHeuristics.MAX_DELIB_THRESHOLD / 1000.0;
@@ -138,7 +140,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			}
 			// if (numLoops > temp_max) break; // TODO
 			if (numLoops > MAX_ITERATIONS) {
-				if (getStateMachine().getRoles().size() == 1 && num_update < 2) {
+				if (getStateMachine().getRoles().size() == 1 && num_update < 1) {
 					System.out.println("Updating Csp");
 					ThreadedGraphNode.Csp *= CSP_UPDATE_COEFF;
 					num_update ++;
