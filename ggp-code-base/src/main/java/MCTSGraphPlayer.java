@@ -45,6 +45,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 					return propnet;
 				} catch (Exception e) {
 					System.out.println("[GRAPH] Error in thread building IntPropNet.");
+					System.out.println(e); 
 				}
 				return null;
 			}
@@ -78,6 +79,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			}
 		}
 		System.out.println("[GRAPH] Using prover :|");
+		fut.cancel(true);
 		ThreadedGraphNode.usingProver = true;
 		List<StateMachine> machines = new ArrayList<StateMachine>();
 		for (int ii = 0; ii < IntPropNet.NUM_THREADS; ii ++) {
