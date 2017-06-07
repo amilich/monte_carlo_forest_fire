@@ -145,10 +145,10 @@ public class IntPropNet extends StateMachine {
 	}
 
 	@Override
-	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+	public double cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
 		double numActions = propNet.getLegalPropositions().get(r).size();
 		double numMoves = getLegalMoves(s, r, tid).size();
-		return (int) (100.0 * numMoves / numActions);
+		return (100.0 * numMoves / numActions);
 	}
 
 	BitSet compBitsT;
@@ -520,7 +520,7 @@ public class IntPropNet extends StateMachine {
 		List<Move> allMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
-			allMoves.add(new Move(p.getName().get(1), componentIds.get(propNet.getLegalInputMap().get(p))));
+			allMoves.add(new Move(p.getName().get(1)));
 		}
 		return allMoves;
 	}
@@ -709,6 +709,67 @@ public class IntPropNet extends StateMachine {
 			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
 			start = internalNextState(start, selected, tid);
 		}
+		return start;
+	}
+
+	/**
+	 * We use this method to return an average of the mobility throughout the entire game, not just at
+	 * the end. This way, we get a sense of how good mobility is as a whole, not just at the end when
+	 * the game is pretty much determined
+	 */
+
+	@Override
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] weightedMobility, Role player)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		int playerIndex = -1;
+		for(int i = 0; i <  roles.length ; i++){
+			if (roles[i].equals(player)){
+				playerIndex = i;
+			}
+		}
+		MachineState next = null;
+		List<Double> mobilityVals = new ArrayList<Double>();
+		int numMovesToTerminal = 0;
+		while (true) {
+			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
+			next = internalNextState(start, selected, tid);
+			if (!isTerminal(next, tid)) {
+				start = next;
+//				List<Move> moves = getLegalMoves(start, roles[playerIndex], tid);
+//				if (moves.size() == 1 && moves[0]){
+//				}
+//				if (getLegalMoves(s, roles[playerIndex], tid).size() > 1) { //disregard mobililty when
+					double cm = cheapMobility(start, roles[playerIndex], tid);
+					mobilityVals.add(cm);
+					numMovesToTerminal++;
+//				}
+			} else {
+				break;
+			}
+		}
+		List<Double> weights = new ArrayList<Double>();
+		double weightsSum = 0.0;
+		for(int i = mobilityVals.size(); i > 0; i--){
+			weights.add((double) i);
+			weightsSum += (double) i;
+		}
+//		System.out.println("weights: " + weights);
+//		System.out.println("weightsSum: " + weightsSum);
+
+		double weightedMobilitySum = 0.0;
+		for(int i = 0; i < weights.size(); i++){
+			weightedMobilitySum += mobilityVals.get(i) * weights.get(i) / weightsSum;
+		}
+
+//		System.out.println("mobility sum: " + weightedMobilitySum);
+//		System.out.println("No. moves to Terminal: " + numMovesToTerminal);
+
+		if (numMovesToTerminal > 0) {
+			weightedMobility[0] = weightedMobilitySum;
+		} else {
+			weightedMobility[0] = 0;
+		}
+		finalS.props = (BitSet) next.props.clone();
 		return start;
 	}
 
