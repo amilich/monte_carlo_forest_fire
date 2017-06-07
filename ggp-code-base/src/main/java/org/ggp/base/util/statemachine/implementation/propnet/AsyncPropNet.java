@@ -84,11 +84,11 @@ public class AsyncPropNet extends StateMachine {
 	}
 
 	@Override
-	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+	public double cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
 		if (ip == null) {
 			double numActions = csm.findActions(r).size();
 			double numMoves = csm.getLegalMoves(s, r).size();
-			return (int) (100.0 * numMoves / numActions);
+			return 100.0 * numMoves / numActions;
 		} else {
 			return ip.cheapMobility(s, r, tid);
 		}
