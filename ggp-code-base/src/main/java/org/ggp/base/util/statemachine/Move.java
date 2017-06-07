@@ -16,7 +16,17 @@ import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
  */
 @SuppressWarnings("serial")
 public class Move implements Serializable {
-    protected final GdlTerm contents;
+    protected GdlTerm contents;
+    public int compId;
+
+    public Move(int id) {
+    	this.compId = id;
+    }
+
+    public Move(GdlTerm contents, int id) {
+        this.contents = contents;
+        this.compId = id;
+    }
 
     public Move(GdlTerm contents) {
         this.contents = contents;
@@ -35,6 +45,7 @@ public class Move implements Serializable {
         if ((o != null) && (o instanceof Move)) {
             Move move = (Move) o;
             return move.contents.equals(contents);
+//            return move.compId == this.compId;
         }
 
         return false;
@@ -46,7 +57,9 @@ public class Move implements Serializable {
 
     @Override
     public int hashCode() {
-        return contents.hashCode();
+//    	return compId;
+//    	if (contents == null) return compId;
+    	return contents.hashCode();
     }
 
     @Override

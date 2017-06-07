@@ -11,8 +11,14 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.gdl.grammar.GdlDistinct;
+import org.ggp.base.util.gdl.grammar.GdlFunction;
+import org.ggp.base.util.gdl.grammar.GdlLiteral;
+import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlRelation;
+import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
+import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.propnet.architecture.Component;
 import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.propnet.architecture.components.And;
@@ -31,7 +37,7 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBuilder;
 
-public class BitSetPropNet extends StateMachine {
+public class ExpFactorPropNet extends StateMachine {
 	/** The underlying proposition network  */
 	private PropNet propNet;
 	/** The topological ordering of the propositions */
@@ -43,7 +49,66 @@ public class BitSetPropNet extends StateMachine {
 		return propNet;
 	}
 
-	public Set<Component> dfs(Component p) {
+	MachineState init;
+	BitSet baseBits; // = new BitSet();
+	BitSet inputBits;
+	BitSet nextBaseBits;
+	BitSet compBits;
+
+	public Proposition[] allBaseArr = null;
+	public Proposition[] allInputArr = null;
+	public int allLongs[] = null;
+	public Component[] allCompArr = null;
+
+	private void sanitizeDistinctHelper(Gdl gdl, List<Gdl> in, List<Gdl> out) {
+	    if (!(gdl instanceof GdlRule)) {
+	        out.add(gdl);
+	        return;
+	    }
+	    GdlRule rule = (GdlRule) gdl;
+	    for (GdlLiteral lit : rule.getBody()) {
+	        if (lit instanceof GdlDistinct) {
+	            GdlDistinct d = (GdlDistinct) lit;
+	            GdlTerm a = d.getArg1();
+	            GdlTerm b = d.getArg2();
+	            if (!(a instanceof GdlFunction) && !(b instanceof GdlFunction)) continue;
+	            if (!(a instanceof GdlFunction && b instanceof GdlFunction)) return;
+	            GdlSentence af = ((GdlFunction) a).toSentence();
+	            GdlSentence bf = ((GdlFunction) b).toSentence();
+	            if (!af.getName().equals(bf.getName())) return;
+	            if (af.arity() != bf.arity()) return;
+	            for (int i = 0; i < af.arity(); i++) {
+	                List<GdlLiteral> ruleBody = new ArrayList<>();
+	                for (GdlLiteral newLit : rule.getBody()) {
+	                    if (newLit != lit) ruleBody.add(newLit);
+	                    else ruleBody.add(GdlPool.getDistinct(af.get(i), bf.get(i)));
+	                }
+	                GdlRule newRule = GdlPool.getRule(rule.getHead(), ruleBody);
+	                // Log.println("new rule: " + newRule);
+	                in.add(newRule);
+	            }
+	            return;
+	        }
+	    }
+	    for (GdlLiteral lit : rule.getBody()) {
+	        if (lit instanceof GdlDistinct) {
+	            System.out.println("distinct rule added: " + rule);
+	            break;
+	        }
+	    }
+	    out.add(rule);
+	}
+
+	private List<Gdl> sanitizeDistinct(List<Gdl> description) {
+	    List<Gdl> out = new ArrayList<>();
+	    for (int i = 0; i < description.size(); i++) {
+	        sanitizeDistinctHelper(description.get(i), description, out);
+	    }
+	    return out;
+	}
+
+
+	public Set<Component> dfs(Proposition p) {
 		Queue<Component> nodesToVisit = new LinkedList<Component>();
 		Set<Component> visited = new HashSet<Component>();
 		nodesToVisit.add(p);
@@ -56,91 +121,51 @@ public class BitSetPropNet extends StateMachine {
 		return visited;
 	}
 
-	Map<Proposition, Proposition> inputLegalMap = new HashMap<Proposition, Proposition>();
 	public void doOnePlayerOptimization() {
-		for (Proposition p : propNet.getLegalInputMap().keySet()) {
-			inputLegalMap.put(propNet.getLegalInputMap().get(p), p);
-		}
-
 		Set<Component> important = new HashSet<Component>();
-		Set<Component> toRemove = new HashSet<Component>();
 		important.addAll(dfs(propNet.getTerminalProposition()));
-		important.addAll(dfs(propNet.getInitProposition()));
 		for (Proposition p : propNet.getAllGoalPropositions()) {
 			important.addAll(dfs(p));
 		}
 		for (Proposition p : propNet.getAllLegalPropositions()) {
 			important.addAll(dfs(p));
 		}
+		for (Proposition p : propNet.getAllInputProps()) {
+			important.addAll(dfs(p));
+		}
+		Set<Component> toRemove = new HashSet<Component>();
 		for (Component c : propNet.getComponents()) {
 			if (!important.contains(c)) {
 				toRemove.add(c);
 			}
 		}
-		propNet.renderToFile("opBefore.dot");
-		System.out.println("Removing " + toRemove.size() + " components - " + toRemove);
 		for (Component c : toRemove) {
 			propNet.removeComponent(c);
-			if (inputLegalMap.containsKey(c)) {
-				propNet.removeComponent(inputLegalMap.get(c));
-			}
 		}
-		propNet.renderToFile("opDone.dot");
-//		for (Component c : propNet.getComponents()) {
-//			Proposition input = (Proposition) propNet.getLegalInputMap().get(c);
-//			if (input == null) {
-//				propNet.removeComponent(c);
-//			}
-//		}
 		// System.out.println("Removed " + toRemove.size() + " components.");
 		// propNet.renderToFile("optimized.dot");
 	}
 
-
-	int num = 0;
-	@Override
-	public void convertAndRender(String string) {
-		// TODO Auto-generated method stub
-		propNet.renderToFile(string + "bs" + ++num + ".dot");
-	}
-
-	MachineState init;
-	BitSet baseBits; // = new BitSet();
-	BitSet inputBits;
-	BitSet legalBits;
-	BitSet nextBaseBits;
-
-	// BitSet propBits;
-	BitSet compBits;
-
-	public Proposition[] allBaseArr = null;
-	public Proposition[] allInputArr = null;
-	public Proposition[] allLegalArr = null;
-	// Map<Integer, Proposition> baseBitMap = new HashMap<Integer, Proposition>();
-
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
+		description = sanitizeDistinct(description);
+		System.out.println("Sanitized.");
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
-
-
-			doOnePlayerOptimization();
-
-
+			System.out.println("propNet built.");
+			// propNet.renderToFile("start.dot");
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
+			if (roles.length == 1 && propNet.getComponents().size() < 10000) { // TODO
+				System.out.println("Trying to optimize");
+				doOnePlayerOptimization();
+			}
 
 			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
 			allInputArr = propNet.getAllInputProps().toArray(new Proposition[propNet.getAllInputProps().size()]);
-			allLegalArr = propNet.getAllLegalPropositions().toArray(
-					new Proposition[propNet.getAllLegalPropositions().size()]);
 			for (int ii = 0; ii < allBaseArr.length; ii ++) {
 				allBaseArr[ii].bitIndex = ii;
 				allBaseArr[ii].isBase = true;
-			}
-			for (int ii = 0; ii < allLegalArr.length; ii ++) {
-				allLegalArr[ii].bitIndex = ii;
-				allLegalArr[ii].isLegal = true;
 			}
 			for (int ii = 0; ii < allInputArr.length; ii ++) {
 				allInputArr[ii].bitIndex = ii;
@@ -149,12 +174,27 @@ public class BitSetPropNet extends StateMachine {
 			baseBits = new BitSet(allBaseArr.length);
 			nextBaseBits = new BitSet(allBaseArr.length);
 			inputBits = new BitSet(allInputArr.length);
-			legalBits = new BitSet(allLegalArr.length);
 
 			for (Component c : propNet.getComponents()) {
 				c.crystalize();
 			}
-
+			allCompArr = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
+			allLongs = new int[allCompArr.length];
+			for (int ii = 0; ii < allCompArr.length; ii ++) {
+				allCompArr[ii].compIndex = ii;
+				if (allCompArr[ii] instanceof And) {
+					allLongs[ii] = 0x80000000 - allCompArr[ii].input_arr.length;
+				} else if (allCompArr[ii] instanceof Or) {
+					allLongs[ii] = 0x7FFFFFFF;
+				} else if (allCompArr[ii] instanceof Not) {
+					allLongs[ii] = -1 * allCompArr[ii].input_arr.length;
+				} else if (allCompArr[ii] instanceof Transition) {
+					// empty - no counter needed
+				} else if (allCompArr[ii] instanceof Constant) {
+					// empty - no counter needed
+				}
+			}
+			System.out.println("Going to init work.");
 			init = doInitWork();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -200,7 +240,8 @@ public class BitSetPropNet extends StateMachine {
 	private MachineState doInitWork() {
 		for (Component c : propNet.getComponents()) {
 			if (c instanceof Constant) {
-				forwardpropmark(c, c.getValue(), false);
+				Set<Component> visited = new HashSet<Component>();
+				initforwardpropmark(c, c.getValue(), visited);
 			}
 		}
 		Set<Proposition> bases = propNet.getAllBasePropositions();
@@ -208,12 +249,21 @@ public class BitSetPropNet extends StateMachine {
 		/* for (int ii = 0; ii < ordering.size(); ii ++) {
 			forwardpropmark(ordering.get(ii), ordering.get(ii).curVal, false);
 		}*/
+		System.out.println("There are " + bases.size() + " base propositions.");
 		for (Proposition base : bases) {
-			forwardpropmark(base, false, false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(base, false, visited);
 		}
+		System.out.println("Done with bases");
+		/*for (Component c : propNet.getComponents()) {
+			if (c instanceof Not) {
+				initforwardpropmark(c, !c.input_arr[0].curVal);
+			}
+		}*/
 
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), true, true);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), true, visited);
 		}
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
@@ -227,21 +277,17 @@ public class BitSetPropNet extends StateMachine {
 			}
 		}
 
-		for (Proposition p : propNet.getAllLegalPropositions()) {
-			if (p.curVal) {
-				legalBits.set(p.bitIndex);
-			}
-		}
-
 		if (propNet.getInitProposition() != null) {
-			forwardpropmark(propNet.getInitProposition(), false, false);
+			Set<Component> visited = new HashSet<Component>();
+			initforwardpropmark(propNet.getInitProposition(), false, visited);
 		}
 
 		for (Component c : propNet.getComponents()) {
-			if (c instanceof And || c instanceof Or) {
-				c.numTrue = 0;
+			if (c instanceof And || c instanceof Or || c instanceof Not) {
 				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (c.input_arr[ii].curVal) c.numTrue ++;
+					if (c.input_arr[ii].curVal) {
+						allLongs[c.compIndex] ++;
+					}
 				}
 			}
 		}
@@ -325,53 +371,79 @@ public class BitSetPropNet extends StateMachine {
 		return new MachineState(newState);
 	}
 
-	public void forwardpropmark(Component c, boolean newValue, boolean differential) {
-		if (newValue == c.curVal && differential) {
-			return; // stop forward propagating
-		}
+	public void initforwardpropmark(Component c, boolean newValue, Set<Component> visited) {
+		if (visited.contains(c)) return;
+		visited.add(c);
 		c.curVal = newValue;
 
 		if (c.isBase) {
 			if (newValue) baseBits.set(c.bitIndex);
 			else baseBits.clear(c.bitIndex);
+		} else if (c instanceof Transition) { // if c is a transition
+			// transitions always have exactly one output
+			if (c.output_arr.length > 0) {
+				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
+				else nextBaseBits.clear(c.output_arr[0].bitIndex);
+			}
+			return;
 		}
-		/* else if (c.isLegal) {
-			if (newValue) legalBits.set(c.bitIndex);
-			else legalBits.clear(c.bitIndex);
-		} */
+		for (int jj = 0; jj < c.output_arr.length; jj ++) {
+			Component out = c.output_arr[jj];
+			if (out instanceof Transition || out instanceof Proposition) {
+				initforwardpropmark(out, newValue, visited);
+			} else if (out instanceof And) {
+				if (!newValue) {
+					initforwardpropmark(out, false, visited);
+				} else {
+					boolean result = true;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (!out.input_arr[ii].curVal) {
+							result = false;
+							break;
+						}
+					}
+					initforwardpropmark(out, result, visited);
+				}
+			} else if (out instanceof Or) {
+				if (newValue) {
+					initforwardpropmark(out, true, visited);
+				} else {
+					boolean result = false;
+					for (int ii = 0; ii < out.inputs.size(); ii ++) {
+						if (out.input_arr[ii].curVal) {
+							result = true;
+							break;
+						}
+					}
+					initforwardpropmark(out, result, visited);
+				}
+			} else if (out instanceof Not) {
+				initforwardpropmark(out, !newValue, visited);
+			}
+		}
+	}
+
+	public void forwardpropmark(Component c, boolean newValue) {
+		if (newValue == c.curVal) {
+			return; // stop forward propagating
+		}
+		c.curVal = newValue;
+		if (c.isBase) {
+			baseBits.flip(c.bitIndex);
+		}
+
 		if (c instanceof Transition) {
-			if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-			else nextBaseBits.clear(c.output_arr[0].bitIndex);
+			nextBaseBits.flip(c.output_arr[0].bitIndex);
 			return;
 		}
 		for (int jj = 0; jj < c.outputs.size(); jj ++) {
 			Component out = c.output_arr[jj];
-			if (differential) {
-				if (newValue) out.numTrue ++;
-				else out.numTrue --;
-			}
+			allLongs[out.compIndex] += newValue? 1 : -1;
 			if (out instanceof Proposition || out instanceof Transition) {
-				forwardpropmark(out, newValue, differential);
-			} else if (out instanceof And) {
-				if (!newValue) {
-					forwardpropmark(out, false, differential);
-				} else if (differential) {
-					forwardpropmark(out, out.numTrue == out.inputs.size(), differential);
-				} else {
-					boolean result = ((And) out).getValue();
-					forwardpropmark(out, result, differential);
-				}
-			} else if (out instanceof Or) {
-				if (newValue) {
-					forwardpropmark(out, true, differential);
-				} else if (differential) {
-					forwardpropmark(out, out.numTrue > 0, differential);
-				} else {
-					boolean result = ((Or) out).getValue();
-					forwardpropmark(out, result, differential);
-				}
-			} else if (out instanceof Not) {
-				forwardpropmark(out, !newValue, differential);
+				forwardpropmark(out, newValue);
+			} else {
+				boolean corrected = ((allLongs[out.compIndex] >> 31) & 1) == 1;
+				forwardpropmark(out, corrected);
 			}
 		}
 	}
@@ -384,7 +456,7 @@ public class BitSetPropNet extends StateMachine {
 		}
 		stateBits.xor(baseBits);
 		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allBaseArr[ii], !baseBits.get(ii), true);
+			forwardpropmark(allBaseArr[ii], !baseBits.get(ii));
 		}
 	}
 
@@ -392,11 +464,12 @@ public class BitSetPropNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet nowTrue = new BitSet(allInputArr.length);
 		for (GdlSentence s : moveGdl) {
-			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
+			Proposition p = propNet.getInputPropositions().get(s);
+			if (p != null) nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {
-			forwardpropmark(allInputArr[ii], nowTrue.get(ii), true);
+			forwardpropmark(allInputArr[ii], nowTrue.get(ii));
 		}
 		inputBits = nowTrue;
 	}
@@ -416,39 +489,59 @@ public class BitSetPropNet extends StateMachine {
 	 * @return The order in which the truth values of propositions need to be set.
 	 */
 	public List<Proposition> getOrdering() {
+		System.out.println("Sort start");
 		// List to contain the topological ordering.
 		List<Proposition> order = new ArrayList<Proposition>();
 
 		// All of the components in the PropNet
-		// List<Component> components = new ArrayList<Component>(propNet.getComponents());
+		 List<Component> components = new ArrayList<Component>(propNet.getComponents());
 
 		// All of the propositions in the PropNet.
-//		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
+		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
 
 		Queue<Proposition> allSources = new LinkedList<Proposition>();
 		allSources.addAll(propNet.getAllInputProps());
 		allSources.addAll(propNet.getAllBasePropositions());
+		HashSet<Component> visitedNodes = new HashSet<Component>();
 
-//		HashSet<Component> visitedNodes = new HashSet<Component>();
-
-		//		while (!allSources.isEmpty()){
-		//			Proposition front = allSources.poll();
-		//			order.add(front);
-		//			visitedNodes.add(front);
-		//			for (Component c : front.getOutputs()){
-		//				if (c instanceof Proposition){
-		//					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
-		//					otherInputs.removeAll(visitedNodes);
-		//					if (otherInputs.isEmpty()){
-		//						allSources.add((Proposition) c);
-		//					}
-		//				}
-		//			}
-		//		}
+		while (!allSources.isEmpty()){
+			Proposition front = allSources.poll();
+			order.add(front);
+			visitedNodes.add(front);
+			for (Component c : front.getOutputs()){
+				if (c instanceof Proposition){
+					Set<Component> otherInputs = new HashSet<Component>(c.getInputs());
+					otherInputs.removeAll(visitedNodes);
+					if (otherInputs.isEmpty()){
+						allSources.add((Proposition) c);
+					}
+				}
+			}
+		}
 		// assert order.size() == propNet.getPropositions().size();
 		order.addAll(allSources);
+		System.out.println("Sort done");
 		return order;
 	}
+
+	// Test if topological ordering worked. Not supposed to be called at runtime
+	/*public void testTopologicalOrdering(List<Proposition> ordering){
+		for(int i=1; i < ordering.size(); i++){
+			System.out.println(i);
+			HashSet<Proposition> prev = new HashSet<Proposition>(ordering.subList(0, i));
+			Set<Component> inputs_c = ordering.get(i).getInputs();
+			HashSet<Proposition> inputs = new HashSet<Proposition>();
+			for (Component c : inputs_c){
+				if (c instanceof Proposition){
+					inputs.add((Proposition) c);
+				}
+			}
+			inputs.removeAll(prev);
+			if (!inputs.isEmpty()){
+				throw new Error("Ordering is not topological");
+			}
+		}
+	}*/
 
 	/* Already implemented for you */
 	@Override

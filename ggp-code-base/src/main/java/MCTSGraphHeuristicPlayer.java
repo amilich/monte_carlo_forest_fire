@@ -69,14 +69,6 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 			syy += y * y;
 			sxy += x * y;
 		}
-		// covariation
-//		double cov = sxy / n - sx * sy / n / n;
-		// standard error of x
-//		double sigmax = Math.sqrt(sxx / n -  sx * sx / n / n);
-		// standard error of y
-//		double val = syy / n -  sy * sy / n / n;
-//		double sigmay = Math.sqrt(val);
-		// correlation is just a normalized covariation
 		double numerator = n * sxy - sx * sy;
 		if (Math.abs(numerator) < 0.001) {
 			return 0;
@@ -162,7 +154,7 @@ public class MCTSGraphHeuristicPlayer extends StateMachineGamer {
 	}
 
 	private void initRoot() throws MoveDefinitionException, GoalDefinitionException {
-		ThreadedGraphNode.setStateMachines(machines);
+		// ThreadedGraphNode.setStateMachines(machines); // TODO
 		root = new ThreadedGraphNode(getCurrentState());
 	}
 

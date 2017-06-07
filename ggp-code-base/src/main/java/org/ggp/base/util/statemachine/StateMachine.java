@@ -27,7 +27,27 @@ public abstract class StateMachine
 	// ============================================
     // These methods (through findterminalp) layer over other methods
 	// in order to align with notation in the notes for Stanford's CS227B course
+	public MachineState internalDC(MachineState start, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.internalDC should never be called!");
+		return null;
+	}
 
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] avgMobility, Role player)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		return null;
+	}
+
+	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.preInternalDC should never be called!");
+		return null;
+	}
+
+	public double cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.cheapMobility should never be called!");
+		return 0.0;
+	}
 
 	/**
 	 * Returns the list of roles for the game.
@@ -45,6 +65,9 @@ public abstract class StateMachine
      * an error in either the game description or the StateMachine implementation.
 	 */
 	public abstract List<Move> findActions(Role role) throws MoveDefinitionException;
+	public List<Move> findActions(Role role, int tid) throws MoveDefinitionException {
+		return null;
+	}
 
 	/**
 	 * Returns the initial state of the game.
@@ -131,11 +154,20 @@ public abstract class StateMachine
      * description or the StateMachine implementation.
      */
     public abstract int getGoal(MachineState state, Role role) throws GoalDefinitionException;
+    public int getGoal(MachineState state, Role role, int tid) throws GoalDefinitionException {
+    	System.out.println("[StateMachine] WARNING: StateMachine.getGoal(state, role) should never be called!");
+    	return 0;
+    }
+
     /**
      * Returns true if and only if the given state is a terminal state (i.e. the
      * game is over).
      */
     public abstract boolean isTerminal(MachineState state);
+    public boolean isTerminal(MachineState state, int tid) {
+    	System.out.println("[StateMachine] WARNING: StateMachine.isTerminal(state, tid) should never be called!");
+    	return false;
+    }
 
     /**
      * Returns a list of the roles in the game, in the same order as they
@@ -159,6 +191,10 @@ public abstract class StateMachine
      */
     // TODO: There are philosophical reasons for this to return Set<Move> rather than List<Move>.
     public abstract List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException;
+    public List<Move> getLegalMoves(MachineState state, Role role, int tid) throws MoveDefinitionException {
+    	System.out.println("[StateMachine] WARNING: StateMachine.getLegalMoves(state, role, tid) should never be called!");
+    	return null;
+    }
 
     /**
      * Returns the next state of the game given the current state and a joint move
@@ -170,6 +206,10 @@ public abstract class StateMachine
      * game description or the StateMachine implementation.
      */
     public abstract MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException;
+    public MachineState getNextState(MachineState state, List<Move> moves, int tid) throws TransitionDefinitionException {
+    	System.out.println("[StateMachine] WARNING: StateMachine.getNextState(state, moves, tid) should never be called!");
+    	return null;
+    }
 
     // The following methods are included in the abstract StateMachine base so
     // implementations which use alternative Role/Move/State representations
@@ -481,4 +521,9 @@ public abstract class StateMachine
             avgScores[j] /= repetitions;
         }
     }
+
+	public void convertAndRender(String string) {
+		// TODO Auto-generated method stub
+
+	}
 }

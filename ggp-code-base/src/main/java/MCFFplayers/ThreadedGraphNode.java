@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -16,18 +17,20 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 
 // Graph based MCTS Node
 public class ThreadedGraphNode {
 	// Depth charging parameters/objects
-	public static final int NUM_THREADS = 3;
-	public static final int NUM_DEPTH_CHARGES = 3; // TODO
+	public static final int NUM_THREADS = IntPropNet.NUM_THREADS;
+	public static final int NUM_DEPTH_CHARGES = 4; // TODO
 	Charger rs[] = new Charger[NUM_THREADS];
 	public static int num = 0;
 
 	public static HashMap<MachineState, ThreadedGraphNode> stateMap = new HashMap<MachineState, ThreadedGraphNode>();
 	public static int numCharges = 0;
 	public double utility = -1;
+	public static Role enemy;
 
 	// Variables used to calculate standard deviation
 	// http://stackoverflow.com/questions/5543651/computing-standard-deviation-in-a-stream
@@ -49,6 +52,7 @@ public class ThreadedGraphNode {
 	private int numMoves;
 	private int numEnemyMoves;
 	private MachineState state;
+	private int pMobility;
 
 	private boolean isTerminal = false;
 
@@ -56,18 +60,12 @@ public class ThreadedGraphNode {
 	static Role player;
 	public static int roleIndex = -1;
 	static StateMachine machine;
-	static List<StateMachine> machines;
 	static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 	// .newCachedThreadPool();
 
 	// Set the static, single state machine used for move determination (not for depth charges)
 	public static void setStateMachine(StateMachine machine) {
 		ThreadedGraphNode.machine = machine;
-	}
-
-	// Populate the state machine list with state machines (for depth charges)
-	public static void setStateMachines(List<StateMachine> machines) {
-		ThreadedGraphNode.machines = machines;
 	}
 
 	// Set the static role information for the graph
@@ -112,6 +110,7 @@ public class ThreadedGraphNode {
 		oCounts = new double[numMoves][numEnemyMoves];
 		oVals = new double[numMoves][numEnemyMoves];
 		children = new ThreadedGraphNode[numMoves][numEnemyMoves];
+		pMobility = (int) (100.0 * numMoves / machine.findActions(player).size());
 		numChildren = numMoves * numEnemyMoves;
 	}
 
@@ -120,6 +119,17 @@ public class ThreadedGraphNode {
 		double total = 0;
 		for (int ii = 0; ii < array.length; ii ++) total += array[ii];
 		return total;
+	}
+
+	public double getBestUtility() throws MoveDefinitionException {
+		double maxUtility = 0;
+		for (int ii = 0; ii < pVals.length; ii ++) {
+			double tempUtility = pVals[ii] / pCounts[ii];
+			if (tempUtility > maxUtility) {
+				maxUtility = tempUtility;
+			}
+		}
+		return maxUtility;
 	}
 
 	// Return the best move available from the current state.
@@ -148,13 +158,17 @@ public class ThreadedGraphNode {
 				}
 			}
 			System.out.println("[GRAPH] Utility of best move = " + maxUtility);
+			if (maxUtility == 0) {
+				Random r = new Random();
+				return myMoves.get(r.nextInt(myMoves.size()));
+			}
 			return myMoves.get(maxMove);
 		}
 	}
 
 	// Perform selection and expansion for a MCTS node.
 	public ThreadedGraphNode selectAndExpand(ArrayList<ThreadedGraphNode> path)
-			throws MoveDefinitionException, TransitionDefinitionException {
+			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		ThreadedGraphNode selected = this.select(path);
 		ThreadedGraphNode expanded = selected.expand();
 		if (!expanded.equals(path.get(path.size() - 1))) path.add(expanded); // May have expanded itself (and not added new node)
@@ -163,24 +177,38 @@ public class ThreadedGraphNode {
 
 	// Two select functions are presented. One uses a generic constant, and the other uses the standard deviation
 	// of the depth charges from a particular node.
-	static final int C = 40;
-	static final double C1 = 0.7;
-	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) {
+	public static double Csp = 300000;
+	public static boolean heuristicEnable = false;
+	public static double mobilityCorr = 0.0;
+	static final int C = 50;
+	static final double C1 = 0.85;
+	static final double C2 = 0.2;
+	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) throws MoveDefinitionException {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
 		if (Double.isNaN(stddev)) {
 			stddev = C;
 		}
-		return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-				Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
-		//return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove] +
-		//		Math.sqrt(50 * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+		if (heuristicEnable) {
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove]
+					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]))
+//					+ C2 * machine.cheapMobility(n.state, player, 0);
+					+ C2 * mobilityCorr * pMobility;
+		} else {
+			return -1 * oVals[pMove][oMove] / oCounts[pMove][oMove]
+					+ Math.sqrt(C1 * stddev * Math.log(sumArray(oCounts[pMove]) / oCounts[pMove][oMove]));
+		}
 	}
-	protected double selectfn(int pMove, int oMove) {
+
+	protected double selectfn(int pMove, int oMove) throws GoalDefinitionException {
 		return pVals[pMove] / pCounts[pMove] + Math.sqrt(C * Math.log(sumArray(pCounts)) / pCounts[pMove]);
 	}
 
+	protected double singlePSelect(int pMove) throws GoalDefinitionException {
+		return pVals[pMove] / pCounts[pMove] + Math.sqrt(Csp * Math.log(sumArray(pCounts)) / pCounts[pMove]);
+	}
+
 	// MCTS selection
-	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) {
+	public ThreadedGraphNode select(ArrayList<ThreadedGraphNode> path) throws GoalDefinitionException, MoveDefinitionException {
 		ThreadedGraphNode currNode = this;
 		while (true) {
 			path.add(currNode);
@@ -191,25 +219,38 @@ public class ThreadedGraphNode {
 				}
 			}
 			// if (currNode.numExpanded < currNode.numChildren) return currNode; // TODO
-			double pMoveScore = Double.NEGATIVE_INFINITY;
-			double oMoveScore = Double.NEGATIVE_INFINITY;
-			int resultP = 0;
-			int resultO = 0;
-			for (int ii = 0; ii < currNode.numMoves; ii ++){
-				double newscore = currNode.selectfn(ii, -1);
-				if (newscore > pMoveScore) {
-					pMoveScore = newscore;
-					resultP = ii;
+			if (machine.findRoles().size() == 1) {
+				double pMoveScore = Double.NEGATIVE_INFINITY;
+				int resultP = 0;
+				for (int ii = 0; ii < currNode.numMoves; ii ++){
+					double newscore = currNode.singlePSelect(ii);
+					if (newscore > pMoveScore) {
+						pMoveScore = newscore;
+						resultP = ii;
+					}
 				}
-			}
-			for (int jj = 0; jj < currNode.numEnemyMoves; jj ++) {
-				double newscore = currNode.opponentSelectFn(resultP, jj, currNode.children[resultP][jj]);
-				if (newscore > oMoveScore) {
-					oMoveScore = newscore;
-					resultO = jj;
+				currNode = currNode.children[resultP][0];
+			} else {
+				double pMoveScore = Double.NEGATIVE_INFINITY;
+				double oMoveScore = Double.NEGATIVE_INFINITY;
+				int resultP = 0;
+				int resultO = 0;
+				for (int ii = 0; ii < currNode.numMoves; ii ++){
+					double newscore = currNode.selectfn(ii, -1);
+					if (newscore > pMoveScore) {
+						pMoveScore = newscore;
+						resultP = ii;
+					}
 				}
+				for (int jj = 0; jj < currNode.numEnemyMoves; jj ++) {
+					double newscore = currNode.opponentSelectFn(resultP, jj, currNode.children[resultP][jj]);
+					if (newscore > oMoveScore) {
+						oMoveScore = newscore;
+						resultO = jj;
+					}
+				}
+				currNode = currNode.children[resultP][resultO];
 			}
-			currNode = currNode.children[resultP][resultO];
 		}
 	}
 
@@ -218,15 +259,16 @@ public class ThreadedGraphNode {
 		if (machine.isTerminal(state)) return this;
 		for (int ii = 0; ii < numMoves; ii ++) {
 			Move myMove = myMoves.get(ii);
-			List<List<Move>> jMoves = machine.getLegalJointMoves(state, player, myMove);
 			for (int jj = 0; jj < numEnemyMoves; jj ++) {
 				if (children[ii][jj] == null) {
+					List<List<Move>> jMoves = machine.getLegalJointMoves(state, player, myMove);
 					List<Move> jointMove = jMoves.get(jj);
 					try {
 						MachineState nextState = machine.getNextState(state, jointMove);
-						if (stateMap.containsKey(nextState)) children[ii][jj] = stateMap.get(nextState);
-						else {
-							children[ii][jj] = new ThreadedGraphNode(nextState, jointMove.toString());
+						if (stateMap.containsKey(nextState)) {
+							children[ii][jj] = stateMap.get(nextState);
+						} else {
+							children[ii][jj] = new ThreadedGraphNode(nextState, nextState.toString());
 							this.numExpanded ++;
 							stateMap.put(nextState, children[ii][jj]);
 						}
@@ -346,8 +388,7 @@ public class ThreadedGraphNode {
 		} else {
 			Set<Future<Double>> futures = new HashSet<Future<Double>>();
 			for (int ii = 0; ii < NUM_THREADS; ii ++) {
-				Future<Double> future =
-						executor.submit(new DepthCharger(machines.get(ii), state, player, NUM_DEPTH_CHARGES, roleIndex));
+				Future<Double> future = executor.submit(new DepthCharger(machine, state, player, NUM_DEPTH_CHARGES, ii));
 				futures.add(future);
 			}
 			double avgScore = 0;

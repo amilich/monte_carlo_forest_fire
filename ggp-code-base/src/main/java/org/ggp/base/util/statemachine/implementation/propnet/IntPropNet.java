@@ -4,13 +4,24 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.gdl.grammar.GdlDistinct;
+import org.ggp.base.util.gdl.grammar.GdlFunction;
+import org.ggp.base.util.gdl.grammar.GdlLiteral;
+import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlRelation;
+import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
+import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.propnet.architecture.Component;
 import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.propnet.architecture.components.And;
@@ -35,17 +46,11 @@ public class IntPropNet extends StateMachine {
 	/** The player roles */
 	private Role roles[];
 
-	public PropNet getPropnet() {
-		return propNet;
-	}
-
 	MachineState init;
-	final int NUM_THREADS = 1;
+	public static final int NUM_THREADS = 8;
 
-	public Proposition[] allBaseArr; // TODO we should get rid of this eventually
 	public Proposition[] allInputArr; // TODO we should get rid of this eventually
 	Component[] origComps;
-
 	private int terminalCompId;
 
 	// TODO: maybe instead of using pointers in compInfo into compOutputs,
@@ -66,71 +71,125 @@ public class IntPropNet extends StateMachine {
 	private int[] compOutputs;
 
 	// All
-	BitSet compBits;
-	BitSet nextBaseBits;
+	BitSet compBits[];
+	BitSet nextBaseBits[];
 	BitSet isBase;
 	BitSet isInput;
 
 	// The first three bits of the longs in compInfo define the proposition type
-    private final long INPUT_TYPE_MASK = 0;
-    private final long OTHER_PROP_TYPE_MASK = 1l << 61l;
-    private final long BASE_TYPE_MASK = 2l << 61l;
-    private final long AND_TYPE_MASK = 3l << 61l;
-    private final long OR_TYPE_MASK = 4l << 61l;
-    private final long NOT_TYPE_MASK = 5l << 61l;
-    private final long TRANSITION_TYPE_MASK = 6l << 61l;
-    private final long CONSTANT_TYPE_MASK = 7l << 61l;
-    private final long TYPE_MASK = 7l << 61l; // call compInfo[i] & TYPE_MASK to get the type
+	private final long INPUT_TYPE_MASK = 0;
+	private final long OTHER_PROP_TYPE_MASK = 1l << 61l;
+	private final long BASE_TYPE_MASK = 2l << 61l;
+	private final long AND_TYPE_MASK = 3l << 61l;
+	private final long OR_TYPE_MASK = 4l << 61l;
+	private final long NOT_TYPE_MASK = 5l << 61l;
+	private final long TRANSITION_TYPE_MASK = 6l << 61l;
+	private final long CONSTANT_TYPE_MASK = 7l << 61l;
+	private final long TYPE_MASK = 7l << 61l; // call compInfo[i] & TYPE_MASK to get the type
 
-    private final int TRUE_INT = 0x80000000;
-    private final int FALSE_INT = 0x7FFFFFFF;
+	private final int TRUE_INT = 0x80000000;
+	private final int FALSE_INT = 0x7FFFFFFF;
 
-    private Map<Component, Integer> componentIds; // TODO THIS SHOULD NOT BE A MEMBER VARIABLE DAMNIT. UPDATE MACHINESTATE
+	private Map<Component, Integer> componentIds; // TODO THIS SHOULD NOT BE A MEMBER VARIABLE DAMNIT. UPDATE MACHINESTATE
 
-    private int numInputs(int compId) {
-    	return (int)((compInfo[compId] & NUM_INPUT_MASK) >> (NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET));
-    }
+	private int numInputs(int compId) {
+		return (int)((compInfo[compId] & NUM_INPUT_MASK) >> (NUM_BITS_OUTPUT + NUM_BITS_OUTPUT_OFFSET));
+	}
 
-    private int numOutputs(int compId) {
-    	return (int)((compInfo[compId] & NUM_OUTPUT_MASK) >> NUM_BITS_OUTPUT_OFFSET);
-    }
+	private int numOutputs(int compId) {
+		return (int)((compInfo[compId] & NUM_OUTPUT_MASK) >> NUM_BITS_OUTPUT_OFFSET);
+	}
 
-    private int outputOffset(int compId) {
-    	return (int)(compInfo[compId] & NUM_OUTPUT_OFFSET_MASK);
-    }
+	private int outputOffset(int compId) {
+		return (int)(compInfo[compId] & NUM_OUTPUT_OFFSET_MASK);
+	}
 
-    private boolean val(int compId, int thread) {
-    	return (compState[thread][compId] & TRUE_INT) == TRUE_INT;
-    }
+	private boolean val(int compId, int thread) {
+		int debugV = compState[thread][compId];
+		int numIn = this.numInputs(compId);
+		return (compState[thread][compId] & TRUE_INT) == TRUE_INT;
+	}
 
-    int num = 0;
-    private void convertAndRender(String filename) {
-    	for (Component c : propNet.getComponents()) {
-    		c.curVal = val(componentIds.get(c), 0);
-    	}
-    	propNet.renderToFile(filename + ++num + ".dot");
-    }
+	int num = 0;
+	@Override
+	public void convertAndRender(String filename) {
+		for (Component c : propNet.getComponents()) {
+			c.curVal = val(componentIds.get(c), 0);
+			if (c instanceof And) {
+				And a = (And) c;
+				a.num = compState[0][componentIds.get(c)];
+				a.bitIndex = componentIds.get(c);
+			} else if (c instanceof Not) {
+				Not a = (Not) c;
+				a.num = compState[0][componentIds.get(c)];
+				a.bitIndex = componentIds.get(c);
+			} else if (c instanceof Or) {
+				Or a = (Or) c;
+				a.num = compState[0][componentIds.get(c)];
+				a.bitIndex = componentIds.get(c);
+			}
+		}
+		propNet.renderToFile(filename + ++num + ".dot");
+	}
 
+	public void render(String filename) {
+		propNet.renderToFile(filename + ++num + ".dot");
+	}
+
+	public void renderState(String filename, MachineState s) {
+		updatePropnetState(s, 0);
+		for (Component c : propNet.getComponents()) {
+			c.curVal = val(componentIds.get(c), 0);
+		}
+		propNet.renderToFile(filename + ++num + ".dot");
+	}
+
+	@Override
+	public double cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+		double numActions = propNet.getLegalPropositions().get(r).size();
+		double numMoves = getLegalMoves(s, r, tid).size();
+		return (100.0 * numMoves / numActions);
+	}
+
+	BitSet compBitsT;
+	BitSet nextBaseBitsT;
+	final int MAX_FACTOR_SIZE = 10000;
 	@Override
 	public void initialize(List<Gdl> description, Role r) {
 		System.out.println("[PropNet] Initializing for role " + r);
+		description = sanitizeDistinct(description);
 		try {
 			propNet = OptimizingPropNetFactory.create(description);
+			System.out.println("Built propnet");
+			try {
+				if (propNet.getRoles().size() == 1 && propNet.getComponents().size() < MAX_FACTOR_SIZE) { // TODO
+					System.out.println("Trying to optimize");
+					doOnePlayerOptimization();
+				} else if (propNet.getComponents().size() < MAX_FACTOR_SIZE) {
+					factorSubgamesWCC(r);
+				}
+			} catch (Exception e) {
+				System.out.println("Factoring failed: ");
+				System.out.println(e);
+			}
 			roles = propNet.getRoles().toArray(new Role[propNet.getRoles().size()]);
 
 			// initialize all component states to 0
 			int nComps = propNet.getComponents().size();
 			int[] initCompState = new int[nComps];
 
-			compBits = new BitSet(nComps);
-		    nextBaseBits = new BitSet(nComps);
-		    isBase = new BitSet(nComps);
-		    isInput = new BitSet(nComps);
-
-			allBaseArr = propNet.getAllBasePropositions().toArray(new Proposition[propNet.getAllBasePropositions().size()]);
-			allInputArr = propNet.getInputPropositions().values().toArray(new Proposition[propNet.getAllInputProps().size()]);
+			compBitsT = new BitSet(nComps);
+			nextBaseBitsT = new BitSet(nComps);
+			isBase = new BitSet(nComps);
+			isInput = new BitSet(nComps);
 
 			origComps = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
+			boolean result = topsortComponents(origComps);
+			System.out.println("Sorted");
+			// testTopologicalOrdering(Arrays.asList(origComps));
+			System.out.println("Result: " + result);
+			System.out.println(result);
+
 			componentIds = new HashMap<Component, Integer>();
 			for (int i = 0; i < origComps.length; i++) {
 				componentIds.put(origComps[i], i);
@@ -141,6 +200,7 @@ public class IntPropNet extends StateMachine {
 			int curOffset = 0;
 			for (int i = 0; i < origComps.length; i++) {
 				Component cur = origComps[i];
+				cur.crystalize(); // necessary for doInitWork and initforwardpropmark
 				int numInputs = cur.inputs.size();
 				int numOutputs = cur.outputs.size();
 				initCompState[i] = FALSE_INT; // by default, regardless of type, init to false
@@ -151,29 +211,29 @@ public class IntPropNet extends StateMachine {
 					if (propNet.getAllInputProps().contains(cur)) {
 						curInfo |= INPUT_TYPE_MASK;
 						isInput.set(i);
-					}
-					else if (propNet.getAllBasePropositions().contains(cur)) {
+					} else if (propNet.getAllBasePropositions().contains(cur)) {
 						curInfo |= BASE_TYPE_MASK;
 						isBase.set(i);
-					}
-					else {
+					} else {
 						curInfo |= OTHER_PROP_TYPE_MASK;
 					}
 				} else if (cur instanceof And) {
 					curInfo |= AND_TYPE_MASK;
 					initCompState[i] = TRUE_INT - numInputs;
+					//					if (cur.inputs.toString().contains("r 13") && cur.outputs.toString().contains("OR")) {
+					//						System.out.println(); // TODO debug
+					//					}
 				} else if (cur instanceof Or) {
 					curInfo |= OR_TYPE_MASK;
 					initCompState[i] = FALSE_INT;
 				} else if (cur instanceof Not) {
 					curInfo |= NOT_TYPE_MASK;
+					initCompState[i] = -numInputs;
 				} else if (cur instanceof Transition) {
 					curInfo |= TRANSITION_TYPE_MASK;
 				} else if (cur instanceof Constant) {
 					curInfo |= CONSTANT_TYPE_MASK;
 					initCompState[i] = ((Constant)cur).getValue() ? TRUE_INT : FALSE_INT;
-				} else {
-					assert false; // something is fucked up
 				}
 
 				// Component inputs
@@ -198,10 +258,7 @@ public class IntPropNet extends StateMachine {
 					compOutputsTemp.add(componentIds.get(output));
 					curOffset++;
 				}
-
-				System.out.println("After component " + i + ", compInfo=" + curInfo);
-
-				cur.crystalize(); // necessary for doInitWork and initforwardpropmark
+				// System.out.println("After component " + i + ", compInfo=" + curInfo);
 			}
 
 			compOutputs = new int[compOutputsTemp.size()];
@@ -216,10 +273,15 @@ public class IntPropNet extends StateMachine {
 
 			// copy initCompState into each thread's separate state
 			compState = new int[NUM_THREADS][nComps];
+			nextBaseBits = new BitSet[NUM_THREADS];
+			compBits = new BitSet[NUM_THREADS];
 			for (int i = 0; i < NUM_THREADS; i++) {
 				System.arraycopy(initCompState, 0, compState[i], 0, nComps);
+				nextBaseBits[i] = (BitSet) nextBaseBitsT.clone();
+				compBits[i] = (BitSet) compBitsT.clone();
 			}
-
+			//			this.convertAndRender("theInitial");
+			// this.convertAndRender("newinit");
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -232,10 +294,16 @@ public class IntPropNet extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	// TODO threads
+	// Don't use this method, just implemented to satisfy abstract parent class.
 	public boolean isTerminal(MachineState state) {
-		updatePropnetState(state);
-		return val(terminalCompId, 0);
+		//		System.out.println("[IntPropNet] WARNING: isTerminal(MachineState state) should never be called.");
+		return isTerminal(state, 0);
+	}
+
+	@Override
+	public boolean isTerminal(MachineState state, int tid) {
+		updatePropnetState(state, tid);
+		return val(terminalCompId, tid);
 	}
 
 	/**
@@ -248,11 +316,15 @@ public class IntPropNet extends StateMachine {
 	@Override
 	public int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
-		updatePropnetState(state);
-		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
+		return getGoal(state, role, 0);
+	}
 
+	@Override
+	public int getGoal(MachineState state, Role role, int tid) {
+		updatePropnetState(state, tid);
+		Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
 		for (Proposition p : rewards) {
-			boolean val = val(componentIds.get(p), 0);
+			boolean val = val(componentIds.get(p), tid);
 			if (val) {
 				return Integer.parseInt(p.getName().get(1).toString());
 			}
@@ -260,39 +332,128 @@ public class IntPropNet extends StateMachine {
 		return 0;
 	}
 
-	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
-//		propNet.renderToFile("intpropnet.dot");
-		for (Component c : propNet.getComponents()) {
-			if (c instanceof Constant) {
-				Set<Component> visited = new HashSet<Component>();
-				initforwardpropmark(c, c.getValue(), visited, componentIds);
+	private static boolean topsortHelper(Component comp, Set<Component> visited, Set<Component> tempMarks, Stack<Component> order) {
+		if (tempMarks.contains(comp))
+			return false; // Graph has a cycle
+
+		if (!visited.contains(comp)) {
+			if (!(comp instanceof Transition)) { // pretend that transitions don't have outputs for the topsort
+				tempMarks.add(comp);
+				for (Component next : comp.getOutputs()) {
+					if (!topsortHelper(next, visited, tempMarks, order))
+						return false;
+				}
+				tempMarks.remove(comp);
+			}
+			visited.add(comp);
+			order.push(comp);
+		}
+		return true;
+	}
+
+	/**
+	 * This should compute the topological ordering of all components.
+	 * Given an array of all components in the graph, modifies the array
+	 * in-place to be topologically sorted. If the graph contains a cycle
+	 * the ordering of the input array is unmodified.
+	 *
+	 * @return true iff the graph does not contain a cycle (ignoring transition outputs).
+	 */
+	public static boolean topsortComponents(Component[] comps) {
+		Stack<Component> order = new Stack<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		Set<Component> tempMarks = new HashSet<Component>();
+		System.out.println("Starting topsort");
+		int count = 0;
+		for (Component comp : comps) {
+			count ++;
+			if (!visited.contains(comp)) {
+				if (!topsortHelper(comp, visited, tempMarks, order))
+					return false;
+			}
+			if (count % 100 == 0) {
+				System.out.println(count);
 			}
 		}
-		Set<Proposition> bases = propNet.getAllBasePropositions();
+		for (int i = 0; i < comps.length; i++) {
+			comps[i] = order.pop();
+		}
+		return true;
+	}
 
+	public void testTopologicalOrdering(List<Component> ordering){
+		for (int i=1; i < ordering.size(); i++){
+			HashSet<Component> prev = new HashSet<Component>(ordering.subList(0, i));
+			Set<Component> inputs_c = ordering.get(i).getInputs();
+			HashSet<Component> inputs = new HashSet<Component>();
+			for (Component c : inputs_c){
+				if (!(c instanceof Transition)){
+					inputs.add(c);
+				}
+			}
+			inputs.removeAll(prev);
+			if (!inputs.isEmpty()){
+				throw new Error("Ordering is not topological");
+			}
+		}
+	}
+
+	private MachineState doInitWork(int[] initCompState, Map<Component, Integer> componentIds) {
+		Set<Proposition> bases = propNet.getAllBasePropositions();
 		System.out.println("There are " + bases.size() + " base propositions.");
 		System.out.println("There are " + propNet.getComponents().size() + " components.");
-		for (Proposition base : bases) {
-			Set<Component> visited = new HashSet<Component>();
-			initforwardpropmark(base, false, visited, componentIds);
-		}
-		System.out.println("Done with bases");
-
 		if (propNet.getInitProposition() != null) {
-			Set<Component> visited = new HashSet<Component>();
-			initforwardpropmark(propNet.getInitProposition(), true, visited, componentIds);
+			propNet.getInitProposition().curVal = true;
+		}
+		for (Component c : origComps) {
+			if (c instanceof Constant) continue;
+			else if (bases.contains(c)) continue;
+			else if (propNet.getAllInputProps().contains(c)) continue;
+			else if (c.equals(propNet.getInitProposition())) continue;
+			else if (c instanceof And) {
+				boolean result = true;
+				for (int ii = 0; ii < c.inputs.size(); ii ++) {
+					if (!c.input_arr[ii].curVal) {
+						result = false;
+						break;
+					}
+				}
+				c.curVal = result;
+			} else if (c instanceof Or) {
+				boolean result = false;
+				for (int ii = 0; ii < c.inputs.size(); ii ++) {
+					if (c.input_arr[ii].curVal) {
+						result = true;
+						break;
+					}
+				}
+				c.curVal = result;
+			} else if (c instanceof Not) {
+				c.curVal = !c.input_arr[0].curVal;
+			} else if (c instanceof Transition) {
+				c.curVal = c.input_arr[0].curVal;
+			} else if (c instanceof Proposition) {
+				if (c.input_arr.length == 0) {
+					System.out.println(c);
+				}
+				c.curVal = c.input_arr[0].curVal;
+			} else {
+				System.out.println("[IntPropNet] Unknown type: " + c);
+			}
 		}
 
 		Set<GdlSentence> sentences = new HashSet<GdlSentence>();
 		for (Proposition base : bases) {
 			if (base.getSingleInput().getSingleInput().curVal) {
 				sentences.add(base.getName());
-				nextBaseBits.set(componentIds.get(base));
+				nextBaseBitsT.set(componentIds.get(base));
 			}
 			if (base.curVal) {
-				compBits.set(componentIds.get(base));
+				compBitsT.set(componentIds.get(base));
 			}
 		}
+
+		BitSet initBits = (BitSet) nextBaseBitsT.clone();
 
 		if (propNet.getInitProposition() != null) {
 			Set<Component> visited = new HashSet<Component>();
@@ -300,14 +461,26 @@ public class IntPropNet extends StateMachine {
 		}
 
 		// Now, copy the object propnet state into our representation
-
 		for (Component c : propNet.getComponents()) {
 			if (c.equals(propNet.getInitProposition())) continue;
-			if (c instanceof And || c instanceof Or || c instanceof Not) {
+			if (c instanceof And || c instanceof Or) {
 				for (int ii = 0; ii < c.inputs.size(); ii ++) {
-					if (c.input_arr[ii].curVal) {
+					Component in = c.input_arr[ii];
+					if (in.curVal && !(in instanceof Not)) {
 						initCompState[componentIds.get(c)]++;
+					} else if (in instanceof Not) {
+						boolean notVal = !in.input_arr[0].curVal;
+						if (notVal) {
+							initCompState[componentIds.get(c)]++;
+						}
 					}
+				}
+			} else if (c instanceof Not) {
+				boolean inputVal = c.input_arr[0].curVal;
+				if (!inputVal) {
+					initCompState[componentIds.get(c)] = -1;
+				} else {
+					initCompState[componentIds.get(c)] = 0;
 				}
 			} else {
 				if (c.curVal) {
@@ -318,7 +491,12 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 
-		return new MachineState(sentences);
+		Set<GdlSentence> initSet = new HashSet<GdlSentence>();
+		for (int ii = initBits.nextSetBit(0); ii != -1; ii = initBits.nextSetBit(ii + 1)) {
+			Proposition p = (Proposition) origComps[ii];
+			initSet.add(p.getName());
+		}
+		return new MachineState(initSet, initBits);
 	}
 
 	Set<Proposition> trueLegals = new HashSet<Proposition>();
@@ -352,25 +530,26 @@ public class IntPropNet extends StateMachine {
 	 */
 	Map<Proposition, Move> propToMove = new HashMap<Proposition, Move>();
 	@Override
-	public List<Move> getLegalMoves(MachineState state, Role role)
-			throws MoveDefinitionException {
+	public List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException {
+		return getLegalMoves(state, role, 0);
+	}
 
-		convertAndRender("ttt");
-
-		updatePropnetState(state);
+	@Override
+	public List<Move> getLegalMoves(MachineState state, Role role, int tid) throws MoveDefinitionException {
+		updatePropnetState(state, tid);
 		List<Move> legalMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
-			if (val(componentIds.get(p), 0)) {
+			int id = componentIds.get(p);
+			if (val(id, tid)) {
 				Move m = propToMove.get(p);
 				if (m == null) {
-					m = new Move(p.getName().get(1));
+					m = new Move(p.getName().get(1), componentIds.get(propNet.getLegalInputMap().get(p)));
 					propToMove.put(p, m);
 				}
 				legalMoves.add(m);
 			}
 		}
-
 		return legalMoves;
 	}
 
@@ -380,29 +559,39 @@ public class IntPropNet extends StateMachine {
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves)
 			throws TransitionDefinitionException {
-		updatePropnetState(state);
-		updatePropnetMoves(moves);
+		return getNextState(state, moves, 0);
+	}
+
+	@Override
+	public MachineState getNextState(MachineState state, List<Move> moves, int tid) throws TransitionDefinitionException {
+
+		//		this.convertAndRender("important.dot");
+		updatePropnetMoves(moves, tid);
+		//		this.convertAndRender("important.dot");
+
+		updatePropnetState(state, tid);
 		Set<GdlSentence> newState = new HashSet<GdlSentence>();
-		for (int ii = nextBaseBits.nextSetBit(0); ii != -1; ii = nextBaseBits.nextSetBit(ii + 1)) {
-			Proposition c = (Proposition) origComps[ii];
-			newState.add(c.getName());
+		for (int ii = nextBaseBits[tid].nextSetBit(0); ii != -1; ii = nextBaseBits[tid].nextSetBit(ii + 1)) {
+			newState.add(((Proposition) origComps[ii]).getName());
 		}
-		return new MachineState(newState);
+		MachineState m = new MachineState(newState, nextBaseBits[tid]);
+		return m;
 	}
 
 	public void initforwardpropmark(Component c, boolean newValue, Set<Component> visited, Map<Component, Integer> componentIds) {
 		if (visited.contains(c)) return;
 		visited.add(c);
+		// if (c.curVal == newValue) return;
 		c.curVal = newValue;
 
 		if (c.isBase) {
-			if (newValue) compBits.set(componentIds.get(c));
-			else compBits.clear(componentIds.get(c));
+			if (newValue) compBitsT.set(componentIds.get(c));
+			else compBitsT.clear(componentIds.get(c));
 		} else if (c instanceof Transition) {
 			// transitions always have exactly one output, or zero if pruned during factoring
 			if (c.output_arr.length > 0) {
-				if (newValue) nextBaseBits.set(componentIds.get(c.output_arr[0]));
-				else nextBaseBits.clear(componentIds.get(c.output_arr[0]));
+				if (newValue) nextBaseBitsT.set(componentIds.get(c.output_arr[0]));
+				else nextBaseBitsT.clear(componentIds.get(c.output_arr[0]));
 			}
 			return;
 		}
@@ -448,40 +637,27 @@ public class IntPropNet extends StateMachine {
 	 * @param compId
 	 * @param thread
 	 */
-	private void forwardpropmarkRec(int compId, int thread) {
-		int numOutputs = numOutputs(compId);
-		int offset = outputOffset(compId);
-		long type = compInfo[compId] & TYPE_MASK;
-		boolean newValue = val(compId, thread);
-		if (type == BASE_TYPE_MASK) {
-			if (newValue) compBits.set(compId);
-			else compBits.clear(compId);
-		} else if (type == TRANSITION_TYPE_MASK) {
-			if (numOutputs > 0) {
-				if (newValue) nextBaseBits.set(compOutputs[offset]);
-				else nextBaseBits.clear(compOutputs[offset]);
-			}
+	private void forwardpropmarkRec(int compId, int thread) {int numOutputs = numOutputs(compId);
+	int offset = outputOffset(compId);
+	long type = compInfo[compId] & TYPE_MASK;
+	boolean newValue = val(compId, thread);
+	if (type == BASE_TYPE_MASK) {
+		compBits[thread].flip(compId);
+	} else if (type == TRANSITION_TYPE_MASK) {
+		if (numOutputs > 0) {
+			nextBaseBits[thread].flip(compOutputs[offset]);
 		}
+		return;
+	}
 
-		if (newValue) {
-			// increment each output's counter
-			for (int i = offset; i < offset + numOutputs; i++) {
-				boolean orig = val(compOutputs[i], thread);
-				compState[thread][compOutputs[i]]++; // TODO: is this right for not gates and propositions??
-				if (val(compOutputs[i], thread) != orig) {
-					forwardpropmarkRec(compOutputs[i], thread);
-				}
-			}
-		} else {
-			// decrement each output's counter
-			for (int i = offset; i < offset + numOutputs; i++) {
-				boolean orig = val(compOutputs[i], thread);
-				compState[thread][compOutputs[i]]--; // TODO: is this right for not gates and propositions??
-				if (val(compOutputs[i], thread) != orig) {
-					forwardpropmarkRec(compOutputs[i], thread);
-				}
-			}
+	for (int i = offset; i < offset + numOutputs; i ++) {
+		int comp = compOutputs[i];
+		boolean orig = val(comp, thread);
+		compState[thread][comp] += newValue ? 1 : -1;
+		if (val(compOutputs[i], thread) != orig) {
+			forwardpropmarkRec(comp, thread);
 		}
+	}
 	}
 
 	/**
@@ -496,38 +672,201 @@ public class IntPropNet extends StateMachine {
 		forwardpropmarkRec(compId, thread);
 	}
 
-	// TODO: need to handle multiple threads
-	public void updatePropnetState(MachineState state) {
-		Set<GdlSentence> stateGdl = state.getContents();
-		BitSet newBits = new BitSet(compInfo.length);
-		for (GdlSentence s : stateGdl) {
-			newBits.set(componentIds.get(propNet.getBasePropositions().get(s)));
+	public void updatePropnetState(MachineState state, int tid) {
+		if (state.props == null) {
+			BitSet stateB = new BitSet(origComps.length);
+			for (GdlSentence s : state.getContents()) {
+				Component sc = propNet.getBasePropositions().get(s);
+				if (sc != null) stateB.set(componentIds.get(sc));
+			}
+			state.props = stateB;
 		}
-
-		newBits.xor(compBits);
+		BitSet newBits = (BitSet) state.props.clone();
+		newBits.xor(compBits[tid]);
 		newBits.and(isBase);
 
 		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
-			forwardpropmark(ii, !val(ii, 0), 0);
+			//			Component c = origComps[ii];
+			forwardpropmark(ii, state.props.get(ii), tid);
+		}
+	}
+
+	public List<Move> getInternalMoves(MachineState state, int tid) throws MoveDefinitionException {
+		List<Move> legals = new ArrayList<Move>();
+		for (Role role : getRoles()) {
+			List<Move> ms = getLegalMoves(state, role, tid);
+			legals.add(ms.get(ThreadLocalRandom.current().nextInt(0, ms.size())));
+			//			legals.add(ms.get(r.nextInt(ms.size())));
+		}
+		return legals;
+	}
+
+	//	Random r = new Random();
+	@Override
+	public MachineState internalDC(MachineState start, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		while (!isTerminal(start, tid)) {
+			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
+			start = internalNextState(start, selected, tid);
+		}
+		return start;
+	}
+
+	/**
+	 * We use this method to return an average of the mobility throughout the entire game, not just at
+	 * the end. This way, we get a sense of how good mobility is as a whole, not just at the end when
+	 * the game is pretty much determined
+	 */
+
+	@Override
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] weightedMobility, Role player)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		int playerIndex = -1;
+		for(int i = 0; i <  roles.length ; i++){
+			if (roles[i].equals(player)){
+				playerIndex = i;
+			}
+		}
+		MachineState next = null;
+		List<Double> mobilityVals = new ArrayList<Double>();
+		int numMovesToTerminal = 0;
+		while (true) {
+			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
+			next = internalNextState(start, selected, tid);
+			if (!isTerminal(next, tid)) {
+				start = next;
+//				List<Move> moves = getLegalMoves(start, roles[playerIndex], tid);
+//				if (moves.size() == 1 && moves[0]){
+//				}
+//				if (getLegalMoves(s, roles[playerIndex], tid).size() > 1) { //disregard mobililty when
+					double cm = cheapMobility(start, roles[playerIndex], tid);
+					mobilityVals.add(cm);
+					numMovesToTerminal++;
+//				}
+			} else {
+				break;
+			}
+		}
+		List<Double> weights = new ArrayList<Double>();
+		double weightsSum = 0.0;
+		for(int i = mobilityVals.size(); i > 0; i--){
+			weights.add((double) i);
+			weightsSum += (double) i;
+		}
+//		System.out.println("weights: " + weights);
+//		System.out.println("weightsSum: " + weightsSum);
+
+		double weightedMobilitySum = 0.0;
+		for(int i = 0; i < weights.size(); i++){
+			weightedMobilitySum += mobilityVals.get(i) * weights.get(i) / weightsSum;
+		}
+
+//		System.out.println("mobility sum: " + weightedMobilitySum);
+//		System.out.println("No. moves to Terminal: " + numMovesToTerminal);
+
+		if (numMovesToTerminal > 0) {
+			weightedMobility[0] = weightedMobilitySum;
+		} else {
+			weightedMobility[0] = 0;
+		}
+		finalS.props = (BitSet) next.props.clone();
+		return start;
+	}
+
+	@Override
+	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		MachineState next = null;
+		while (true) {
+			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
+			next = internalNextState(start, selected, tid);
+			if (!isTerminal(next, tid)) {
+				start = next;
+			} else {
+				break;
+			}
+		}
+		finalS.props = (BitSet) next.props.clone();
+		return start;
+	}
+
+	// TODO does not work
+	public List<Move> randomJointMove(MachineState state, int tid) throws MoveDefinitionException {
+		List<Move> moves = new ArrayList<Move>();
+		for (Role role : getRoles()) {
+			List<Move> lms = internalLegalMoves(state, role, tid);
+			moves.add(lms.get(ThreadLocalRandom.current().nextInt(0, lms.size())));
+			//			moves.add(lms.get(r.nextInt(lms.size())));
+		}
+		return moves;
+	}
+
+	// TODO make internal legal joint moves
+	public List<Move> internalLegalMoves(MachineState state, Role role, int tid)
+			throws MoveDefinitionException {
+		updatePropnetState(state, tid);
+		List<Move> legalMoves = new ArrayList<Move>();
+		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
+		for (Proposition p : legals) {
+			int id = componentIds.get(p);
+			if (val(id, tid)) {
+				legalMoves.add(new Move(id));
+			}
+		}
+		return legalMoves;
+	}
+
+	public void internalStateUpdate(BitSet state, int tid) {
+		state.xor(compBits[tid]);
+		state.and(isBase);
+		for (int ii = state.nextSetBit(0); ii != -1; ii = state.nextSetBit(ii + 1)) {
+			forwardpropmark(ii, state.get(ii), tid);
+		}
+	}
+
+	public MachineState internalNextState(MachineState state, List<Move> moves, int tid)
+			throws TransitionDefinitionException {
+		internalStateUpdate((BitSet) state.props.clone(), tid);
+		internalMoveUpdate(moves, tid);
+		MachineState m = new MachineState(nextBaseBits[tid]);
+		return m;
+	}
+
+	public void internalMoveUpdate(List<Move> moves, int tid) {
+		BitSet newBits = new BitSet(compInfo.length);
+		for (Move m : moves) {
+			newBits.set(m.compId);
+		}
+		newBits.xor(compBits[tid]);
+		newBits.and(isInput);
+
+		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
+			forwardpropmark(ii, !val(ii, tid), tid);
+		}
+		for (int ii = isInput.nextSetBit(0); ii != -1; ii = isInput.nextSetBit(ii + 1)) {
+			if (newBits.get(ii)) compBits[tid].flip(ii);
 		}
 	}
 
 	// TODO: need to handle multiple threads
-	public void updatePropnetMoves(List<Move> moves) {
+	public void updatePropnetMoves(List<Move> moves, int tid) {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet newBits = new BitSet(compInfo.length);
 		for (GdlSentence s : moveGdl) {
-			newBits.set(componentIds.get(propNet.getInputPropositions().get(s)));
+			Component c = propNet.getInputPropositions().get(s);
+			if (c != null) {
+				newBits.set(componentIds.get(c));
+			}
 		}
-
-		newBits.xor(compBits);
+		newBits.xor(compBits[tid]);
 		newBits.and(isInput);
 
 		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
-			forwardpropmark(ii, !val(ii, 0), 0);
+			//			Component c = origComps[ii];
+			forwardpropmark(ii, !val(ii, tid), tid);
 		}
 		for (int ii = isInput.nextSetBit(0); ii != -1; ii = isInput.nextSetBit(ii + 1)) {
-			if (newBits.get(ii)) compBits.flip(ii);
+			if (newBits.get(ii)) compBits[tid].flip(ii);
 		}
 	}
 
@@ -538,6 +877,101 @@ public class IntPropNet extends StateMachine {
 	}
 
 	/* Helper methods */
+
+
+	private void sanitizeDistinctHelper(Gdl gdl, List<Gdl> in, List<Gdl> out) {
+		if (!(gdl instanceof GdlRule)) {
+			out.add(gdl);
+			return;
+		}
+		GdlRule rule = (GdlRule) gdl;
+		for (GdlLiteral lit : rule.getBody()) {
+			if (lit instanceof GdlDistinct) {
+				GdlDistinct d = (GdlDistinct) lit;
+				GdlTerm a = d.getArg1();
+				GdlTerm b = d.getArg2();
+				if (!(a instanceof GdlFunction) && !(b instanceof GdlFunction)) continue;
+				if (!(a instanceof GdlFunction && b instanceof GdlFunction)) return;
+				GdlSentence af = ((GdlFunction) a).toSentence();
+				GdlSentence bf = ((GdlFunction) b).toSentence();
+				if (!af.getName().equals(bf.getName())) return;
+				if (af.arity() != bf.arity()) return;
+				for (int i = 0; i < af.arity(); i++) {
+					List<GdlLiteral> ruleBody = new ArrayList<>();
+					for (GdlLiteral newLit : rule.getBody()) {
+						if (newLit != lit) ruleBody.add(newLit);
+						else ruleBody.add(GdlPool.getDistinct(af.get(i), bf.get(i)));
+					}
+					GdlRule newRule = GdlPool.getRule(rule.getHead(), ruleBody);
+					// Log.println("new rule: " + newRule);
+					in.add(newRule);
+				}
+				return;
+			}
+		}
+		for (GdlLiteral lit : rule.getBody()) {
+			if (lit instanceof GdlDistinct) {
+				System.out.println("distinct rule added: " + rule);
+				break;
+			}
+		}
+		out.add(rule);
+	}
+
+	private List<Gdl> sanitizeDistinct(List<Gdl> description) {
+		List<Gdl> out = new ArrayList<>();
+		for (int i = 0; i < description.size(); i++) {
+			sanitizeDistinctHelper(description.get(i), description, out);
+		}
+		return out;
+	}
+
+
+	public Set<Component> dfs(Component p) {
+		Queue<Component> nodesToVisit = new LinkedList<Component>();
+		Set<Component> visited = new HashSet<Component>();
+		nodesToVisit.add(p);
+		while (!nodesToVisit.isEmpty()) {
+			Component currNode = nodesToVisit.poll();
+			if (visited.contains(currNode)) continue;
+			else visited.add(currNode);
+			nodesToVisit.addAll(currNode.inputs);
+		}
+		return visited;
+	}
+
+	Map<Proposition, Proposition> inputLegalMap = new HashMap<Proposition, Proposition>();
+
+	public void doOnePlayerOptimization() {
+		for (Proposition p : propNet.getLegalInputMap().keySet()) {
+			inputLegalMap.put(propNet.getLegalInputMap().get(p), p);
+		}
+
+		Set<Component> important = new HashSet<Component>();
+		Set<Component> toRemove = new HashSet<Component>();
+		important.addAll(dfs(propNet.getTerminalProposition()));
+		important.addAll(dfs(propNet.getInitProposition()));
+		for (Proposition p : propNet.getAllGoalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Proposition p : propNet.getAllLegalPropositions()) {
+			important.addAll(dfs(p));
+		}
+		for (Component c : propNet.getComponents()) {
+			if (!important.contains(c)) {
+				toRemove.add(c);
+			}
+		}
+		// propNet.renderToFile("opBefore.dot");
+		System.out.println("Removing " + toRemove.size() + " components - " + toRemove);
+		for (Component c : toRemove) {
+			propNet.removeComponent(c);
+			if (inputLegalMap.containsKey(c)) {
+				propNet.removeComponent(inputLegalMap.get(c));
+			}
+		}
+		// propNet.renderToFile("opDone.dot");
+	}
 
 	/**
 	 * The Input propositions are indexed by (does ?player ?action).
@@ -570,13 +1004,95 @@ public class IntPropNet extends StateMachine {
 		}
 		return doeses;
 	}
+	public Set<Component> undirectedDfsFromNode(Proposition p, Set<Component> allVisited, List<Boolean> wccIsRelevant, Role r) {
+		assert !allVisited.contains(p);
+		Set<Component> result = new HashSet<Component>();
+		Queue<Component> frontier = new LinkedList<Component>();
+		frontier.add(p);
+		boolean isRelevant = false;
+		while (!frontier.isEmpty()) {
+			Component cur = frontier.poll();
+			if (allVisited.contains(cur))
+				continue;
+			if (cur.equals(propNet.getInitProposition())) // ignore the init proposition when determining WCCs
+				continue;
+
+			allVisited.add(cur);
+			result.add(cur);
+			if (propNet.getGoalPropositions().get(r).contains(cur) || propNet.getTerminalProposition().equals(cur))
+				isRelevant = true;
+
+			propNet.getInputPropositions().get(r);
+
+			frontier.addAll(cur.inputs);
+			frontier.addAll(cur.outputs);
+		}
+		wccIsRelevant.add(isRelevant);
+		return result;
+	}
 
 	/**
-	 * Takes in a Legal Proposition and returns the appropriate corresponding Move
-	 * @param p
-	 * @return a PropNetMove
+	 * Factors game into weakly connected components, ignoring init.
+	 * @param r
+	 * @return
 	 */
-	public static Move getMoveFromProposition(Proposition p) {
-		return new Move(p.getName().get(1));
+	public void factorSubgamesWCC(Role r) {
+		// propNet.renderToFile("start_w.dot");
+		Proposition term = propNet.getTerminalProposition();
+		Set<Component> allVisited = new HashSet<Component>();
+		List<Set<Component>> wccs = new ArrayList<Set<Component>>();
+		List<Boolean> wccIsRelevant = new ArrayList<Boolean>();
+
+		for (Proposition p : propNet.getAllGoalPropositions()) {
+			if (allVisited.contains(p))
+				continue;
+			Set<Component> curWcc = undirectedDfsFromNode(p, allVisited, wccIsRelevant, r);
+			wccs.add(curWcc);
+		}
+		Set<Component> curWcc = undirectedDfsFromNode(term, allVisited, wccIsRelevant, r);
+		wccs.add(curWcc);
+
+		int numWccsRemoved = 0;
+		int numR = 0;
+		for (int i = 0; i < wccs.size(); i++) {
+			if (!wccIsRelevant.get(i)) {
+				for (Component c : wccs.get(i)) {
+					propNet.removeComponent(c);
+					numR ++;
+				}
+				numWccsRemoved++;
+				// propNet.renderToFile("factor_removed_" + numWccsRemoved + "_wccs.dot");
+			}
+		}
+		System.out.println("Removed " + numR + " components.");
+		Set<Role> relevantRoles = new HashSet<Role>();
+		for (int i = 0; i < wccs.size(); i++) {
+			if (wccIsRelevant.get(i)) {
+				for (Component c : wccs.get(i)) {
+					for (Role role : propNet.roles) {
+						if (propNet.getGoalPropositions().get(role).contains(c)) {
+							relevantRoles.add(role);
+							break;
+						}
+					}
+					for (Role role : propNet.roles) {
+						if (propNet.getLegalPropositions().get(role).contains(c)) {
+							relevantRoles.add(role);
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		Iterator<Role> it = propNet.roles.iterator();
+		while (it.hasNext()) {
+			Role role = it.next();
+			if (!relevantRoles.contains(role)) {
+				it.remove();
+			}
+		}
+		// System.out.println(relevantRoles);
+		// System.out.println(propNet.roles);
 	}
 }
