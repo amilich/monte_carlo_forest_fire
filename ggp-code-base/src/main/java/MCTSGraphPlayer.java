@@ -96,7 +96,9 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		resetGraphNode();
 		moveNum = 0;
 		try {
-			mobilityHeuristic(timeout);
+			if (getStateMachine().getRoles().size() > 1) {
+				mobilityHeuristic(timeout);
+			}
 		} catch (Exception e) {
 			System.out.println("[GRAPH] Error while computing mobility heuristic:");
 			e.printStackTrace();
