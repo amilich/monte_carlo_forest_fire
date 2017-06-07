@@ -32,7 +32,7 @@ public abstract class StateMachine
 		return null;
 	}
 
-	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, int[] avgMobility)
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] avgMobility, Role player)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		return null;
 	}
@@ -42,8 +42,8 @@ public abstract class StateMachine
 		return null;
 	}
 
-	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
-		return 0;
+	public double cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+		return 0.0;
 	}
 
 	/**

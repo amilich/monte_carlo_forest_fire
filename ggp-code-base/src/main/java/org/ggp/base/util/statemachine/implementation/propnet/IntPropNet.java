@@ -145,10 +145,10 @@ public class IntPropNet extends StateMachine {
 	}
 
 	@Override
-	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+	public double cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
 		double numActions = propNet.getLegalPropositions().get(r).size();
 		double numMoves = getLegalMoves(s, r, tid).size();
-		return (int) (100.0 * numMoves / numActions);
+		return (100.0 * numMoves / numActions);
 	}
 
 	BitSet compBitsT;
@@ -714,22 +714,38 @@ public class IntPropNet extends StateMachine {
 	 */
 
 	@Override
-	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, int[] avgMobility)
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] avgMobility, Role player)
 			throws MoveDefinitionException, TransitionDefinitionException {
+		int playerIndex = -1;
+		for(int i = 0; i <  roles.length ; i++){
+			if (roles[i].equals(player)){
+				playerIndex = i;
+			}
+		}
 		MachineState next = null;
-		int mobilitySum = 0;
+		double mobilitySum = 0.0;
 		int numMovesToTerminal = 0;
 		while (true) {
 			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
 			next = internalNextState(start, selected, tid);
 			if (!isTerminal(next, tid)) {
 				start = next;
-				mobilitySum += cheapMobility(start, roles[0], tid);
-				numMovesToTerminal++;
+//				List<Move> moves = getLegalMoves(start, roles[playerIndex], tid);
+//				if (moves.size() == 1 && moves[0]){
+//				}
+//				if (getLegalMoves(s, roles[playerIndex], tid).size() > 1) { //disregard mobililty when
+					double cm = cheapMobility(start, roles[playerIndex], tid);
+					mobilitySum += cm;
+					System.out.println("cm: " + cm);
+					numMovesToTerminal++;
+//				}
 			} else {
 				break;
 			}
 		}
+		System.out.println("mobility sum: " + mobilitySum);
+		System.out.println("No. moves to Terminal: " + numMovesToTerminal);
+
 		if (numMovesToTerminal > 0) {
 			avgMobility[0] = mobilitySum/numMovesToTerminal;
 		} else {
