@@ -30,8 +30,8 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		// 		return new BitSetNet();
 		//		return new BasicFactorPropNet();
 		//		return new StateLessPropNet();
-//			return new AsyncPropNet();
-//		return new CachedStateMachine(new ProverStateMachine());
+		//		return new AsyncPropNet();
+		//		return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	// http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java
@@ -42,11 +42,11 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		double syy = 0.0;
 		double sxy = 0.0;
 		int n = xs.size();
-	//	double maxX = Collections.max(xs);
-	//	double maxY = Collections.max(ys);
+		//	double maxX = Collections.max(xs);
+		//	double maxY = Collections.max(ys);
 		for (int i = 0; i < n; i ++) {
-			double x = xs.get(i);///maxX;
-			double y = ys.get(i);///maxY;
+			double x = xs.get(i); ///maxX;
+			double y = ys.get(i); ///maxY;
 			sx += x;
 			sy += y;
 			sxx += x * x;
@@ -73,7 +73,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
 			MachineState finalState = new MachineState();
 			double[] weightedMobility = new double[1]; // for returning the value only
-			MachineState next = getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, weightedMobility, getRole());
+			getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, weightedMobility, getRole());
 			ourScore.add((double)getStateMachine().getGoal(finalState, getRole()));
 			heuristic.add(weightedMobility[0]);
 		}
@@ -183,11 +183,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
 			moveNum ++;
 			Move m = root.getBestMove();
-			double d = root.getBestUtility();
-			if (d > 99.9) {
-				System.out.println("GAME IS SOLVED");
-				this.MAX_ITERATIONS = 50000; // TODO
-			}
 			return m;
 		} catch (Exception e) {
 			System.out.println("[GRAPH] Exception in stateMachineSelectMove. Falling back to any legal move.");

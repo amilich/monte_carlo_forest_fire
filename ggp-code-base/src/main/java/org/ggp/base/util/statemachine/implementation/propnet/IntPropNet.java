@@ -674,6 +674,7 @@ public class IntPropNet extends StateMachine {
 
 	public void updatePropnetState(MachineState state, int tid) {
 		if (state.props == null) {
+			System.out.println("Null state");
 			BitSet stateB = new BitSet(origComps.length);
 			for (GdlSentence s : state.getContents()) {
 				Component sc = propNet.getBasePropositions().get(s);
@@ -686,7 +687,6 @@ public class IntPropNet extends StateMachine {
 		newBits.and(isBase);
 
 		for (int ii = newBits.nextSetBit(0); ii != -1; ii = newBits.nextSetBit(ii + 1)) {
-			//			Component c = origComps[ii];
 			forwardpropmark(ii, state.props.get(ii), tid);
 		}
 	}
@@ -696,7 +696,6 @@ public class IntPropNet extends StateMachine {
 		for (Role role : getRoles()) {
 			List<Move> ms = getLegalMoves(state, role, tid);
 			legals.add(ms.get(ThreadLocalRandom.current().nextInt(0, ms.size())));
-			//			legals.add(ms.get(r.nextInt(ms.size())));
 		}
 		return legals;
 	}
