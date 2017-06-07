@@ -171,7 +171,7 @@ public class ThreadedGraphNode {
 	public static double mobilityCorr = 0.0;
 	static final int C = 50;
 	static final double C1 = 0.7;
-	static final double C2 = 0.4;
+	static final double C2 = 0.2;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) throws MoveDefinitionException {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
 		if (Double.isNaN(stddev)) {
