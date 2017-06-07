@@ -73,7 +73,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
 			MachineState finalState = new MachineState();
 			double[] weightedMobility = new double[1]; // for returning the value only
-			MachineState next = getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, weightedMobility, getRole());
+			getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, weightedMobility, getRole());
 			ourScore.add((double)getStateMachine().getGoal(finalState, getRole()));
 			heuristic.add(weightedMobility[0]);
 		}
