@@ -47,7 +47,7 @@ public class AsyncPropNet extends StateMachine {
 			throws MoveDefinitionException, TransitionDefinitionException {
 		if (ip == null) {
 			Random r = new Random();
-			while (!isTerminal(start, tid)) {
+			while (!csm.isTerminal(start)) {
 				List<List<Move>> jmoves = csm.getLegalJointMoves(start);
 				List<Move> selected =jmoves.get(r.nextInt(jmoves.size()));
 				start = csm.getNextState(start, selected);
@@ -68,7 +68,7 @@ public class AsyncPropNet extends StateMachine {
 				List<List<Move>> jmoves = csm.getLegalJointMoves(start);
 				List<Move> selected = jmoves.get(r.nextInt(jmoves.size()));
 				next = csm.getNextState(start, selected);
-				if (!isTerminal(next, tid)) {
+				if (!csm.isTerminal(next)) {
 					start = next;
 				} else {
 					break;
@@ -132,6 +132,14 @@ public class AsyncPropNet extends StateMachine {
 	public int getGoal(MachineState state, Role role) throws GoalDefinitionException {
 		return getSM().getGoal(state, role);
 	}
+
+	@Override
+    public int getGoal(MachineState state, Role role, int tid) throws GoalDefinitionException {
+    	if (ip == null) {
+    		return csm.getGoal(state, role);
+    	}
+    	return ip.getGoal(state, role, tid);
+    }
 
 	@Override
 	public boolean isTerminal(MachineState state) {

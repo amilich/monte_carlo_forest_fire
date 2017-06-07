@@ -30,7 +30,8 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		// 		return new BitSetNet();
 		//		return new BasicFactorPropNet();
 		//		return new StateLessPropNet();
-		//	return new AsyncPropNet();
+//			return new AsyncPropNet();
+//		return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	// http://stackoverflow.com/questions/28428365/how-to-find-correlation-between-two-integer-arrays-in-java

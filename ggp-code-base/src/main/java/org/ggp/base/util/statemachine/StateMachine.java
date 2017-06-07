@@ -29,15 +29,18 @@ public abstract class StateMachine
 	// in order to align with notation in the notes for Stanford's CS227B course
 	public MachineState internalDC(MachineState start, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.internalDC should never be called!");
 		return null;
 	}
 
 	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.preInternalDC should never be called!");
 		return null;
 	}
 
 	public int cheapMobility(MachineState s, Role r, int tid) throws MoveDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.cheapMobility should never be called!");
 		return 0;
 	}
 
@@ -147,6 +150,7 @@ public abstract class StateMachine
      */
     public abstract int getGoal(MachineState state, Role role) throws GoalDefinitionException;
     public int getGoal(MachineState state, Role role, int tid) throws GoalDefinitionException {
+    	System.out.println("[StateMachine] WARNING: StateMachine.getGoal(state, role) should never be called!");
     	return 0;
     }
 
@@ -156,6 +160,7 @@ public abstract class StateMachine
      */
     public abstract boolean isTerminal(MachineState state);
     public boolean isTerminal(MachineState state, int tid) {
+    	System.out.println("[StateMachine] WARNING: StateMachine.isTerminal(state, tid) should never be called!");
     	return false;
     }
 
@@ -182,6 +187,7 @@ public abstract class StateMachine
     // TODO: There are philosophical reasons for this to return Set<Move> rather than List<Move>.
     public abstract List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException;
     public List<Move> getLegalMoves(MachineState state, Role role, int tid) throws MoveDefinitionException {
+    	System.out.println("[StateMachine] WARNING: StateMachine.getLegalMoves(state, role, tid) should never be called!");
     	return null;
     }
 
@@ -196,6 +202,7 @@ public abstract class StateMachine
      */
     public abstract MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException;
     public MachineState getNextState(MachineState state, List<Move> moves, int tid) throws TransitionDefinitionException {
+    	System.out.println("[StateMachine] WARNING: StateMachine.getNextState(state, moves, tid) should never be called!");
     	return null;
     }
 
