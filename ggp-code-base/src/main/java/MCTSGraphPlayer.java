@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
@@ -47,11 +46,11 @@ public double Correlation(List<Double> xs, List<Double> ys) {
 	double syy = 0.0;
 	double sxy = 0.0;
 	int n = xs.size();
-	double maxX = Collections.max(xs);
-	double maxY = Collections.max(ys);
+//	double maxX = Collections.max(xs);
+//	double maxY = Collections.max(ys);
 	for (int i = 0; i < n; i ++) {
-		double x = xs.get(i)/maxX;
-		double y = ys.get(i)/maxY;
+		double x = xs.get(i);///maxX;
+		double y = ys.get(i);///maxY;
 		sx += x;
 		sy += y;
 		sxx += x * x;
@@ -63,47 +62,10 @@ public double Correlation(List<Double> xs, List<Double> ys) {
 		return 0;
 	}
 	double denominator = Math.sqrt(n * sxx - sx * sx) * Math.sqrt(n * syy - sy * sy);
-	System.out.println("avg cov: " + numerator/xs.size());
-	System.out.println("denominator: " + denominator);
 	return numerator / denominator;
 }
 
-public double avgNormDiff(List<Double> xs, List<Double> ys) {
-	int n = xs.size();
-	double maxX = Collections.max(xs);
-	double maxY = Collections.max(ys);
-	double meanX = 0.0;
-	double meanY = 0.0;
-	for (int i = 0; i < n; i ++) {
-		meanX += xs.get(i) / maxX;
-		meanY += ys.get(i) / maxY;
-	}
-	meanX /= n;
-	meanY /= n;
-
-	double diffSum = 0.0;
-	for (int i = 0; i < n; i ++) {
-		double x = xs.get(i)/maxX - meanX;
-		double y = ys.get(i)/maxY - meanY;
-		diffSum += (x-y);
-	}
-	return diffSum / n;
-}
-
-// https://stackoverflow.com/questions/520241/how-do-i-calculate-the-cosine-similarity-of-two-vectors
-public double cosineSimilarity(List<Integer> vectorA, List<Integer> vectorB) {
-    double dotProduct = 0.0;
-//    double normA = 0.0;
-//    double normB = 0.0;
-    for (int i = 0; i < vectorA.size(); i++) {
-        dotProduct += 1.0*vectorA.get(i)/100 * vectorB.get(i)/100;
-//        normA += Math.pow(vectorA.get(i), 2);
-//        normB += Math.pow(vectorB.get(i), 2);
-    }
-    return dotProduct/vectorA.size();// / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-static final double corr_threshold = 0.5;
+private double CORR_THRESHOLD = 0.2;
 static final int TIME_REM = 15000;
 static final int TIME_CORR = 15000;
 public void mobilityHeuristic(long timeout)
@@ -112,17 +74,12 @@ public void mobilityHeuristic(long timeout)
 	List<Double> heuristic = new ArrayList<Double>();
 	long newTimeout = System.currentTimeMillis() + TIME_CORR;
 	System.out.println("Starting correlation");
-	int i = 0;
-	while (i < 25){// || !MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
+	while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
 		MachineState finalState = new MachineState();
-//		MachineState next = getStateMachine().preInternalDC(getCurrentState(), finalState, 0);
-		double[] avgMobility = new double[1]; // for returning the value only
-		MachineState next = getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, avgMobility, getRole());
-
+		double[] weightedMobility = new double[1]; // for returning the value only
+		MachineState next = getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, weightedMobility, getRole());
 		ourScore.add((double)getStateMachine().getGoal(finalState, getRole()));
-//		heuristic.add(getStateMachine().cheapMobility(next, getRole(), 0));
-		heuristic.add(avgMobility[0]);
-		i++;
+		heuristic.add(weightedMobility[0]);
 	}
 	System.out.println("ourScore " + ourScore);
 	System.out.println("heuristic " + heuristic);
@@ -136,7 +93,6 @@ public void mobilityHeuristic(long timeout)
 		// we want to store corr because a higher correlation should entail a higher c value in the select fn
 	}
 }
-private double CORR_THRESHOLD = 0.3;
 
 // List of machines used for depth charges
 @Override

@@ -515,7 +515,12 @@ public class IntPropNet extends StateMachine {
 		List<Move> allMoves = new ArrayList<Move>();
 		Set<Proposition> legals = propNet.getLegalPropositions().get(role);
 		for (Proposition p : legals) {
-			allMoves.add(new Move(p.getName().get(1), componentIds.get(propNet.getLegalInputMap().get(p))));
+			GdlSentence name = p.getName();
+			GdlTerm contents = name.get(1);
+			Proposition pr = propNet.getLegalInputMap().get(p);
+//			Integer inr =  componentIds.get(pr);
+			Move m = new Move(contents);
+			allMoves.add(m);
 		}
 		return allMoves;
 	}
@@ -714,7 +719,7 @@ public class IntPropNet extends StateMachine {
 	 */
 
 	@Override
-	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] avgMobility, Role player)
+	public MachineState preInternalDCMobility(MachineState start, MachineState finalS, int tid, double[] weightedMobility, Role player)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		int playerIndex = -1;
 		for(int i = 0; i <  roles.length ; i++){
@@ -723,7 +728,7 @@ public class IntPropNet extends StateMachine {
 			}
 		}
 		MachineState next = null;
-		double mobilitySum = 0.0;
+		List<Double> mobilityVals = new ArrayList<Double>();
 		int numMovesToTerminal = 0;
 		while (true) {
 			List<Move> selected = getInternalMoves(start, tid); //jmoves.get(r.nextInt(jmoves.size()));
@@ -735,21 +740,34 @@ public class IntPropNet extends StateMachine {
 //				}
 //				if (getLegalMoves(s, roles[playerIndex], tid).size() > 1) { //disregard mobililty when
 					double cm = cheapMobility(start, roles[playerIndex], tid);
-					mobilitySum += cm;
-					System.out.println("cm: " + cm);
+					mobilityVals.add(cm);
 					numMovesToTerminal++;
 //				}
 			} else {
 				break;
 			}
 		}
-		System.out.println("mobility sum: " + mobilitySum);
-		System.out.println("No. moves to Terminal: " + numMovesToTerminal);
+		List<Double> weights = new ArrayList<Double>();
+		double weightsSum = 0.0;
+		for(int i = mobilityVals.size(); i > 0; i--){
+			weights.add((double) i);
+			weightsSum += (double) i;
+		}
+//		System.out.println("weights: " + weights);
+//		System.out.println("weightsSum: " + weightsSum);
+
+		double weightedMobilitySum = 0.0;
+		for(int i = 0; i < weights.size(); i++){
+			weightedMobilitySum += mobilityVals.get(i) * weights.get(i) / weightsSum;
+		}
+
+//		System.out.println("mobility sum: " + weightedMobilitySum);
+//		System.out.println("No. moves to Terminal: " + numMovesToTerminal);
 
 		if (numMovesToTerminal > 0) {
-			avgMobility[0] = mobilitySum/numMovesToTerminal;
+			weightedMobility[0] = weightedMobilitySum;
 		} else {
-			avgMobility[0] = 0;
+			weightedMobility[0] = 0;
 		}
 		finalS.props = (BitSet) next.props.clone();
 		return start;
