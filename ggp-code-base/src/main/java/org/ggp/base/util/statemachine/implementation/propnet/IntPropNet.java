@@ -443,8 +443,9 @@ public class IntPropNet extends StateMachine {
 			} else if (c instanceof Proposition) {
 				if (c.input_arr.length == 0) {
 					System.out.println(c);
+				} else {
+					c.curVal = c.input_arr[0].curVal;
 				}
-				c.curVal = c.input_arr[0].curVal;
 			} else {
 				System.out.println("[IntPropNet] Unknown type: " + c);
 			}
