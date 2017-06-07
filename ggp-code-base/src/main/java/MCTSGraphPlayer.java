@@ -118,9 +118,9 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		initRoot();
 	}
 
-	private double CSP_UPDATE_COEFF = 1.8;
+	private double CSP_UPDATE_COEFF = 1.3;
 	int num_update = 0;
-	private final int MAX_ITERATIONS = 3000000; // Unnecessary to explore
+	private int MAX_ITERATIONS = 3000000; // Unnecessary to explore
 	public void expandTree(long timeout) {
 		long startT = System.currentTimeMillis();
 		double timeDiff = (timeout - startT) / 1000.0 - MyHeuristics.MAX_DELIB_THRESHOLD / 1000.0;
@@ -140,7 +140,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			}
 			// if (numLoops > temp_max) break; // TODO
 			if (numLoops > MAX_ITERATIONS) {
-				if (getStateMachine().getRoles().size() == 1 && num_update < 2) {
+				if (getStateMachine().getRoles().size() == 1 && num_update < 1) {
 					System.out.println("Updating Csp");
 					ThreadedGraphNode.Csp *= CSP_UPDATE_COEFF;
 					num_update ++;
@@ -185,6 +185,11 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
 			moveNum ++;
 			Move m = root.getBestMove();
+			double d = root.getBestUtility();
+			if (d > 99.9) {
+				System.out.println("GAME IS SOLVED");
+				this.MAX_ITERATIONS = 50000; // TODO
+			}
 			return m;
 		} catch (Exception e) {
 			System.out.println("[GRAPH] Exception in stateMachineSelectMove. Falling back to any legal move.");

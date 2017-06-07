@@ -119,6 +119,17 @@ public class ThreadedGraphNode {
 		return total;
 	}
 
+	public double getBestUtility() throws MoveDefinitionException {
+		double maxUtility = 0;
+		for (int ii = 0; ii < pVals.length; ii ++) {
+			double tempUtility = pVals[ii] / pCounts[ii];
+			if (tempUtility > maxUtility) {
+				maxUtility = tempUtility;
+			}
+		}
+		return maxUtility;
+	}
+
 	// Return the best move available from the current state.
 	public Move getBestMove() throws MoveDefinitionException {
 		if (explored) {
@@ -167,7 +178,7 @@ public class ThreadedGraphNode {
 	public static double Csp = 300000;
 	public static boolean heuristicEnable = false;
 	static final int C = 50;
-	static final double C1 = 0.7;
+	static final double C1 = 0.85;
 	static final double C2 = 0.2;
 	protected double opponentSelectFn(int pMove, int oMove, ThreadedGraphNode n) throws MoveDefinitionException {
 		double stddev = Math.sqrt((n.s0 * n.s2 - n.s1 * n.s1) / (n.s0 * (n.s0 - 1)));
