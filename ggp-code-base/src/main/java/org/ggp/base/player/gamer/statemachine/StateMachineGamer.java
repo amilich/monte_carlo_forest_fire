@@ -168,22 +168,26 @@ public abstract class StateMachineGamer extends Gamer
 	// new stateMachineMetaGame() and stateMachineSelectMove() functions after
 	// doing the state-machine-related book-keeping.
 
+	// TODO this must be implemented in ANY player that is used
+	public StateMachine getAndInitializeStateMachine(long timeout, Role role) {
+		System.out.println("[StateMachineGamer] WARNING this should never be called (getAndInit)");
+		return null;
+	}
+
 	/**
 	 * A wrapper function for stateMachineMetaGame. When the match begins, this
 	 * initializes the state machine and role using the match description, and
 	 * then calls stateMachineMetaGame.
 	 */
 	@Override
-	public final void metaGame(long timeout) throws MetaGamingException
-	{
+	public final void metaGame(long timeout) throws MetaGamingException {
 		try {
-			stateMachine = getInitialStateMachine();
-			role = stateMachine.getRoleFromConstant(getRoleName());
-			stateMachine.initialize(getMatch().getGame().getRules(), role);
+			role = new Role(getRoleName()); //stateMachine.getRoleFromConstant(getRoleName());
+			//	stateMachine = getInitialStateMachine();
+			stateMachine = getAndInitializeStateMachine(timeout, role);
+//			stateMachine.initialize(getMatch().getGame().getRules(), role);
 			currentState = stateMachine.getInitialState();
-
 			getMatch().appendState(currentState.getContents());
-
 			stateMachineMetaGame(timeout);
 		} catch (Exception e) {
 		    GamerLogger.logStackTrace("GamePlayer", e);

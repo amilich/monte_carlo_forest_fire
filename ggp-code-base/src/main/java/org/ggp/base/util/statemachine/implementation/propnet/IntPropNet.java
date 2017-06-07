@@ -371,7 +371,7 @@ public class IntPropNet extends StateMachine {
 				if (!topsortHelper(comp, visited, tempMarks, order))
 					return false;
 			}
-			if (count % 100 == 0) {
+			if (count % 1000 == 0) {
 				System.out.println(count);
 			}
 		}
