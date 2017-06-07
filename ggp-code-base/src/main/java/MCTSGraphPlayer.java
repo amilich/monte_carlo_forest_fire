@@ -156,11 +156,12 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// getStateMachine().initialize(getMatch().getGame().getRules(), getRole());
+		ThreadedGraphNode.stateMap.clear();
 		resetGraphNode();
 		moveNum = 0;
 		try {
 			if (getStateMachine().getRoles().size() > 1) {
-				mobilityHeuristic(timeout);
+				// mobilityHeuristic(timeout);
 			}
 		} catch (Exception e) {
 			System.out.println("[GRAPH] Error while computing mobility heuristic:");

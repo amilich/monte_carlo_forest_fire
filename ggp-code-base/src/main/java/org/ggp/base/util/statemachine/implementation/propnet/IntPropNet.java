@@ -371,7 +371,7 @@ public class IntPropNet extends StateMachine {
 				if (!topsortHelper(comp, visited, tempMarks, order))
 					return false;
 			}
-			if (count % 1000 == 0) {
+			if (count % 5000 == 0) {
 				System.out.println(count);
 			}
 		}
@@ -405,6 +405,13 @@ public class IntPropNet extends StateMachine {
 		if (propNet.getInitProposition() != null) {
 			propNet.getInitProposition().curVal = true;
 		}
+		for (Component c : propNet.getComponents()) {
+			if (c instanceof Constant) {
+				Set<Component> visited = new HashSet<Component>();
+				initforwardpropmark(c, c.getValue(), visited, componentIds);
+			}
+		}
+
 		for (Component c : origComps) {
 			if (c instanceof Constant) continue;
 			else if (bases.contains(c)) continue;

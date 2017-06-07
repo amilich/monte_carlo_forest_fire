@@ -105,6 +105,7 @@ public class ThreadedGraphNode {
 		} else {
 			myMoves = machine.getLegalMoves(state, player);
 			this.numMoves = myMoves.size();
+//			List<List<Move>> lgm = machine.getLegalJointMoves(state);
 			this.numEnemyMoves = machine.getLegalJointMoves(state, player, myMoves.get(0)).size();
 		}
 		pCounts = new double[numMoves];
