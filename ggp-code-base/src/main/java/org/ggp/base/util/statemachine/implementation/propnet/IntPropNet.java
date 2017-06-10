@@ -53,7 +53,7 @@ public class IntPropNet extends StateMachine {
 	/** The player roles */
 	private Role roles[];
 
-	MachineState init;
+	MachineState init; // Initial state (do not want to recompute)
 	public static final int NUM_THREADS = 8;
 	public Proposition[] allInputArr;
 	Component[] origComps;
