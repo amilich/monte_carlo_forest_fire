@@ -10,16 +10,21 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-// Perform random depth charge to terminal state.
+/**
+ * DepthCharger
+ *
+ * Perform random depth charge to terminal state.
+ *
+ * @author monte_carlo_forest_fire
+ */
 public class DepthCharger implements Callable<Double>, Charger {
 	private volatile double value = 0;
 	private MachineState state;
 	private StateMachine machine;
 	private int numCharges = 0;
 	private Role role;
-	int roleIndex;
     private Random r = new Random();
-    int tid;
+    private int tid;
 
 	// Initialize depth charger with given state machine and state
 	public DepthCharger(StateMachine machine, MachineState state, Role role, int numCharges, int tid) {

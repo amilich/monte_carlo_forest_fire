@@ -9,24 +9,26 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-// Andrew
-
+/**
+ * Various static functions useful for game playing.
+ *
+ * @author monte_carlo_forest_fire
+ */
 public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
 	final static double MAX_DELIB_THRESHOLD = 2500; // Timeout parameter
 
+	/**
+	 * Determine which heuristic functions to use.
+	 */
 	public static void determineHeuristics(MachineState state, StateMachine machine, long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException {
 		List<MachineState> terminalStates = new ArrayList<MachineState>();
 		while (MyHeuristics.checkTime(timeout)) { // TODO need more time after
 			terminalStates.add(machine.performDepthCharge(state, null));
 		}
-		int n = terminalStates.size();
-		// double myFocusScores[] = new double [n];
-		// double enemyFocusScores[] = new double[n];
-		for (int ii = 0; ii < n; ii ++) {
-			// myfocusScores[ii] = MyHeuristics.nStepEnemyFocus(role, state, n, machine);
-		}
+		// This method was replaced by MCTSGraphPlayer.mobilityHeuristic and
+		// MCTSGraphPlayer.goalHeuristic
 	}
 
 	/**
