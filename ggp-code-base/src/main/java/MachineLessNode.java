@@ -12,8 +12,6 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-import MCFFplayers.Charger;
-
 // Graph based MCTS Node
 public class MachineLessNode {
 	// Depth charging parameters/objects

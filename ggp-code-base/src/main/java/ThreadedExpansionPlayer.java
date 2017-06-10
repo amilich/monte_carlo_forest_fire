@@ -18,6 +18,16 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.propnet.BitSetPropNet;
 
+/**
+ * ThreadedExpansionPlayer
+ *
+ * This class is currently unused.
+ * It was initially used to allow multiple threads to perform the entire MCTS sequence -
+ * selection, expansion, simulation, and backpropagation - at once; we decided this
+ * was too complicated to be useful (it did not yield huge performance benefits).
+ *
+ * See TreeExpander.java for the thread that performed these expansions.
+ */
 public class ThreadedExpansionPlayer extends StateMachineGamer {
 	MachineLessNode root = null;
 	List<Gdl> prevRules = null;
@@ -34,7 +44,7 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		resetGraphNode();
 		moveNum = 0;
-		expandTree(timeout); // TODO
+		expandTree(timeout);
 		System.out.println("[GRAPH] METAGAME charges = " + MachineLessNode.numCharges);
 	}
 
@@ -43,7 +53,7 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 	// Must be called in order to reset static information regarding the game.
 	private void resetGraphNode() throws MoveDefinitionException {
 		MachineLessNode.setRole(getRole());
-		MachineLessNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
+		MachineLessNode.roleIndex = -1;
 		MachineLessNode.stateMap.clear();
 		MachineLessNode.numCharges = 0;
 		createMachines(); // Clears and adds new machines
@@ -90,7 +100,7 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		/* if (root == null) {
+		if (root == null) {
 			initRoot();
 		} else if (moveNum != 0){
 			MachineLessNode matchingChild = root.findMatchingState(getCurrentState());
@@ -103,8 +113,8 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 			}
 		} else {
 			System.out.println("[GRAPH] First move: advanced tree.");
-		}*/
-		root = new MachineLessNode(getCurrentState(), getStateMachine());
+		}
+
 		expandTree(timeout);
 		System.out.println("[GRAPH] Num charges = " + MachineLessNode.numCharges);
 		moveNum ++;

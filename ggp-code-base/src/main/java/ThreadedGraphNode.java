@@ -1,4 +1,4 @@
-package MCFFplayers;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -183,6 +183,7 @@ public class ThreadedGraphNode {
 	public static double Csp = 300000;
 	public static boolean heuristicEnable = false;
 	public static double mobilityCorr = 0.0;
+	public static double goalCorr = 0.0;
 	static final int C = 50;
 	static final double C1 = 0.85;
 	static final double C2 = 0.2;

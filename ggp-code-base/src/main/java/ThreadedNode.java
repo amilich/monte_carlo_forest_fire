@@ -14,9 +14,6 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-import MCFFplayers.Charger;
-import MCFFplayers.DepthCharger;
-
 public class ThreadedNode {
 	public static int numCharges = 0;
 	public double utility = 0;

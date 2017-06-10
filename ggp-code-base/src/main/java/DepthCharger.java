@@ -1,4 +1,4 @@
-package MCFFplayers;
+
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -44,7 +44,6 @@ public class DepthCharger implements Callable<Double>, Charger {
 		value = 0;
 		for (int ii = 0; ii < numCharges; ii ++) {
 			try {
-				// TODO(andrew): Update for compatibility with AsyncPropNet
 				MachineState depthCharge = machine.internalDC(state, tid); // customdc(state); // new
 				value += machine.getGoal(depthCharge, role, tid);
 			} catch (Exception e) {
@@ -57,13 +56,11 @@ public class DepthCharger implements Callable<Double>, Charger {
 
 	@Override
 	public double[] getValues() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public double getValue() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 }

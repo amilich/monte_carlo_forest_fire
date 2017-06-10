@@ -21,8 +21,6 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-import MCFFplayers.ThreadedGraphNode;
-
 public class MCTSGraphPlayer extends StateMachineGamer {
 	ThreadedGraphNode root = null;
 	List<Gdl> prevRules = null;
@@ -92,6 +90,39 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		return csm;
 	}
 
+	class AlphaBetaThread implements Runnable {
+		Move action = null;
+		MachineState s = null;
+		StateMachine m = null;
+		Role r = null;
+		boolean finished = false;
+
+		public AlphaBetaThread(StateMachine m, MachineState s, Role r) {
+			this.s = s; this.r = r; this.m = m;
+		}
+
+		@Override
+		public void run() {
+			finished = false;
+			if (getStateMachine().getRoles().size() == 1) {
+				try {
+					action = MyBoundedMobilityPlayer.singlePlayerBestMove(r, s, m);
+				} catch (Exception e) {
+					e.printStackTrace();
+					return;
+				}
+			} else {
+				try {
+					action = MyAlphaBetaPlayer.staticBest(m, s, r);
+				} catch (Exception e) {
+					e.printStackTrace();
+					return;
+				}
+			}
+			finished = true;
+		}
+	}
+
 	@Override
 	public StateMachine getInitialStateMachine() {
 		System.out.println("[GRAPH] getInitialStateMachine SHOULD NEVER BE CALLED");
@@ -127,7 +158,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 	private double CORR_THRESHOLD = 0.2;
 	static final int TIME_REM = 15000;
-	static final int TIME_CORR = 15000;
+	static final int TIME_CORR = 8000;
 	public void mobilityHeuristic(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		if (!(getStateMachine() instanceof IntPropNet)) {
@@ -156,17 +187,45 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		}
 	}
 
+	public void goalHeuristic(long timeout)
+			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		if (!(getStateMachine() instanceof IntPropNet)) {
+			System.out.println("Skipping goal heuristic because not using propNet.");
+			return;
+		}
+		List<Double> ourScore = new ArrayList<Double>();
+		List<Double> heuristic = new ArrayList<Double>();
+		long newTimeout = System.currentTimeMillis() + TIME_CORR;
+		System.out.println("Starting goal correlation");
+		while (!MyHeuristics.checkTime(timeout - TIME_REM) && !MyHeuristics.checkTime(newTimeout)) {
+			MachineState finalState = new MachineState();
+			double[] weightedGoal = new double[1]; // for returning the value only
+			getStateMachine().preInternalDCGoal(getCurrentState(), finalState, 0, weightedGoal, getRole());
+			ourScore.add((double) getStateMachine().getGoal(finalState, getRole()));
+			heuristic.add(weightedGoal[0]);
+		}
+		double corr = Correlation(ourScore, heuristic);
+		System.out.println("Corr = " + corr);
+		System.out.println("Num charges = " + heuristic.size());
+		if (Math.abs(corr) > CORR_THRESHOLD) { // we want the abs value of corr because in some games, it might be beneficial to restrict our own moves
+			System.out.println("ENABLING GOAL HEURISTIC [corr=" + corr + "]");
+			ThreadedGraphNode.heuristicEnable = true;
+			ThreadedGraphNode.goalCorr = corr;
+			// we want to store corr because a higher correlation should entail a higher c value in the select fn
+		}
+	}
+
 	// List of machines used for depth charges
 	@Override
 	public void stateMachineMetaGame(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		// getStateMachine().initialize(getMatch().getGame().getRules(), getRole());
 		ThreadedGraphNode.stateMap.clear();
 		resetGraphNode();
 		moveNum = 0;
 		try {
 			if (getStateMachine().getRoles().size() > 1) {
-				// mobilityHeuristic(timeout);
+				mobilityHeuristic(timeout);
+				goalHeuristic(timeout);
 			}
 		} catch (Exception e) {
 			System.out.println("[GRAPH] Error while computing mobility heuristic:");

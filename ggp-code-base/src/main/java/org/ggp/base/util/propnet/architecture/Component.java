@@ -30,7 +30,7 @@ public abstract class Component implements Serializable {
 //		TRANS
 //	};
 //	public Type type;
-	public int bitIndex = 0;
+	public int intVal = 0;
 	public int compIndex = 0;
 
 	 public Component output_arr[] = null;
