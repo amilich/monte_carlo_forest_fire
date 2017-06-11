@@ -7,6 +7,8 @@ import java.util.Set;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 
 public class MachineState {
+	int stepCount = 0; // Re-adding this from an old experiment identifying step counter
+
     public MachineState() {
         this.contents = null;
     }

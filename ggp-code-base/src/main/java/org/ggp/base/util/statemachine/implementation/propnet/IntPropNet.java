@@ -705,7 +705,6 @@ public class IntPropNet extends StateMachine {
 			}
 			return;
 		}
-
 		for (int i = offset; i < offset + numOutputs; i ++) {
 			int comp = compOutputs[i];
 			boolean orig = val(comp, thread);
@@ -1199,6 +1198,54 @@ public class IntPropNet extends StateMachine {
 				it.remove();
 			}
 		}
+	}
+
+
+	// TODO this is supposed to return a set of all step-related propositions
+	// It is meant to go through all propositions and add them to a map based on keyword.
+	// It then tries to figure out which set contains a set of propositions with consecutive numbers
+	// using the formula 1 + 2 + ... + n = (n) * (n+1) / 2.
+	//
+	// Note: Andrew re-added this code from old propnet work that was not in our final player or propnet.
+	public Set<Proposition> getStepCountProps(Set<Proposition> propositions) {
+		Map<String, Set<Proposition>> keyWordPropMap = new HashMap<String, Set<Proposition>>();
+		for (Proposition p : propositions) {
+			String keyword = p.getName().getBody().get(0).toString();
+			if (keyWordPropMap.containsKey(keyword)) {
+				keyWordPropMap.get(keyword).add(p);
+			} else {
+				Set<Proposition> s = new HashSet<>();
+				s.add(p);
+				keyWordPropMap.put(keyword, s);
+			}
+		}
+		for (String key : keyWordPropMap.keySet()) {
+			Set<Proposition> s = keyWordPropMap.get(key);
+			int size = s.size();
+			int total = 0;
+			for (Proposition p : s) {
+				total += Integer.parseInt(p.getName().getBody().get(1).toString());
+			}
+			if (total == size * (size + 1) / 2) {
+				// we have a set of consecutive propositions with the same keyword!
+				return s;
+			}
+		}
+		return null;
+	}
+
+	// This is a more naive implementation of a step count finder (compared to getStepCountProps)
+	//
+	// Also re-added by Andrew before final player submission
+	public double getNumSteps(Set<Proposition> propositions) {
+		double maxStep = -1;
+		for (Proposition p : propositions) {
+			if (p.toString().contains("step")) {
+				int stepNum = Integer.parseInt(p.getName().getBody().get(1).toString());
+				if (stepNum > maxStep) maxStep = stepNum;
+			}
+		}
+		return maxStep;
 	}
 
 	/* Already implemented for you */

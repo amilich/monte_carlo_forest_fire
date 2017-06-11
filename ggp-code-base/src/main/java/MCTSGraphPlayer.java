@@ -343,6 +343,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 
 		int numLoops = 0;
 		ArrayList<ThreadedGraphNode> path = new ArrayList<ThreadedGraphNode>();
+		double depth = 0;
 		while (!MyHeuristics.checkTime(timeout)) {
 			path.clear();
 			numLoops ++;
@@ -350,6 +351,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 				ThreadedGraphNode selected = root.selectAndExpand(path);
 				double score = selected.simulate();
 				selected.backpropagate(path, score);
+				depth += path.size();
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -368,6 +370,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		}
 		System.out.println(numLoops + ", " + moveNum);
 		System.out.println("[GRAPH] Charges/sec = " + (ThreadedGraphNode.numCharges / timeDiff));
+		System.out.println("[GRAPH] Avg depth expanded: " + depth / numLoops);
 	}
 
 	/**
