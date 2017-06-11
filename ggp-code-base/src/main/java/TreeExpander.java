@@ -5,7 +5,7 @@ import org.ggp.base.util.statemachine.StateMachine;
 
 /**
  * TreeExpander
- *
+ * ------------
  * This class is currently unused.
  * It was initially used to allow multiple threads to perform the entire MCTS sequence -
  * selection, expansion, simulation, and backpropagation - at once; we decided this

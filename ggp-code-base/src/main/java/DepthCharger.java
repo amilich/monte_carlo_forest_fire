@@ -12,7 +12,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 /**
  * DepthCharger
- *
+ * -------------
  * Perform random depth charge to terminal state.
  *
  * @author monte_carlo_forest_fire

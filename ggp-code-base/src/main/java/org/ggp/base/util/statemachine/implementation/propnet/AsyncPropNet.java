@@ -19,8 +19,9 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
 /**
- * Encapsulates two state machines: the Prover and our IntPropNet.
+ * AsyncPropNet
  *
+ * Encapsulates two state machines: the Prover and our IntPropNet.
  * This class will use the Prover internally until the IntPropNet is initialized,
  * at which point it will switch over.
  */
@@ -36,12 +37,6 @@ public class AsyncPropNet extends StateMachine {
 		return ip;
 	}
 
-	// TODO(andrew): Are there other StateMachine methods that DepthCharger/ThreadedGraphNode/MCTSGraphPlayer
-	// rely on, besides the abstract methods in StateMachine? If so you need to add them here and curry the
-	// function call in the same pattern that the below methods do. Things that I found are missing so far:
-	// -
-
-	// You need to make sure that CachedStateMachine implements these methods also if you want AsyncPropNet to work.
 	@Override
 	public MachineState internalDC(MachineState start, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {

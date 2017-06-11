@@ -1,4 +1,3 @@
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +20,7 @@ import org.ggp.base.util.statemachine.implementation.propnet.IntPropNet;
 
 /**
  * ThreadedGraphNode
- *
+ * -----------------
  * Node used for MCTS tree.
  *
  * @author monte_carlo_forest_fire

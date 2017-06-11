@@ -126,11 +126,11 @@ public class BitSetNet extends StateMachine {
 			allCompArr = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
 
 			for (int ii = 0; ii < allBaseArr.length; ii ++) {
-				allBaseArr[ii].bitIndex = ii;
+				allBaseArr[ii].intVal = ii;
 				allBaseArr[ii].isBase = true;
 			}
 			for (int ii = 0; ii < allInputArr.length; ii ++) {
-				allInputArr[ii].bitIndex = ii;
+				allInputArr[ii].intVal = ii;
 			}
 
 			baseBits = new BitSet(allBaseArr.length);
@@ -201,10 +201,10 @@ public class BitSetNet extends StateMachine {
 		for (Proposition base : allBaseArr) {
 			if (compBits.get(base.getSingleInput().getSingleInput().compIndex)) {
 				sentences.add(base.getName());
-				nextBaseBits.set(base.bitIndex);
+				nextBaseBits.set(base.intVal);
 			}
 			if (compBits.get(base.compIndex)) {
-				baseBits.set(base.bitIndex);
+				baseBits.set(base.intVal);
 			}
 		}
 
@@ -323,13 +323,13 @@ public class BitSetNet extends StateMachine {
 		else compBits.clear(c.compIndex);
 
 		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
+			if (newValue) baseBits.set(c.intVal);
+			else baseBits.clear(c.intVal);
 		} else if (transBits.get(c.compIndex)) { // if c is a transition
 			// transitions always have exactly one output
 			if (c.output_arr.length > 0) {
-				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-				else nextBaseBits.clear(c.output_arr[0].bitIndex);
+				if (newValue) nextBaseBits.set(c.output_arr[0].intVal);
+				else nextBaseBits.clear(c.output_arr[0].intVal);
 			}
 			return;
 		}
@@ -380,12 +380,12 @@ public class BitSetNet extends StateMachine {
 		else compBits.clear(c.compIndex);
 
 		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
+			if (newValue) baseBits.set(c.intVal);
+			else baseBits.clear(c.intVal);
 		} else if (transBits.get(c.compIndex)) { // transitions always have exactly one output
 			if (c.output_arr.length > 0) {
-				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-				else nextBaseBits.clear(c.output_arr[0].bitIndex);
+				if (newValue) nextBaseBits.set(c.output_arr[0].intVal);
+				else nextBaseBits.clear(c.output_arr[0].intVal);
 			}
 			return;
 		}
@@ -414,7 +414,7 @@ public class BitSetNet extends StateMachine {
 		for (GdlSentence s : stateGdl) {
 			Proposition p = propNet.getBasePropositions().get(s);
 			if (p != null) {
-				stateBits.set(p.bitIndex);
+				stateBits.set(p.intVal);
 			}
 		}
 		stateBits.xor(baseBits);
@@ -436,7 +436,7 @@ public class BitSetNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet nowTrue = new BitSet(allInputArr.length);
 		for (GdlSentence s : moveGdl) {
-			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
+			nowTrue.set(propNet.getInputPropositions().get(s).intVal);
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {

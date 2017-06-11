@@ -23,7 +23,7 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 /**
  * MCTSGraphPlayer
- *
+ * ---------------
  * Graph-based MCTS player. Builds propnet, searches for heuristics,
  * and then plays game.
  *
