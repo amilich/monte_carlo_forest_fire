@@ -1,4 +1,4 @@
-package MCFFplayers;
+
 
 // Interface for classes that perform depth charges
 public interface Charger {

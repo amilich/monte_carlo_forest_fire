@@ -125,15 +125,15 @@ public class ExpPropNet extends StateMachine {
 			allLegalArr = propNet.getAllLegalPropositions().toArray(
 					new Proposition[propNet.getAllLegalPropositions().size()]);
 			for (int ii = 0; ii < allBaseArr.length; ii ++) {
-				allBaseArr[ii].bitIndex = ii;
+				allBaseArr[ii].intVal = ii;
 				allBaseArr[ii].isBase = true;
 			}
 			for (int ii = 0; ii < allLegalArr.length; ii ++) {
-				allLegalArr[ii].bitIndex = ii;
+				allLegalArr[ii].intVal = ii;
 				allLegalArr[ii].isLegal = true;
 			}
 			for (int ii = 0; ii < allInputArr.length; ii ++) {
-				allInputArr[ii].bitIndex = ii;
+				allInputArr[ii].intVal = ii;
 			}
 
 			baseBits = new BitSet(allBaseArr.length);
@@ -226,16 +226,16 @@ public class ExpPropNet extends StateMachine {
 		for (Proposition base : bases) {
 			if (base.getSingleInput().getSingleInput().curVal) {
 				sentences.add(base.getName());
-				nextBaseBits.set(base.bitIndex);
+				nextBaseBits.set(base.intVal);
 			}
 			if (base.curVal) {
-				baseBits.set(base.bitIndex);
+				baseBits.set(base.intVal);
 			}
 		}
 
 		for (Proposition p : propNet.getAllLegalPropositions()) {
 			if (p.curVal) {
-				legalBits.set(p.bitIndex);
+				legalBits.set(p.intVal);
 			}
 		}
 
@@ -336,13 +336,13 @@ public class ExpPropNet extends StateMachine {
 		c.curVal = newValue;
 
 		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
+			if (newValue) baseBits.set(c.intVal);
+			else baseBits.clear(c.intVal);
 		} else if (c instanceof Transition) { // if c is a transition
 			// transitions always have exactly one output
 			if (c.output_arr.length > 0) {
-				if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-				else nextBaseBits.clear(c.output_arr[0].bitIndex);
+				if (newValue) nextBaseBits.set(c.output_arr[0].intVal);
+				else nextBaseBits.clear(c.output_arr[0].intVal);
 			}
 			return;
 		}
@@ -389,13 +389,13 @@ public class ExpPropNet extends StateMachine {
 		c.curVal = newValue;
 
 		if (c.isBase) {
-			if (newValue) baseBits.set(c.bitIndex);
-			else baseBits.clear(c.bitIndex);
+			if (newValue) baseBits.set(c.intVal);
+			else baseBits.clear(c.intVal);
 		}
 
 		if (c instanceof Transition) {
-			if (newValue) nextBaseBits.set(c.output_arr[0].bitIndex);
-			else nextBaseBits.clear(c.output_arr[0].bitIndex);
+			if (newValue) nextBaseBits.set(c.output_arr[0].intVal);
+			else nextBaseBits.clear(c.output_arr[0].intVal);
 			return;
 		}
 		for (int jj = 0; jj < c.outputs.size(); jj ++) {
@@ -414,7 +414,7 @@ public class ExpPropNet extends StateMachine {
 		Set<GdlSentence> stateGdl = state.getContents();
 		BitSet stateBits = new BitSet(allBaseArr.length);
 		for (GdlSentence s : stateGdl) {
-			stateBits.set(propNet.getBasePropositions().get(s).bitIndex);
+			stateBits.set(propNet.getBasePropositions().get(s).intVal);
 		}
 		stateBits.xor(baseBits);
 		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
@@ -426,7 +426,7 @@ public class ExpPropNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet nowTrue = new BitSet(allInputArr.length);
 		for (GdlSentence s : moveGdl) {
-			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
+			nowTrue.set(propNet.getInputPropositions().get(s).intVal);
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {

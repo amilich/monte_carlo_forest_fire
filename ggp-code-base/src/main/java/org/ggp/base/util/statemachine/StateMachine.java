@@ -39,6 +39,12 @@ public abstract class StateMachine
 		return null;
 	}
 
+	public MachineState preInternalDCGoal(MachineState start, MachineState finalS, int tid, double[] avgMobility, Role player)
+			throws MoveDefinitionException, TransitionDefinitionException {
+		System.out.println("[StateMachine] WARNING: StateMachine.preInternalDCGoal should never be called!");
+		return null;
+	}
+
 	public MachineState preInternalDC(MachineState start, MachineState finalS, int tid)
 			throws MoveDefinitionException, TransitionDefinitionException {
 		System.out.println("[StateMachine] WARNING: StateMachine.preInternalDC should never be called!");

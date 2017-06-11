@@ -8,8 +8,6 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-import MCFFplayers.Charger;
-
 public class SmartCharger implements Runnable, Charger {
 
 	private volatile double value = 0;

@@ -76,11 +76,11 @@ public class StateLessPropNet extends StateMachine {
 			allCompArr = propNet.getComponents().toArray(new Component[propNet.getComponents().size()]);
 
 			for (int ii = 0; ii < allBaseArr.length; ii ++) {
-				allBaseArr[ii].bitIndex = ii;
+				allBaseArr[ii].intVal = ii;
 				allBaseArr[ii].isBase = true;
 			}
 			for (int ii = 0; ii < allInputArr.length; ii ++) {
-				allInputArr[ii].bitIndex = ii;
+				allInputArr[ii].intVal = ii;
 			}
 
 			baseBits = new BitSet(allBaseArr.length);
@@ -184,10 +184,10 @@ public class StateLessPropNet extends StateMachine {
 		for (Proposition base : allBaseArr) {
 			if (compBits.get(base.getSingleInput().getSingleInput().compIndex)) {
 				sentences.add(base.getName());
-				nextBaseBits.set(base.bitIndex);
+				nextBaseBits.set(base.intVal);
 			}
 			if (compBits.get(base.compIndex)) {
-				baseBits.set(base.bitIndex);
+				baseBits.set(base.intVal);
 			}
 		}
 
@@ -291,12 +291,12 @@ public class StateLessPropNet extends StateMachine {
 		else compBits.clear(c);
 
 		if (basePropBits.get(c)) {
-			if (newValue) baseBits.set(allCompArr[c].bitIndex);
-			else baseBits.clear(allCompArr[c].bitIndex);
+			if (newValue) baseBits.set(allCompArr[c].intVal);
+			else baseBits.clear(allCompArr[c].intVal);
 		} else if (transBits.get(c)) { // if c is a transition
 			// transitions always have exactly one output
-			if (newValue) nextBaseBits.set(allCompArr[outputs[c][0]].bitIndex);
-			else nextBaseBits.clear(allCompArr[outputs[c][0]].bitIndex);
+			if (newValue) nextBaseBits.set(allCompArr[outputs[c][0]].intVal);
+			else nextBaseBits.clear(allCompArr[outputs[c][0]].intVal);
 			return;
 		}
 		for (int jj = 0; jj < outputs[c].length; jj ++) {
@@ -347,7 +347,7 @@ public class StateLessPropNet extends StateMachine {
 		Set<GdlSentence> stateGdl = state.getContents();
 		BitSet stateBits = new BitSet(allBaseArr.length);
 		for (GdlSentence s : stateGdl) {
-			stateBits.set(propNet.getBasePropositions().get(s).bitIndex);
+			stateBits.set(propNet.getBasePropositions().get(s).intVal);
 		}
 		stateBits.xor(baseBits);
 		for (int ii = stateBits.nextSetBit(0); ii != -1; ii = stateBits.nextSetBit(ii + 1)) {
@@ -359,7 +359,7 @@ public class StateLessPropNet extends StateMachine {
 		Set<GdlSentence> moveGdl = toDoes(moves);
 		BitSet nowTrue = new BitSet(allInputArr.length);
 		for (GdlSentence s : moveGdl) {
-			nowTrue.set(propNet.getInputPropositions().get(s).bitIndex);
+			nowTrue.set(propNet.getInputPropositions().get(s).intVal);
 		}
 		inputBits.xor(nowTrue);
 		for (int ii = inputBits.nextSetBit(0); ii != -1; ii = inputBits.nextSetBit(ii + 1)) {
