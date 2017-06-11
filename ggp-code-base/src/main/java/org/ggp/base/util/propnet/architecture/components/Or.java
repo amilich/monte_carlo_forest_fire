@@ -32,9 +32,9 @@ public final class Or extends Component
 	public String toString()
 	{
 		if (num < 0) {
-			return toDot("ellipse", "red", "OR=" + num +".id="+bitIndex);
+			return toDot("ellipse", "red", "OR=" + num +".id="+intVal);
 		} else {
-			return toDot("ellipse", "grey", "OR=" + num +".id="+bitIndex);
+			return toDot("ellipse", "grey", "OR=" + num +".id="+intVal);
 		}
 	}
 }

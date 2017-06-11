@@ -31,9 +31,9 @@ public final class And extends Component {
 	public String toString()
 	{
 		if (num < 0) {
-			return toDot("invhouse", "red", "AND=" + num +".id="+bitIndex);
+			return toDot("invhouse", "red", "AND=" + num +".id="+intVal);
 		} else {
-			return toDot("invhouse", "grey", "AND=" + num +".id="+bitIndex);
+			return toDot("invhouse", "grey", "AND=" + num +".id="+intVal);
 		}
 	}
 

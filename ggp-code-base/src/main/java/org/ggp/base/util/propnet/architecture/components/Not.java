@@ -28,9 +28,9 @@ public final class Not extends Component
 	public String toString()
 	{
 		if (num < 0) {
-			return toDot("invtriangle", "red", "NOT=" + num +".id="+bitIndex);
+			return toDot("invtriangle", "red", "NOT=" + num +".id="+intVal);
 		} else {
-			return toDot("invtriangle", "grey", "NOT=" + num +".id="+bitIndex);
+			return toDot("invtriangle", "grey", "NOT=" + num +".id="+intVal);
 		}
 	}
 }
