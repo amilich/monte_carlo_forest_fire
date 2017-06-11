@@ -61,16 +61,13 @@ public class ThreadedExpansionPlayer extends StateMachineGamer {
 
 	int num_mach = 2;
 	public void expandTree(long timeout) {
-		// Semaphore backprop = new Semaphore(1);
-		TreeExpander t1 = null ;// new TreeExpander(root, backprop, timeout, getStateMachine());
-		TreeExpander t2 = null ;//new TreeExpander(root, backprop, timeout, machines.get(1));
-		// TreeExpander t3 = new TreeExpander(root, backprop, timeout, machines.get(2));
-		// TreeExpander t3 = new TreeExpander(root, backprop, timeout);
+		// TreeExpander class has a static semaphore for synchronizing
+		// selection and expansion.
+		TreeExpander t1 = new TreeExpander(root, timeout, getStateMachine(), 0);
+		TreeExpander t2 = new TreeExpander(root, timeout, getStateMachine(), 1);
 		Collection<Future<?>> futures = new LinkedList<Future<?>>();
 		futures.add(executor.submit(t1));
 		futures.add(executor.submit(t2));
-		// futures.add(executor.submit(t3));
-		// futures.add(executor.submit(t3));
 
 		for (Future<?> future : futures) {
 			try {
