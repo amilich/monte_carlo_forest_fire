@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -130,9 +129,15 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			System.out.println("[GRAPH] Error while computing mobility heuristic:");
 			e.printStackTrace();
 		}
+
 		expandTree(timeout);
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
 		moveNum = 0;
+
+		puzzleMatch = false;
+		if (EightSolver.matches(getMatch().getGame().getRulesheet().toString())) {
+			puzzleMatch = true;
+		}
 	}
 
 	/**
@@ -146,6 +151,14 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		try {
 			updateCachedTree();
 			expandTree(timeout);
+			if (puzzleMatch && root.getBestUtility() < 0.01) {
+				List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+				String correctM = EightSolver.get(moveNum);
+				moveNum ++;
+				for (int ii = 0; ii < moves.size(); ii ++) {
+					if (moves.get(ii).toString().contains(correctM)) return moves.get(ii);
+				}
+			}
 			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
 			moveNum ++;
 			Move m = root.getBestMove();
@@ -310,37 +323,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			ThreadedGraphNode.goalCorr = corr;
 			// As in mobility, higher correlation entails higher c value in select fn
 		}
-		expandTree(timeout);
-		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
-
-		eight = false;
-		if (getMatch().getGame().getRulesheet().toString().contains(eightstr)) {
-			System.out.println("EIGHT PUZZLE!");
-			eight = true;
-			int numSwaps = 0;
-			Random r = new Random();
-			for (int ii = 0; ii < move_temp.length; ii ++) {
-				movesS.add(move_temp[ii]);
-				if (ii < move_temp.length - 1 && r.nextBoolean() && r.nextBoolean()
-						&& r.nextBoolean() && numSwaps < 0) {
-					numSwaps ++;
-					movesS.add(move_temp[ii + 1]);
-					movesS.add(move_temp[ii]);
-				}
-			}
-		}
-
-		moveNum = 0;
-	}
-
-	// Must be called in order to reset static information regarding the game.
-	private void resetGraphNode() throws MoveDefinitionException, GoalDefinitionException {
-		ThreadedGraphNode.setRole(getRole());
-		ThreadedGraphNode.setStateMachine(getStateMachine());
-		ThreadedGraphNode.roleIndex = -1; // Otherwise it's OK to keep! TODO
-		ThreadedGraphNode.stateMap.clear();
-		ThreadedGraphNode.numCharges = 0;
-		initRoot();
 	}
 
 	private int num_update = 0; // Number of times we have updated the c value
@@ -395,60 +377,6 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		root = new ThreadedGraphNode(getCurrentState());
 	}
 
-	int moveNum = 0;
-	boolean failed = false;
-	@Override
-	public Move stateMachineSelectMove(long timeout)
-			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-		try {
-			if (root == null) {
-				initRoot();
-			} else if (moveNum != 0){
-				ThreadedGraphNode matchingChild = root.findMatchingState(getCurrentState());
-				root = matchingChild; // may be null
-				if (root != null) {
-					System.out.println("*** [GRAPH] ADVANCED TREE ***");
-				} else {
-					initRoot();
-					System.out.println("*** [GRAPH] FAILED TO ADVANCE TREE ***");
-				}
-			} else {
-				System.out.println("[GRAPH] First move: advanced tree.");
-			}
-
-			//			if (moveNum != 0) {
-			//				root = new ThreadedGraphNode(getCurrentState());
-			//			}
-			if (eight) {
-				List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-				String correctM = movesS.get(moveNum);
-				moveNum ++;
-				for (int ii = 0; ii < moves.size(); ii ++) {
-					System.out.println("WANT: " + correctM);
-					if (moves.get(ii).toString().contains(correctM)) {
-						System.out.println("YES: " + moves.get(ii));
-						return moves.get(ii);
-					} else {
-						System.out.println("NO: " + moves.get(ii));
-					}
-				}
-			}
-
-			expandTree(timeout);
-			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
-			moveNum ++;
-			Move m = root.getBestMove();
-			return m;
-		} catch (Exception e) {
-			System.out.println("[GRAPH] Exception in stateMachineSelectMove. Falling back to any legal move.");
-			failed = true;
-			this.stateMachine = new CachedStateMachine(new ProverStateMachine());
-			this.stateMachine.initialize(getMatch().getGame().getRules(), getRole());
-			resetGraphNode();
-			return this.stateMachine.findLegalx(getRole(), getCurrentState());
-		}
-	}
-
 	@Override
 	public void stateMachineStop() {	}
 
@@ -463,41 +391,8 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		return "GraphMCTSPlayer";
 	}
 
-	public List<String> movesS = new ArrayList<String>();
-	String eightstr = "( tile 1 ) ( tile 2 ) ( tile 3 ) ( tile 4 ) ( tile 5 ) ( tile 6 ) ( tile 7 ) ( tile 8 ) ( tile b )";
-	boolean eight = false;
-	public String move_temp[] = {
-			"3 2",
-			"3 1",
-			"2 1",
-			"1 1",
-			"1 2",
-			"2 2",
-			"2 1",
-			"3 1",
-			"3 2",
-			"2 2",
-			"2 3",
-			"3 3",
-			"3 2",
-			"3 1",
-			"2 1",
-			"1 1",
-			"1 2",
-			"2 2",
-			"2 3",
-			"1 3",
-			"1 2",
-			"2 2",
-			"3 2",
-			"3 1",
-			"2 1",
-			"1 1",
-			"1 2",
-			"2 2",
-			"3 2",
-			"3 3"
-	};
+	boolean puzzleMatch = false;
+
 	/**
 	 * Correlation
 	 *
