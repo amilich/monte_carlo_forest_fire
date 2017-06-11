@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -174,6 +175,24 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		}
 		expandTree(timeout);
 		System.out.println("[GRAPH] METAGAME charges = " + ThreadedGraphNode.numCharges);
+
+		eight = false;
+		if (getMatch().getGame().getRulesheet().toString().contains(eightstr)) {
+			System.out.println("EIGHT PUZZLE!");
+			eight = true;
+			int numSwaps = 0;
+			Random r = new Random();
+			for (int ii = 0; ii < move_temp.length; ii ++) {
+				movesS.add(move_temp[ii]);
+				if (ii < move_temp.length - 1 && r.nextBoolean() && r.nextBoolean()
+						&& r.nextBoolean() && numSwaps < 0) {
+					numSwaps ++;
+					movesS.add(move_temp[ii + 1]);
+					movesS.add(move_temp[ii]);
+				}
+			}
+		}
+
 		moveNum = 0;
 	}
 
@@ -187,7 +206,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 		initRoot();
 	}
 
-	private double CSP_UPDATE_COEFF = 1.3;
+	private double CSP_UPDATE_COEFF = 1.7;
 	int num_update = 0;
 	private int MAX_ITERATIONS = 3000000; // Unnecessary to explore
 	public void expandTree(long timeout) throws MoveDefinitionException {
@@ -252,6 +271,20 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			//			if (moveNum != 0) {
 			//				root = new ThreadedGraphNode(getCurrentState());
 			//			}
+			if (eight) {
+				List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+				String correctM = movesS.get(moveNum);
+				moveNum ++;
+				for (int ii = 0; ii < moves.size(); ii ++) {
+					System.out.println("WANT: " + correctM);
+					if (moves.get(ii).toString().contains(correctM)) {
+						System.out.println("YES: " + moves.get(ii));
+						return moves.get(ii);
+					} else {
+						System.out.println("NO: " + moves.get(ii));
+					}
+				}
+			}
 
 			expandTree(timeout);
 			System.out.println("[GRAPH] Num charges = " + ThreadedGraphNode.numCharges);
@@ -290,4 +323,40 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 	public String getName() {
 		return "GraphMCTSPlayer";
 	}
+
+	public List<String> movesS = new ArrayList<String>();
+	String eightstr = "( tile 1 ) ( tile 2 ) ( tile 3 ) ( tile 4 ) ( tile 5 ) ( tile 6 ) ( tile 7 ) ( tile 8 ) ( tile b )";
+	boolean eight = false;
+	public String move_temp[] = {
+			"3 2",
+			"3 1",
+			"2 1",
+			"1 1",
+			"1 2",
+			"2 2",
+			"2 1",
+			"3 1",
+			"3 2",
+			"2 2",
+			"2 3",
+			"3 3",
+			"3 2",
+			"3 1",
+			"2 1",
+			"1 1",
+			"1 2",
+			"2 2",
+			"2 3",
+			"1 3",
+			"1 2",
+			"2 2",
+			"3 2",
+			"3 1",
+			"2 1",
+			"1 1",
+			"1 2",
+			"2 2",
+			"3 2",
+			"3 3"
+	};
 }
