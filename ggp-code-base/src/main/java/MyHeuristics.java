@@ -16,7 +16,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
  */
 public class MyHeuristics {
 	final static int NUM_DEPTH_CHARGES = 10;
-	final static double MAX_DELIB_THRESHOLD = 3000; // Timeout parameter
+	final static double MAX_DELIB_THRESHOLD = 2500; // Timeout parameter
 
 	/**
 	 * Determine which heuristic functions to use.
