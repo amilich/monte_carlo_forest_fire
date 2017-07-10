@@ -277,7 +277,7 @@ public class MCTSGraphPlayer extends StateMachineGamer {
 			MachineState finalState = new MachineState();
 			double[] weightedMobility = new double[1]; // for returning the value only
 			getStateMachine().preInternalDCMobility(getCurrentState(), finalState, 0, weightedMobility, getRole());
-			ourScore.add((double)getStateMachine().getGoal(finalState, getRole()));
+			ourScore.add((double) getStateMachine().getGoal(finalState, getRole()));
 			heuristic.add(weightedMobility[0]);
 		}
 		double corr = Correlation(ourScore, heuristic);
