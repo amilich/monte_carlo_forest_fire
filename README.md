@@ -1,4 +1,4 @@
-# monte_carlo_forest_fire
+# Monte Carlo Forest Fire
 CS227B 
 Spring 2017
 
